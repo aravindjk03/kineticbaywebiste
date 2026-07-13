@@ -363,15 +363,19 @@ export default function Home() {
             <div className="glow-orb w-64 h-64 bg-primary/10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
             <div className="relative z-10">
               <Reveal>
-                <div className="w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center text-3xl font-bold text-primary mx-auto mb-6 orange-ring">
-                  K
+                <div className="flex items-center justify-center gap-3 mb-6">
+                  {['Y', 'B', 'C'].map((letter) => (
+                    <div key={letter} className="w-14 h-14 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center text-xl font-bold text-primary orange-ring">
+                      {letter}
+                    </div>
+                  ))}
                 </div>
                 <p className="eyebrow mb-3">The team</p>
                 <h2 className="font-heading font-bold text-ink text-3xl md:text-4xl leading-[1.15] mb-4">
-                  <ScrollFloat animationDuration={1} ease="back.inOut(2)" scrollStart="center bottom+=50%" scrollEnd="bottom bottom-=40%" stagger={0.04}>Founder-led. Mission-driven.</ScrollFloat>
+                  <ScrollFloat animationDuration={1} ease="back.inOut(2)" scrollStart="center bottom+=50%" scrollEnd="bottom bottom-=40%" stagger={0.04}>Young. Driven. Mission-guided.</ScrollFloat>
                 </h2>
                 <p className="text-text-secondary text-lg leading-relaxed max-w-xl mx-auto mb-8">
-                  Koushik leads every project with hands-on Azure AI expertise and a belief that great software can change lives.
+                  Built by a group of young chaps who want to change the world through sustainable technology — and shaped by mentors who have already benchmarked what that looks like.
                 </p>
                 <Link to="/team" className="btn-accent inline-flex items-center gap-2 rounded-lg">
                   Meet the team <Users className="w-4 h-4" />
