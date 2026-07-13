@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 540" fill="none">
+
+  <!-- ═══ BRANCHES + CIRCUIT TRACES + LEAVES ═══ -->
+
+  <!-- Outer-left branch -->
+  <line x1="226" y1="300" x2="104" y2="148" stroke="#F97316" stroke-width="10" stroke-linecap="round"/>
+  <!-- Outer-left leaf (large teardrop, tilted) -->
+  <ellipse cx="91" cy="127" rx="16" ry="25" transform="rotate(-46 91 127)" fill="#F97316"/>
+
+  <!-- Inner-left branch -->
+  <line x1="237" y1="298" x2="195" y2="170" stroke="#F97316" stroke-width="8" stroke-linecap="round"/>
+  <!-- Inner-left leaf -->
+  <ellipse cx="191" cy="153" rx="12" ry="19" transform="rotate(-16 191 153)" fill="#F97316"/>
+
+  <!-- Center branch -->
+  <line x1="250" y1="297" x2="250" y2="168" stroke="#F97316" stroke-width="8" stroke-linecap="round"/>
+  <!-- Center leaf -->
+  <ellipse cx="250" cy="151" rx="12" ry="19" fill="#F97316"/>
+
+  <!-- Inner-right branch -->
+  <line x1="263" y1="298" x2="305" y2="170" stroke="#F97316" stroke-width="8" stroke-linecap="round"/>
+  <!-- Inner-right leaf -->
+  <ellipse cx="309" cy="153" rx="12" ry="19" transform="rotate(16 309 153)" fill="#F97316"/>
+
+  <!-- Outer-right branch -->
+  <line x1="274" y1="300" x2="396" y2="148" stroke="#F97316" stroke-width="10" stroke-linecap="round"/>
+  <!-- Outer-right leaf (large teardrop, tilted) -->
+  <ellipse cx="409" cy="127" rx="16" ry="25" transform="rotate(46 409 127)" fill="#F97316"/>
+
+  <!-- Horizontal PCB trace connecting inner three stems -->
+  <line x1="178" y1="226" x2="322" y2="226" stroke="#F97316" stroke-width="5" stroke-linecap="round"/>
+  <!-- Small vertical drops from trace to leaves (optional PCB detail) -->
+  <line x1="178" y1="226" x2="178" y2="240" stroke="#F97316" stroke-width="4" stroke-linecap="round"/>
+  <line x1="322" y1="226" x2="322" y2="240" stroke="#F97316" stroke-width="4" stroke-linecap="round"/>
+
+
+  <!-- ═══ BODY — figure-8 / butterfly ═══ -->
+
+  <!-- Left wing -->
+  <rect x="110" y="300" width="136" height="124" rx="48" fill="#F97316"/>
+  <!-- Left wing hole (matches page background) -->
+  <ellipse cx="178" cy="362" rx="36" ry="40" fill="#08090A"/>
+
+  <!-- Right wing -->
+  <rect x="254" y="300" width="136" height="124" rx="48" fill="#F97316"/>
+  <!-- Right wing hole -->
+  <ellipse cx="322" cy="362" rx="36" ry="40" fill="#08090A"/>
+
+
+  <!-- ═══ TEXT ═══ -->
+
+  <text
+    x="250" y="476"
+    text-anchor="middle"
+    font-family="'Space Grotesk', 'Arial Black', Impact, sans-serif"
+    font-weight="700"
+    font-size="52"
+    fill="#F1F5F9"
+    letter-spacing="2"
+  >KINETIC BAY</text>
+
+  <text
+    x="250" y="514"
+    text-anchor="middle"
+    font-family="'Inter', Arial, Helvetica, sans-serif"
+    font-weight="400"
+    font-size="12"
+    fill="#94A3B8"
+    letter-spacing="4"
+  >BUILDING MACHINES SHAPING HUMANS</text>
+
+</svg>
