@@ -56,29 +56,12 @@ export default function Header() {
         }`}
       >
         <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <KBLogo size={52} />
-            <span className="font-heading text-xl font-bold text-ink tracking-tight flex items-baseline gap-1">
-              <Shuffle
-                text="Kinetic"
-                tag="span"
-                textAlign="left"
-                shuffleDirection="right"
-                duration={0.28}
-                animationMode="evenodd"
-                shuffleTimes={1}
-                ease="power3.out"
-                stagger={0.025}
-                threshold={0.1}
-                triggerOnce={true}
-                triggerOnHover={true}
-                respectReducedMotion={true}
-                className="font-heading text-xl font-bold text-ink tracking-tight"
-              />
-              {' '}
-              <span className="text-primary">
+          <Link to="/" className="flex items-center gap-3.5 group">
+            <KBLogo size={64} />
+            <div className="flex flex-col justify-center select-none">
+              <span className="font-heading text-xl font-bold text-ink tracking-tight flex items-baseline gap-1 leading-none">
                 <Shuffle
-                  text="Bay"
+                  text="Kinetic"
                   tag="span"
                   textAlign="left"
                   shuffleDirection="right"
@@ -91,10 +74,33 @@ export default function Header() {
                   triggerOnce={true}
                   triggerOnHover={true}
                   respectReducedMotion={true}
-                  className="font-heading text-xl font-bold tracking-tight"
+                  className="font-heading text-xl font-bold text-ink tracking-tight"
                 />
+                {' '}
+                <span className="text-primary">
+                  <Shuffle
+                    text="Bay"
+                    tag="span"
+                    textAlign="left"
+                    shuffleDirection="right"
+                    duration={0.28}
+                    animationMode="evenodd"
+                    shuffleTimes={1}
+                    ease="power3.out"
+                    stagger={0.025}
+                    threshold={0.1}
+                    triggerOnce={true}
+                    triggerOnHover={true}
+                    respectReducedMotion={true}
+                    className="font-heading text-xl font-bold tracking-tight"
+                  />
+                </span>
               </span>
-            </span>
+              <span className="text-[9px] tracking-[0.06em] uppercase font-bold mt-1 font-body leading-none whitespace-nowrap">
+                <span className="text-white">Building Machines</span>{' '}
+                <span className="text-primary">Shaping Humans</span>
+              </span>
+            </div>
           </Link>
 
           <div className="hidden md:flex items-center" aria-label="Main navigation">
