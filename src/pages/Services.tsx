@@ -7,6 +7,7 @@ import { ArrowRight, Bot, MessageSquare, Globe, Server, Lock, Cloud, ChevronDown
 import Reveal from '../components/Reveal';
 import PageHero3D from '../components/PageHero3D';
 import TiltCard from '../components/TiltCard';
+import LeadGenForm from '../components/LeadGenForm';
 
 
 const services = [
@@ -253,6 +254,13 @@ export default function Services() {
               {faqs.map((f) => <FaqItem key={f.q} q={f.q} a={f.a} />)}
             </div>
           </Reveal>
+        </div>
+      </section>
+
+      {/* ── LEAD GENERATION FORM ─────────────────────── */}
+      <section className="section-py border-t border-border bg-surface/20">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <LeadGenForm />
         </div>
       </section>
 

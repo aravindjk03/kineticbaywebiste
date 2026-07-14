@@ -8,6 +8,7 @@ import Shuffle from '../components/Shuffle';
 
 import ScrollFloat from '../components/ScrollFloat';
 import TiltCard from '../components/TiltCard';
+import LeadGenForm from '../components/LeadGenForm';
 
 
 /* ─── ANIMATED COUNTER ─────────────────────────────────── */
@@ -405,6 +406,13 @@ export default function Home() {
               </Reveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── LEAD GENERATION FORM ─────────────────────── */}
+      <section className="section-py border-t border-border bg-surface/20">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <LeadGenForm />
         </div>
       </section>
 

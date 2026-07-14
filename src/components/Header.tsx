@@ -51,15 +51,15 @@ export default function Header() {
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
-            ? 'bg-bg/90 backdrop-blur-xl border-b border-border py-2'
-            : 'bg-transparent py-3.5'
+            ? 'bg-bg/90 backdrop-blur-xl border-b border-border py-1'
+            : 'bg-transparent py-2'
         }`}
       >
         <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3.5 group">
-            <KBLogo size={72} />
+            <KBLogo size={48} />
             <div className="flex flex-col items-center justify-center select-none">
-              <span className="font-heading text-xl font-bold text-ink tracking-tight flex items-baseline gap-1 leading-none">
+              <span className="font-heading text-lg font-bold text-ink tracking-tight flex items-baseline gap-1 leading-none">
                 <Shuffle
                   text="Kinetic"
                   tag="span"
@@ -74,7 +74,7 @@ export default function Header() {
                   triggerOnce={true}
                   triggerOnHover={true}
                   respectReducedMotion={true}
-                  className="font-heading text-xl font-bold text-ink tracking-tight"
+                  className="font-heading text-lg font-bold text-ink tracking-tight"
                 />
                 {' '}
                 <span className="text-primary">
@@ -92,11 +92,11 @@ export default function Header() {
                     triggerOnce={true}
                     triggerOnHover={true}
                     respectReducedMotion={true}
-                    className="font-heading text-xl font-bold tracking-tight"
+                    className="font-heading text-lg font-bold tracking-tight"
                   />
                 </span>
               </span>
-              <span className="text-[9px] tracking-[0.06em] uppercase font-bold mt-1.5 font-body leading-none whitespace-nowrap text-center">
+              <span className="text-[8px] tracking-[0.08em] uppercase font-bold mt-1 font-body leading-none whitespace-nowrap text-center">
                 <span className="text-white">Building Machines</span>{' '}
                 <span className="text-primary">Shaping Humans</span>
               </span>
