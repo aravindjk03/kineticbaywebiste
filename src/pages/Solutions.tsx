@@ -1,4 +1,6 @@
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, useScroll } from 'framer-motion';
 import { ArrowRight, GraduationCap, HeartPulse, Leaf, Package, Building2, TrendingUp, Zap, Wrench, ShieldAlert, Code2 } from 'lucide-react';
 import DecryptedText from '../components/DecryptedText';
 import ScrollFloat from '../components/ScrollFloat';
@@ -65,7 +67,38 @@ const products = [
   },
 ];
 
+function TimelineCard({ p, Icon }: { p: any; Icon: any }) {
+  return (
+    <TiltCard className="kb-card p-6 flex flex-col group relative overflow-hidden" maxTilt={4}>
+      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+          <Icon className="w-5 h-5 text-primary" />
+        </div>
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          <span className="text-[12px] font-bold text-primary uppercase tracking-wider">{p.sdg}</span>
+          <span className={`phase-badge phase-${p.phase}`}>Phase {p.phase}</span>
+        </div>
+      </div>
+
+      <h3 className="font-heading font-bold text-ink text-xl sm:text-2xl leading-[1.2] mb-1 group-hover:text-primary transition-colors">
+        {p.name}
+      </h3>
+      <p className="text-text-secondary text-[13px] mb-3">{p.subtitle}</p>
+
+      <div className="h-px bg-border mb-4" />
+      <p className="text-text-secondary text-[14px] leading-relaxed flex-1">{p.description}</p>
+    </TiltCard>
+  );
+}
+
 export default function Solutions() {
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: timelineRef,
+    offset: ['start end', 'end center'],
+  });
+
   return (
     <div className="overflow-hidden bg-bg">
 
@@ -169,8 +202,8 @@ export default function Solutions() {
         </div>
       </section>
 
-      {/* ── THE ROADMAP ─────────────────────────── */}
-      <section className="section-py relative">
+      {/* ── THE ROADMAP (TIMELINE EFFECT) ───────── */}
+      <section className="section-py relative bg-[#060709]" ref={timelineRef}>
         <div className="glow-orb w-[600px] h-[300px] bg-primary/5 -right-48 bottom-1/4" />
         <div className="max-w-[1200px] mx-auto px-6 relative z-10">
           <Reveal>
@@ -178,38 +211,65 @@ export default function Solutions() {
             <h2 className="font-heading font-bold text-ink leading-[1.1] tracking-[-0.02em] mb-4 text-3xl md:text-5xl">
               Engineering Tomorrow's Impact
             </h2>
-            <p className="text-text-secondary text-sm sm:text-base leading-relaxed max-w-2xl mb-14">
+            <p className="text-text-secondary text-sm sm:text-base leading-relaxed max-w-2xl mb-16">
               Seven flagship products, each mapped to a UN SDG, each in active development. This is where Kinetic Bay's proven AI capability is being directed next — toward the world's hardest problems.
             </p>
           </Reveal>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {products.map((p, i) => {
-              const Icon = p.icon;
-              return (
-                <Reveal key={p.name} delay={i * 60}>
-                  <TiltCard className="kb-card p-6 h-full flex flex-col group" maxTilt={6}>
-                    <div className="flex items-start justify-between gap-3 mb-4">
-                      <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                        <Icon className="w-5 h-5 text-primary" />
-                      </div>
-                      <div className="flex flex-col items-end gap-1.5 shrink-0">
-                        <span className="text-[12px] font-bold text-primary uppercase tracking-wider">{p.sdg}</span>
-                        <span className={`phase-badge phase-${p.phase}`}>Phase {p.phase}</span>
-                      </div>
+          {/* Timeline Wrapper */}
+          <div className="relative mt-24">
+            {/* Background Base Line */}
+            <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-0.5 bg-border -translate-x-1/2" />
+
+            {/* Glowing Scroll Progress Line */}
+            <motion.div
+              style={{ scaleY: scrollYProgress }}
+              className="absolute left-6 md:left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary via-orange-light to-primary-dark origin-top -translate-x-1/2 shadow-[0_0_10px_#F97316]"
+            />
+
+            {/* Timeline Nodes & Cards */}
+            <div className="space-y-12 md:space-y-20 relative">
+              {products.map((p, i) => {
+                const Icon = p.icon;
+                const isEven = i % 2 === 0;
+
+                return (
+                  <div
+                    key={p.name}
+                    className={`relative flex flex-col md:flex-row items-stretch gap-6 md:gap-0 ${
+                      isEven ? 'md:flex-row-reverse' : ''
+                    }`}
+                  >
+                    {/* Timeline Node Dot */}
+                    <div className="absolute left-6 md:left-1/2 -translate-x-1/2 top-10 z-20 w-8 h-8 rounded-full border-4 border-bg bg-surface flex items-center justify-center shadow-[0_0_8px_rgba(249,115,22,0.3)]">
+                      <span className="text-[10px] font-bold text-primary">P{p.phase}</span>
                     </div>
 
-                    <h2 className="font-heading font-bold text-ink text-xl sm:text-2xl leading-[1.2] mb-1">
-                      {p.name}
-                    </h2>
-                    <p className="text-text-secondary text-[13px] mb-3">{p.subtitle}</p>
+                    {/* Left Column (Desktop Spacer / Content) */}
+                    <div className="w-full md:w-1/2 flex md:justify-end px-4 pl-16 md:pl-0 md:px-12">
+                      {isEven ? (
+                        <div className="w-full max-w-md hidden md:block" />
+                      ) : (
+                        <Reveal delay={100} className="w-full max-w-md">
+                          <TimelineCard p={p} Icon={Icon} />
+                        </Reveal>
+                      )}
+                    </div>
 
-                    <div className="h-px bg-border mb-4" />
-                    <p className="text-text-secondary text-[14px] leading-relaxed flex-1">{p.description}</p>
-                  </TiltCard>
-                </Reveal>
-              );
-            })}
+                    {/* Right Column (Desktop Content / Spacer) */}
+                    <div className="w-full md:w-1/2 flex justify-start px-4 pl-16 md:pl-0 md:px-12">
+                      {isEven ? (
+                        <Reveal delay={100} className="w-full max-w-md">
+                          <TimelineCard p={p} Icon={Icon} />
+                        </Reveal>
+                      ) : (
+                        <div className="w-full max-w-md hidden md:block" />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
