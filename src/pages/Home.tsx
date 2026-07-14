@@ -4,7 +4,8 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight, Bot, MessageSquare, Globe, Cloud, Target, Users, Zap, TrendingUp, Shield } from 'lucide-react';
 import Reveal from '../components/Reveal';
 import GradientBlinds from '../components/GradientBlinds';
-import DecryptedText from '../components/DecryptedText';
+import Shuffle from '../components/Shuffle';
+
 import ScrollFloat from '../components/ScrollFloat';
 import TiltCard from '../components/TiltCard';
 
@@ -132,41 +133,65 @@ export default function Home() {
           >
             Full-Stack AI Studio
           </motion.p>
-          <motion.h1
+          <h1
             className="font-heading font-bold text-ink leading-[1.03] tracking-[-0.03em] mb-6 max-w-2xl"
             style={{ fontSize: 'clamp(42px, 6vw, 80px)' }}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
           >
-            <DecryptedText
+            <Shuffle
               text="Engineering "
-              animateOn="view"
-              sequential
-              revealDirection="start"
-              speed={40}
-              encryptedClassName="decrypt-encrypted"
+              tag="span"
+              textAlign="left"
+              shuffleDirection="right"
+              duration={0.35}
+              animationMode="evenodd"
+              shuffleTimes={1}
+              ease="power3.out"
+              stagger={0.03}
+              threshold={0.1}
+              triggerOnce={true}
+              triggerOnHover={true}
+              respectReducedMotion={true}
+              className="font-heading font-bold text-ink leading-[1.03] tracking-[-0.03em]"
+              style={{ fontSize: 'inherit' }}
             />
             <span className="text-gradient-primary">
-              <DecryptedText
+              <Shuffle
                 text="Momentum"
-                animateOn="view"
-                sequential
-                revealDirection="start"
-                speed={40}
-                encryptedClassName="decrypt-encrypted"
+                tag="span"
+                textAlign="left"
+                shuffleDirection="right"
+                duration={0.35}
+                animationMode="evenodd"
+                shuffleTimes={1}
+                ease="power3.out"
+                stagger={0.03}
+                threshold={0.1}
+                triggerOnce={true}
+                triggerOnHover={true}
+                respectReducedMotion={true}
+                className="font-heading font-bold leading-[1.03] tracking-[-0.03em]"
+                style={{ fontSize: 'inherit' }}
               />
             </span>
             {' '}
-            <DecryptedText
+            <Shuffle
               text="for a Sustainable World."
-              animateOn="view"
-              sequential
-              revealDirection="start"
-              speed={40}
-              encryptedClassName="decrypt-encrypted"
+              tag="span"
+              textAlign="left"
+              shuffleDirection="right"
+              duration={0.35}
+              animationMode="evenodd"
+              shuffleTimes={1}
+              ease="power3.out"
+              stagger={0.03}
+              threshold={0.1}
+              triggerOnce={true}
+              triggerOnHover={true}
+              respectReducedMotion={true}
+              className="font-heading font-bold text-ink leading-[1.03] tracking-[-0.03em]"
+              style={{ fontSize: 'inherit' }}
             />
-          </motion.h1>
+          </h1>
           <motion.p
             className="text-text-secondary text-xl leading-relaxed max-w-xl mb-10"
             initial={{ opacity: 0, y: 20 }}

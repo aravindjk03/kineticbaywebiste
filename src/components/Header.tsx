@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Zap } from 'lucide-react';
 import GooeyNav from './GooeyNav';
+import Shuffle from './Shuffle';
 
 const navLinks = [
   { name: 'Home', path: '/' },
@@ -57,8 +58,42 @@ export default function Header() {
         <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 group">
             <KBLogo size={32} />
-            <span className="font-heading text-xl font-bold text-ink tracking-tight">
-              Kinetic <span className="text-gradient-primary">Bay</span>
+            <span className="font-heading text-xl font-bold text-ink tracking-tight flex items-baseline gap-1">
+              <Shuffle
+                text="Kinetic"
+                tag="span"
+                textAlign="left"
+                shuffleDirection="right"
+                duration={0.28}
+                animationMode="evenodd"
+                shuffleTimes={1}
+                ease="power3.out"
+                stagger={0.025}
+                threshold={0.1}
+                triggerOnce={true}
+                triggerOnHover={true}
+                respectReducedMotion={true}
+                className="font-heading text-xl font-bold text-ink tracking-tight"
+              />
+              {' '}
+              <span className="text-gradient-primary">
+                <Shuffle
+                  text="Bay"
+                  tag="span"
+                  textAlign="left"
+                  shuffleDirection="right"
+                  duration={0.28}
+                  animationMode="evenodd"
+                  shuffleTimes={1}
+                  ease="power3.out"
+                  stagger={0.025}
+                  threshold={0.1}
+                  triggerOnce={true}
+                  triggerOnHover={true}
+                  respectReducedMotion={true}
+                  className="font-heading text-xl font-bold tracking-tight"
+                />
+              </span>
             </span>
           </Link>
 
