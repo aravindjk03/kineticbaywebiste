@@ -57,9 +57,9 @@ export default function Footer() {
             <h4 className="text-xs font-bold text-ink/50 uppercase tracking-widest mb-4">Connect</h4>
             <ul className="space-y-3">
               <li>
-                <a href="mailto:hello@kineticbay.io" className="flex items-center gap-3 text-sm text-text-secondary hover:text-primary transition-colors group">
+                <a href="mailto:Kineticbay@gmail.com" className="flex items-center gap-3 text-sm text-text-secondary hover:text-primary transition-colors group">
                   <Mail className="w-4 h-4 text-primary/60 group-hover:text-primary transition-colors" />
-                  hello@kineticbay.io
+                  Kineticbay@gmail.com
                 </a>
               </li>
               <li>

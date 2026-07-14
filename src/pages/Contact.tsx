@@ -220,11 +220,11 @@ export default function Contact() {
                   <h3 className="font-heading font-semibold text-ink text-[18px] sm:text-[20px] leading-[1.25] mb-5">Direct contact</h3>
                   <ul className="space-y-5">
                     <li>
-                      <a href="mailto:hello@kineticbay.io" className="flex items-center gap-3 group">
+                      <a href="mailto:Kineticbay@gmail.com" className="flex items-center gap-3 group">
                         <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                           <Mail className="w-4 h-4 text-primary" />
                         </div>
-                        <span className="text-[14px] text-text-secondary group-hover:text-primary transition-colors">hello@kineticbay.io</span>
+                        <span className="text-[14px] text-text-secondary group-hover:text-primary transition-colors">Kineticbay@gmail.com</span>
                       </a>
                     </li>
                     <li>
