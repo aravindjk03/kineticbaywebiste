@@ -57,7 +57,7 @@ export default function Header() {
       >
         <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <KBLogo size={32} />
+            <KBLogo size={44} />
             <span className="font-heading text-xl font-bold text-ink tracking-tight flex items-baseline gap-1">
               <Shuffle
                 text="Kinetic"

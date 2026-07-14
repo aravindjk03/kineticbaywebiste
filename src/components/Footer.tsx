@@ -20,7 +20,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-12">
           <div>
             <Link to="/" className="inline-flex items-center gap-2.5 mb-4">
-              <KBLogo size={28} />
+              <KBLogo size={36} />
               <span className="font-heading text-lg font-bold text-ink">
                 Kinetic <span className="text-gradient-primary">Bay</span>
               </span>
