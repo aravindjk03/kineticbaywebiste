@@ -98,21 +98,21 @@ export default function Home() {
 
       {/* ── HERO ────────────────────────────────────── */}
       <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden">
-        {/* GradientBlinds — exact usage from React Bits docs */}
+        {/* GradientBlinds — orange brand theme */}
         <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0 }}>
           <GradientBlinds
-            gradientColors={['#FF9FFC', '#5227FF']}
+            gradientColors={['#F97316', '#EA580C', '#1a0800', '#08090A']}
             angle={0}
-            noise={0.3}
+            noise={0.18}
             blindCount={12}
             blindMinWidth={50}
-            spotlightRadius={0.5}
-            spotlightSoftness={1}
-            spotlightOpacity={1}
-            mouseDampening={0.15}
+            spotlightRadius={0.55}
+            spotlightSoftness={1.2}
+            spotlightOpacity={0.9}
+            mouseDampening={0.18}
             distortAmount={0}
             shineDirection="left"
-            mixBlendMode="lighten"
+            mixBlendMode="normal"
           />
         </div>
 
