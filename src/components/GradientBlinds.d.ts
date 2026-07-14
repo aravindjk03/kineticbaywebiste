@@ -17,6 +17,7 @@ interface GradientBlindsProps {
   distortAmount?: number;
   shineDirection?: 'left' | 'right';
   mixBlendMode?: string;
+  [key: string]: any;
 }
 
 declare const GradientBlinds: FC<GradientBlindsProps>;

@@ -7,7 +7,7 @@ import GradientBlinds from '../components/GradientBlinds';
 import DecryptedText from '../components/DecryptedText';
 import ScrollFloat from '../components/ScrollFloat';
 import TiltCard from '../components/TiltCard';
-import Hero3D from '../components/Hero3D';
+
 
 /* ─── ANIMATED COUNTER ─────────────────────────────────── */
 
@@ -101,27 +101,24 @@ export default function Home() {
         {/* GradientBlinds full-bleed background */}
         <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
           <GradientBlinds
-            gradientColors={['#F97316', '#EA580C', '#1a0800', '#08090A']}
+            gradientColors={['#FF9FFC', '#5227FF']}
             angle={0}
-            noise={0.18}
+            noise={0.3}
             blindCount={12}
             blindMinWidth={50}
-            spotlightRadius={0.55}
-            spotlightSoftness={1.2}
-            spotlightOpacity={0.9}
-            mouseDampening={0.18}
+            spotlightRadius={0.5}
+            spotlightSoftness={1}
+            spotlightOpacity={1}
+            mouseDampening={0.15}
             distortAmount={0}
             shineDirection="left"
-            mixBlendMode="normal"
+            mixBlendMode="lighten"
+            color1="#F97316"
+            color2="#e8823c"
           />
         </div>
         {/* Grid overlay */}
         <div className="hero-grid absolute inset-0 pointer-events-none" style={{ zIndex: 1 }} />
-
-        {/* Interactive 3D Hero Scene */}
-        <div className="absolute right-0 top-[20%] lg:top-0 w-full lg:w-[48%] h-[60vh] lg:h-full pointer-events-none opacity-60 lg:opacity-85" style={{ zIndex: 2 }}>
-          <Hero3D />
-        </div>
 
 
         {/* Text */}
