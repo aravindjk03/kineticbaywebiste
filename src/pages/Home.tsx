@@ -261,14 +261,14 @@ export default function Home() {
               { icon: Shield, title: 'Azure-Native Security', desc: 'Enterprise-grade security baked in at the infrastructure level, not as an afterthought.' },
             ].map(({ icon: Icon, title, desc }, i) => (
               <Reveal key={title} delay={i * 100}>
-                <TiltCard className="kb-card p-7 h-full">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-5">
-                    <Icon className="w-6 h-6 text-primary" />
-                  </div>
-                  <h3 className="font-heading font-semibold text-ink text-[19px] leading-[1.25] mb-3">{title}</h3>
-                  <p className="text-text-secondary text-[15px] leading-relaxed">{desc}</p>
-                </TiltCard>
-              </Reveal>
+              <TiltCard className="kb-card p-7 h-full">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-5">
+                  <Icon className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-heading font-semibold text-ink text-[19px] leading-[1.25] mb-3">{title}</h3>
+                <p className="text-text-secondary text-[15px] leading-relaxed">{desc}</p>
+              </TiltCard>
+            </Reveal>
             ))}
           </div>
         </div>
@@ -286,16 +286,16 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {services.map(({ icon: Icon, title, desc }, i) => (
               <Reveal key={title} delay={i * 80}>
-                <TiltCard className="kb-card p-7 flex gap-5 items-start">
-                  <div className="w-11 h-11 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
-                    <Icon className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-heading font-semibold text-ink text-[17px] leading-[1.3] mb-2">{title}</h3>
-                    <p className="text-text-secondary text-[14px] leading-relaxed">{desc}</p>
-                  </div>
-                </TiltCard>
-              </Reveal>
+              <TiltCard className="kb-card p-7 flex gap-5 items-start">
+                <div className="w-11 h-11 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+                  <Icon className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-heading font-semibold text-ink text-[17px] leading-[1.3] mb-2">{title}</h3>
+                  <p className="text-text-secondary text-[14px] leading-relaxed">{desc}</p>
+                </div>
+              </TiltCard>
+            </Reveal>
             ))}
           </div>
           <div className="mt-8 text-center">
@@ -337,13 +337,13 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {sdgCards.map(({ num, title, desc, tag }, i) => (
               <Reveal key={title} delay={i * 60}>
-                <TiltCard className="kb-card p-6 h-full">
-                  <span className="font-heading font-bold text-primary/30 text-[13px] tracking-widest block mb-3">{num}</span>
-                  <h3 className="font-heading font-bold text-ink text-[17px] leading-[1.25] mb-2">{title}</h3>
-                  <p className="text-text-secondary text-[13px] leading-relaxed mb-4">{desc}</p>
-                  <span className="phase-badge phase-1">{tag}</span>
-                </TiltCard>
-              </Reveal>
+              <TiltCard className="kb-card p-6 h-full">
+                <span className="font-heading font-bold text-primary/30 text-[13px] tracking-widest block mb-3">{num}</span>
+                <h3 className="font-heading font-bold text-ink text-[17px] leading-[1.25] mb-2">{title}</h3>
+                <p className="text-text-secondary text-[13px] leading-relaxed mb-4">{desc}</p>
+                <span className="phase-badge phase-1">{tag}</span>
+              </TiltCard>
+            </Reveal>
             ))}
           </div>
           <div className="mt-8 text-center">
@@ -398,10 +398,10 @@ export default function Home() {
               <Reveal key={num} delay={i * 80}>
                 <div className="relative">
                   <div className="kb-card p-6 h-full">
-                    <span className="font-heading font-bold text-primary text-[32px] leading-none block mb-4">{num}</span>
-                    <h3 className="font-heading font-semibold text-ink text-[18px] leading-[1.25] mb-2">{title}</h3>
-                    <p className="text-text-secondary text-[14px] leading-relaxed">{desc}</p>
-                  </div>
+                   <span className="font-heading font-bold text-primary text-[32px] leading-none block mb-4">{num}</span>
+                   <h3 className="font-heading font-semibold text-ink text-[18px] leading-[1.25] mb-2">{title}</h3>
+                   <p className="text-text-secondary text-[14px] leading-relaxed">{desc}</p>
+                 </div>
                   {i < steps.length - 1 && (
                     <div className="hidden lg:block absolute top-8 -right-2.5 w-5 h-px bg-primary/30" />
                   )}
