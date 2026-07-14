@@ -1,20 +1,19 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Globe, HeartPulse, Leaf, Package, Building2, TrendingUp, Zap } from 'lucide-react';
+import { ArrowRight, GraduationCap, HeartPulse, Leaf, Package, Building2, TrendingUp, Zap, Wrench, ShieldAlert, Code2 } from 'lucide-react';
 import DecryptedText from '../components/DecryptedText';
 import ScrollFloat from '../components/ScrollFloat';
 import Reveal from '../components/Reveal';
 import PageHero3D from '../components/PageHero3D';
 import TiltCard from '../components/TiltCard';
 
-
 const products = [
   {
-    icon: Globe,
+    icon: GraduationCap,
     name: 'EduReach',
     subtitle: 'Adaptive Learning Platform',
     sdg: 'SDG 4',
     phase: '1',
-    description: 'A mobile-first, AI-powered adaptive learning platform for underserved communities. Curriculum-aligned content, skill certifications, and vocational training in multiple languages — offline-capable.',
+    description: 'A mobile-first, AI-powered learning platform engineered for underserved communities. Curriculum-aligned content, verifiable skill certifications, and vocational training across multiple languages — designed to work fully offline.',
   },
   {
     icon: HeartPulse,
@@ -22,7 +21,7 @@ const products = [
     subtitle: 'Telemedicine & Rural Health Platform',
     sdg: 'SDG 3',
     phase: '1',
-    description: 'AI-assisted triage and remote consultations for rural and underserved communities, with offline health records and a companion app for community health workers.',
+    description: 'AI-assisted triage and remote consultations bringing quality healthcare to rural and underserved regions, backed by offline-capable health records and a companion app for community health workers.',
   },
   {
     icon: Leaf,
@@ -30,7 +29,7 @@ const products = [
     subtitle: 'Carbon Footprint & Climate Analytics',
     sdg: 'SDG 13',
     phase: '1',
-    description: 'Automated carbon footprint calculation, Scope 1–3 emissions reporting, and regulatory compliance tracking for individuals, SMBs, and enterprises.',
+    description: 'Automated carbon accounting across Scope 1–3 emissions, with built-in regulatory compliance tracking — engineered for individuals, SMBs, and enterprises navigating a net-zero future.',
   },
   {
     icon: Package,
@@ -38,7 +37,7 @@ const products = [
     subtitle: 'Circular Supply Chain & ESG Platform',
     sdg: 'SDG 12',
     phase: '2',
-    description: 'End-to-end supply chain transparency — product lifecycle tracking, automated ESG reporting, and supplier sustainability scoring.',
+    description: 'Full supply chain transparency from raw material to retail — product lifecycle tracking, automated ESG reporting, and supplier sustainability scoring in a single intelligent platform.',
   },
   {
     icon: Building2,
@@ -46,7 +45,7 @@ const products = [
     subtitle: 'Smart Cities & Civic Engagement Platform',
     sdg: 'SDG 11',
     phase: '2',
-    description: 'Real-time urban dashboards and a citizen engagement portal for local governments, powered by IoT sensor data and predictive maintenance.',
+    description: 'Real-time urban intelligence dashboards paired with a citizen engagement portal — powered by IoT sensor data and predictive maintenance for the cities of tomorrow.',
   },
   {
     icon: TrendingUp,
@@ -54,7 +53,7 @@ const products = [
     subtitle: 'MSME Fintech & Digital Economy Platform',
     sdg: 'SDG 8',
     phase: '2',
-    description: 'Digital invoicing, cash-flow forecasting, and ML-based credit scoring for micro, small, and medium enterprises in emerging markets.',
+    description: 'Digital invoicing, cash-flow forecasting, and ML-driven credit scoring — unlocking financial access for micro, small, and medium enterprises across emerging markets.',
   },
   {
     icon: Zap,
@@ -62,7 +61,7 @@ const products = [
     subtitle: 'AI Infrastructure & Innovation Suite',
     sdg: 'SDG 9',
     phase: '3',
-    description: 'A cloud-agnostic AI/ML platform providing affordable infrastructure tools and one-click model deployment for startups, SMBs, and governments in emerging markets.',
+    description: 'A cloud-agnostic AI/ML platform delivering affordable infrastructure and one-click model deployment — putting enterprise-grade AI within reach of startups, SMBs, and governments in emerging markets.',
   },
 ];
 
@@ -71,27 +70,27 @@ export default function Solutions() {
     <div className="overflow-hidden bg-bg">
 
       {/* ── HERO ─────────────────────────────────── */}
-      <section className="relative min-h-[50vh] flex items-end pb-16 pt-32 border-b border-border overflow-hidden">
+      <section className="relative min-h-[55vh] flex items-end pb-16 pt-32 border-b border-border overflow-hidden">
         <div className="glow-orb w-[500px] h-[400px] bg-primary/10 top-1/2 right-0 -translate-y-1/2" />
         <PageHero3D shape="octahedron" />
         <div className="max-w-[1200px] mx-auto px-6 relative z-10 w-full">
           <Reveal>
             <p className="eyebrow mb-4">Our Solutions</p>
             <h1
-              className="font-heading font-bold text-ink leading-[1.05] tracking-[-0.02em] mb-5 max-w-2xl"
+              className="font-heading font-bold text-ink leading-[1.05] tracking-[-0.02em] mb-6 max-w-3xl"
               style={{ fontSize: 'clamp(34px, 5vw, 64px)' }}
             >
               <DecryptedText
-                text="Seven products. "
+                text="Seven Products. "
                 animateOn="view"
                 sequential
                 revealDirection="start"
                 speed={35}
                 encryptedClassName="decrypt-encrypted"
               />
-              <span className="text-gradient-primary">
+              <span className="text-primary">
                 <DecryptedText
-                  text="Seven SDGs."
+                  text="Seven SDGs. "
                   animateOn="view"
                   sequential
                   revealDirection="start"
@@ -99,17 +98,91 @@ export default function Solutions() {
                   encryptedClassName="decrypt-encrypted"
                 />
               </span>
+              <DecryptedText
+                text="One Mission."
+                animateOn="view"
+                sequential
+                revealDirection="start"
+                speed={35}
+                encryptedClassName="decrypt-encrypted"
+              />
             </h1>
-            <p className="text-text-secondary leading-relaxed max-w-xl text-base sm:text-lg md:text-xl">
-              Not a single app — a product ecosystem where each tool addresses a real gap in education, health, infrastructure, and sustainability.
+            <p className="text-text-secondary font-medium text-lg leading-relaxed max-w-2xl mb-4">
+              We don't build apps. We engineer ecosystems.
+            </p>
+            <p className="text-text-secondary text-[15px] sm:text-base leading-relaxed max-w-2xl">
+              Every solution in our portfolio is designed to close a real-world gap — in education, healthcare, infrastructure, and sustainability — using AI-native architecture built for scale from day one. This isn't software for software's sake. It's technology engineered against the UN Sustainable Development Goals, purpose-built for the communities and industries that need it most.
             </p>
           </Reveal>
         </div>
       </section>
 
-      {/* ── PRODUCT GRID ─────────────────────────── */}
-      <section className="section-py">
-        <div className="max-w-[1200px] mx-auto px-6">
+      {/* ── PROVEN IN THE FIELD ─────────────────── */}
+      <section className="section-py border-b border-border bg-surface/20 relative">
+        <div className="glow-orb w-[400px] h-[400px] bg-primary/5 -left-48 top-1/4" />
+        <div className="max-w-[1200px] mx-auto px-6 relative z-10">
+          <Reveal>
+            <p className="eyebrow mb-3">Proven in the Field</p>
+            <h2 className="font-heading font-bold text-ink leading-[1.1] tracking-[-0.02em] mb-4 text-3xl md:text-5xl">
+              Real Technology, Real Impact
+            </h2>
+            <p className="text-text-secondary text-sm sm:text-base leading-relaxed max-w-2xl">
+              Before the roadmap, there's the record. Kinetic Bay has already delivered AI-powered systems that are live, working, and driving measurable impact today:
+            </p>
+          </Reveal>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+            {[
+              {
+                icon: Wrench,
+                title: 'Predictive & Preventive Maintenance Intelligence',
+                desc: 'AI-driven monitoring that anticipates equipment failure before it happens — cutting downtime, extending asset life, and turning maintenance from a cost center into a competitive edge.'
+              },
+              {
+                icon: ShieldAlert,
+                title: 'AI-Powered PPE Compliance Monitoring',
+                desc: "Real-time, vision-based safety monitoring that flags PPE non-compliance instantly — protecting workers and giving safety teams the visibility they've never had before."
+              },
+              {
+                icon: Code2,
+                title: 'Custom Web Platforms & Internal Software Systems',
+                desc: 'End-to-end digital builds — from public-facing websites to internal operational tools — engineered to be fast, scalable, and built around how your business actually works.'
+              }
+            ].map(({ icon: Icon, title, desc }, i) => (
+              <Reveal key={title} delay={i * 80}>
+                <TiltCard className="kb-card p-6 h-full flex flex-col" maxTilt={4}>
+                  <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-5 shrink-0">
+                    <Icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <h3 className="font-heading font-semibold text-ink text-[17px] leading-[1.3] mb-3">{title}</h3>
+                  <p className="text-text-secondary text-[14px] leading-relaxed flex-1">{desc}</p>
+                </TiltCard>
+              </Reveal>
+            ))}
+          </div>
+
+          <Reveal delay={200}>
+            <p className="text-text-secondary text-sm text-center mt-10 leading-relaxed max-w-2xl mx-auto">
+              This is the engineering discipline behind everything else we build. It's why our roadmap isn't a pitch deck — it's a pipeline built on a proven foundation.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── THE ROADMAP ─────────────────────────── */}
+      <section className="section-py relative">
+        <div className="glow-orb w-[600px] h-[300px] bg-primary/5 -right-48 bottom-1/4" />
+        <div className="max-w-[1200px] mx-auto px-6 relative z-10">
+          <Reveal>
+            <p className="eyebrow mb-3 font-semibold">The Roadmap</p>
+            <h2 className="font-heading font-bold text-ink leading-[1.1] tracking-[-0.02em] mb-4 text-3xl md:text-5xl">
+              Engineering Tomorrow's Impact
+            </h2>
+            <p className="text-text-secondary text-sm sm:text-base leading-relaxed max-w-2xl mb-14">
+              Seven flagship products, each mapped to a UN SDG, each in active development. This is where Kinetic Bay's proven AI capability is being directed next — toward the world's hardest problems.
+            </p>
+          </Reveal>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {products.map((p, i) => {
               const Icon = p.icon;
@@ -153,7 +226,7 @@ export default function Solutions() {
               <ScrollFloat animationDuration={1} ease="back.inOut(2)" scrollStart="center bottom+=50%" scrollEnd="bottom bottom-=40%" stagger={0.03}>Want to pilot one of these with us?</ScrollFloat>
             </h2>
             <p className="text-text-secondary text-base sm:text-lg leading-relaxed max-w-xl mx-auto mb-8">
-              We work with NGOs, government agencies, and academic institutions to deploy and test our SDG-aligned products in real communities.
+              We partner with NGOs, government agencies, and academic institutions to deploy and test SDG-aligned solutions in real communities — turning proven technology into measurable impact.
             </p>
             <Link to="/contact" className="btn-accent inline-flex items-center gap-2 rounded-lg">
               Start a Conversation <ArrowRight className="w-4 h-4" />
