@@ -190,7 +190,7 @@ export default function Services() {
               </span>
             </h1>
             <p className="text-text-secondary leading-relaxed max-w-xl text-base sm:text-lg md:text-xl">
-              Six specializations, each backed by hands-on delivery experience — not a checklist of buzzwords.
+              We design and build custom management software, SDG-based applications, and high-performance digital tools for large corporations and organizations of all sizes.
             </p>
           </Reveal>
         </div>

@@ -276,9 +276,12 @@ export default function Home() {
         <div className="max-w-[1200px] mx-auto px-6">
           <Reveal>
             <p className="eyebrow mb-3">Services</p>
-            <h2 className="font-heading font-bold text-ink leading-[1.1] tracking-[-0.02em] mb-14 text-3xl md:text-5xl">
+            <h2 className="font-heading font-bold text-ink leading-[1.1] tracking-[-0.02em] mb-4 text-3xl md:text-5xl">
               <ScrollFloat animationDuration={1} ease="back.inOut(2)" scrollStart="center bottom+=50%" scrollEnd="bottom bottom-=40%" stagger={0.03}>What we build.</ScrollFloat>
             </h2>
+            <p className="text-text-secondary text-base sm:text-lg leading-relaxed max-w-2xl mb-14">
+              We design and build custom management software, SDG-based applications, and high-performance digital tools for large corporations and organizations of all sizes.
+            </p>
           </Reveal>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {services.map(({ icon: Icon, title, desc }, i) => (
