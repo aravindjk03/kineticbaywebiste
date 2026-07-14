@@ -119,7 +119,7 @@ export default function Team() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {mentorPillars.map(({ icon: Icon, title, body }, i) => (
               <Reveal key={title} delay={i * 80}>
-                <GlowCard className="p-6 h-full">
+                <TiltCard className="kb-card p-6 h-full" maxTilt={5}>
                   <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
                     <Icon className="w-5 h-5 text-primary" />
                   </div>
@@ -144,7 +144,7 @@ export default function Team() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {coreValues.map(({ icon: Icon, title, body }, i) => (
               <Reveal key={title} delay={i * 80}>
-                <GlowCard className="p-6 h-full">
+                <TiltCard className="kb-card p-6 h-full" maxTilt={6}>
                   <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
                     <Icon className="w-5 h-5 text-primary" />
                   </div>

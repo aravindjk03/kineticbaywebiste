@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { ArrowRight, Bot, MessageSquare, Globe, Cloud, Target, Users, Zap, TrendingUp, Shield } from 'lucide-react';
+import { ArrowRight, Bot, MessageSquare, Globe, Cloud, Target, Users, Zap, TrendingUp, Shield, Code2, Layers, Megaphone } from 'lucide-react';
 import Reveal from '../components/Reveal';
 import GradientBlinds from '../components/GradientBlinds';
 import Shuffle from '../components/Shuffle';
@@ -58,6 +58,9 @@ const services = [
   { icon: Bot, title: 'AI Agents & Automation', desc: 'Intelligent agents that reason, plan, and act — built on Azure AI Foundry.' },
   { icon: MessageSquare, title: 'Conversational AI', desc: 'Chatbots and voice agents that understand context and close the loop.' },
   { icon: Globe, title: 'Web Applications', desc: 'High-performance SPAs and full-stack apps that scale under pressure.' },
+  { icon: Code2, title: 'Custom Development & Projects', desc: 'Bespoke software projects built from the ground up to fit your exact business needs.' },
+  { icon: Layers, title: 'Website Design & Development', desc: 'Visually stunning, high-performance, and responsive websites optimized for growth.' },
+  { icon: Megaphone, title: 'Brand Building & Identity', desc: 'Cohesive brand strategy, logo design, visual identity, and go-to-market messaging.' },
   { icon: Cloud, title: 'Cloud & DevOps', desc: 'Azure-native infrastructure with CI/CD pipelines that ship fast and stay stable.' },
 ];
 

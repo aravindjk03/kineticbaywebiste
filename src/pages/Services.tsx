@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import DecryptedText from '../components/DecryptedText';
 import ScrollFloat from '../components/ScrollFloat';
 import { motion } from 'framer-motion';
-import { ArrowRight, Bot, MessageSquare, Globe, Server, Lock, Cloud, ChevronDown } from 'lucide-react';
+import { ArrowRight, Bot, MessageSquare, Globe, Server, Lock, Cloud, ChevronDown, Code2, Layers, Megaphone } from 'lucide-react';
 import Reveal from '../components/Reveal';
 import PageHero3D from '../components/PageHero3D';
 import TiltCard from '../components/TiltCard';
@@ -44,6 +44,42 @@ const services = [
       'Custom SPA development with Angular and Tailwind CSS',
       'Responsive, accessible UI across devices',
       'API integration with Node.js, Python, Java, or .NET backends',
+    ],
+  },
+  {
+    icon: Code2,
+    title: 'Custom Development & Projects',
+    hook: 'Your idea, engineered from scratch — tailored to fit exactly.',
+    stack: ['React', 'Node.js', 'Python', 'TypeScript', 'MongoDB', 'PostgreSQL'],
+    body: "We take on bespoke software projects from idea to launch — whether it's an internal tool, a client-facing product, or a complex integration. No templates, no shortcuts — just clean, well-architected code built around your exact requirements.",
+    bullets: [
+      'End-to-end project development from discovery to deployment',
+      'Custom integrations with third-party APIs and enterprise systems',
+      'Ongoing maintenance, iteration, and feature expansion post-launch',
+    ],
+  },
+  {
+    icon: Layers,
+    title: 'Website Design & Development',
+    hook: 'Websites that convert visitors into believers.',
+    stack: ['React', 'Vite', 'Tailwind CSS', 'Framer Motion', 'TypeScript'],
+    body: 'We design and build high-performance, visually stunning websites — from marketing landing pages to multi-page corporate sites. Every site is responsive, SEO-optimised, and built with modern tooling for speed and maintainability.',
+    bullets: [
+      'Custom design systems and component libraries',
+      'Responsive, accessible websites optimised for all devices and screen sizes',
+      'SEO best practices, performance optimisation, and Core Web Vitals compliance',
+    ],
+  },
+  {
+    icon: Megaphone,
+    title: 'Brand Building & Identity',
+    hook: 'A brand that people remember — and trust.',
+    stack: ['Figma', 'Adobe Suite', 'Brand Strategy', 'UI/UX Design'],
+    body: 'We help businesses define and express their identity with clarity and confidence — from logo design and visual language to full brand guidelines and go-to-market messaging. We bridge the gap between how you want to be perceived and how you actually show up.',
+    bullets: [
+      'Logo design, typography, and visual identity systems',
+      'Brand guidelines covering colour, tone, voice, and usage rules',
+      'Go-to-market messaging, pitch decks, and marketing collateral',
     ],
   },
   {
