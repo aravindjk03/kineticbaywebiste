@@ -139,8 +139,7 @@ export default function Home() {
           <h1
             className="font-heading font-bold text-ink leading-[1.03] tracking-[-0.03em] mb-6 max-w-2xl"
             style={{ fontSize: 'clamp(42px, 6vw, 80px)' }}
-          >
-            <Shuffle
+          ><Shuffle
               text="Engineering "
               tag="span"
               textAlign="left"
@@ -156,10 +155,8 @@ export default function Home() {
               respectReducedMotion={true}
               className="font-heading font-bold text-ink leading-[1.03] tracking-[-0.03em]"
               style={{ fontSize: 'inherit' }}
-            />
-            <span className="text-gradient-primary">
-              <Shuffle
-                text="Momentum"
+            /><span className="text-primary"><Shuffle
+                text="Momentum "
                 tag="span"
                 textAlign="left"
                 shuffleDirection="right"
@@ -174,10 +171,7 @@ export default function Home() {
                 respectReducedMotion={true}
                 className="font-heading font-bold leading-[1.03] tracking-[-0.03em]"
                 style={{ fontSize: 'inherit' }}
-              />
-            </span>
-            {' '}
-            <Shuffle
+              /></span><Shuffle
               text="for a Sustainable World."
               tag="span"
               textAlign="left"
@@ -193,8 +187,7 @@ export default function Home() {
               respectReducedMotion={true}
               className="font-heading font-bold text-ink leading-[1.03] tracking-[-0.03em]"
               style={{ fontSize: 'inherit' }}
-            />
-          </h1>
+            /></h1>
           <motion.p
             className="text-text-secondary text-xl leading-relaxed max-w-xl mb-10"
             initial={{ opacity: 0, y: 20 }}
