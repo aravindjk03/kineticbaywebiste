@@ -191,7 +191,9 @@ void main() {
 
     const { arr: colorArr, count: colorCount } = prepStops(gradientColors);
     const uniforms = {
-      iResolution: { value: [gl.drawingBufferWidth, gl.drawingBufferHeight, 1] },
+      iResolution: {
+        value: [gl.drawingBufferWidth, gl.drawingBufferHeight, 1]
+      },
       iMouse: { value: [0, 0] },
       iTime: { value: 0 },
       uAngle: { value: (angle * Math.PI) / 180 },
@@ -214,7 +216,11 @@ void main() {
       uColorCount: { value: colorCount }
     };
 
-    const program = new Program(gl, { vertex, fragment, uniforms });
+    const program = new Program(gl, {
+      vertex,
+      fragment,
+      uniforms
+    });
     programRef.current = program;
 
     const geometry = new Triangle(gl);
@@ -226,6 +232,7 @@ void main() {
       const rect = container.getBoundingClientRect();
       renderer.setSize(rect.width, rect.height);
       uniforms.iResolution.value = [gl.drawingBufferWidth, gl.drawingBufferHeight, 1];
+
       if (blindMinWidth && blindMinWidth > 0) {
         const maxByMinWidth = Math.max(1, Math.floor(rect.width / blindMinWidth));
         const effective = blindCount ? Math.min(blindCount, maxByMinWidth) : maxByMinWidth;
@@ -233,6 +240,7 @@ void main() {
       } else {
         uniforms.uBlindCount.value = Math.max(1, blindCount);
       }
+
       if (firstResizeRef.current) {
         firstResizeRef.current = false;
         const cx = gl.drawingBufferWidth / 2;
@@ -289,8 +297,14 @@ void main() {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       canvas.removeEventListener('pointermove', onPointerMove);
       ro.disconnect();
-      if (canvas.parentElement === container) container.removeChild(canvas);
-      const callIfFn = (obj, key) => { if (obj && typeof obj[key] === 'function') obj[key].call(obj); };
+      if (canvas.parentElement === container) {
+        container.removeChild(canvas);
+      }
+      const callIfFn = (obj, key) => {
+        if (obj && typeof obj[key] === 'function') {
+          obj[key].call(obj);
+        }
+      };
       callIfFn(programRef.current, 'remove');
       callIfFn(geometryRef.current, 'remove');
       callIfFn(meshRef.current, 'remove');
@@ -301,16 +315,31 @@ void main() {
       rendererRef.current = null;
     };
   }, [
-    dpr, paused, gradientColors, angle, noise, blindCount, blindMinWidth,
-    mouseDampening, mirrorGradient, spotlightRadius, spotlightSoftness,
-    spotlightOpacity, distortAmount, shineDirection
+    dpr,
+    paused,
+    gradientColors,
+    angle,
+    noise,
+    blindCount,
+    blindMinWidth,
+    mouseDampening,
+    mirrorGradient,
+    spotlightRadius,
+    spotlightSoftness,
+    spotlightOpacity,
+    distortAmount,
+    shineDirection
   ]);
 
   return (
     <div
       ref={containerRef}
       className={`gradient-blinds-container ${className}`}
-      style={{ ...(mixBlendMode && { mixBlendMode }) }}
+      style={{
+        ...(mixBlendMode && {
+          mixBlendMode: mixBlendMode
+        })
+      }}
     />
   );
 };

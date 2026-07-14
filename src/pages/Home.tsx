@@ -98,8 +98,8 @@ export default function Home() {
 
       {/* ── HERO ────────────────────────────────────── */}
       <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden">
-        {/* GradientBlinds full-bleed background */}
-        <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+        {/* GradientBlinds — exact usage from React Bits docs */}
+        <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0 }}>
           <GradientBlinds
             gradientColors={['#FF9FFC', '#5227FF']}
             angle={0}
@@ -113,12 +113,10 @@ export default function Home() {
             distortAmount={0}
             shineDirection="left"
             mixBlendMode="lighten"
-            color1="#F97316"
-            color2="#e8823c"
           />
         </div>
-        {/* Grid overlay */}
-        <div className="hero-grid absolute inset-0 pointer-events-none" style={{ zIndex: 1 }} />
+
+
 
 
         {/* Text */}
