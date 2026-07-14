@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import DecryptedText from '../components/DecryptedText';
 import ScrollFloat from '../components/ScrollFloat';
@@ -6,6 +6,8 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Bot, MessageSquare, Globe, Server, Lock, Cloud, ChevronDown } from 'lucide-react';
 import Reveal from '../components/Reveal';
 import PageHero3D from '../components/PageHero3D';
+import TiltCard from '../components/TiltCard';
+
 
 const services = [
   {
@@ -162,7 +164,7 @@ export default function Services() {
         <div className="max-w-[1200px] mx-auto px-6 space-y-5">
           {services.map(({ icon: Icon, title, hook, stack, body, bullets }, i) => (
             <Reveal key={title} delay={i * 50}>
-              <div className="kb-card p-6 sm:p-8">
+              <TiltCard className="kb-card p-6 sm:p-8" maxTilt={5}>
                 <div className="flex flex-col sm:flex-row items-start gap-5">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                     <Icon className="w-6 h-6 text-primary" />
@@ -193,7 +195,7 @@ export default function Services() {
                     </ul>
                   </div>
                 </div>
-              </div>
+              </TiltCard>
             </Reveal>
           ))}
         </div>

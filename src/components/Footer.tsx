@@ -4,7 +4,7 @@ import { Mail, Linkedin, Github, Zap } from 'lucide-react';
 function KBLogo({ size = 28 }: { size?: number }) {
   return (
     <img
-      src="/logo-icon.svg"
+      src="/kineticbay.png"
       alt="Kinetic Bay logo icon"
       width={size}
       height={size}

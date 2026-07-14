@@ -1,7 +1,34 @@
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Float, MeshDistortMaterial, Icosahedron, Torus, Sphere } from '@react-three/drei';
-import { useRef, Suspense } from 'react';
+import { useRef, Suspense, useEffect } from 'react';
 import { type Mesh, type Group } from 'three';
+
+function InteractiveGroup({ children }: { children: React.ReactNode }) {
+  const ref = useRef<Group>(null);
+  const mouse = useRef({ x: 0, y: 0 });
+  const { viewport } = useThree();
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  useFrame(() => {
+    if (!ref.current) return;
+    const targetX = mouse.current.y * 0.2;
+    const targetY = mouse.current.x * 0.2;
+    ref.current.rotation.x += (targetX - ref.current.rotation.x) * 0.05;
+    ref.current.rotation.y += (targetY - ref.current.rotation.y) * 0.05;
+  });
+
+  const scale = viewport.width < 5 ? 0.75 : 1.1;
+
+  return <group ref={ref} scale={scale}>{children}</group>;
+}
 
 function CoreOrb() {
   const meshRef = useRef<Mesh>(null);
@@ -140,20 +167,23 @@ export default function Hero3D() {
           <pointLight position={[-5, -3, 2]} intensity={1.5} color="#fb923c" />
           <spotLight position={[0, 5, 0]} intensity={1} color="#ffffff" angle={0.5} penumbra={1} />
 
-          <CoreOrb />
-          <InnerCore />
+          <InteractiveGroup>
+            <CoreOrb />
+            <InnerCore />
 
-          <OrbitRing radius={2.2} speed={0.3} tilt={1.2} color="#f97316" thickness={0.015} />
-          <OrbitRing radius={2.8} speed={-0.2} tilt={0.6} color="#fb923c" thickness={0.01} />
-          <OrbitRing radius={3.3} speed={0.15} tilt={1.8} color="#fdba74" thickness={0.008} />
+            <OrbitRing radius={2.2} speed={0.3} tilt={1.2} color="#f97316" thickness={0.015} />
+            <OrbitRing radius={2.8} speed={-0.2} tilt={0.6} color="#fb923c" thickness={0.01} />
+            <OrbitRing radius={3.3} speed={0.15} tilt={1.8} color="#fdba74" thickness={0.008} />
 
-          <OrbitingNode radius={2.2} speed={0.8} offset={0} size={0.15} />
-          <OrbitingNode radius={2.8} speed={-0.6} offset={2} size={0.12} />
-          <OrbitingNode radius={3.3} speed={0.5} offset={4} size={0.1} />
+            <OrbitingNode radius={2.2} speed={0.8} offset={0} size={0.15} />
+            <OrbitingNode radius={2.8} speed={-0.6} offset={2} size={0.12} />
+            <OrbitingNode radius={3.3} speed={0.5} offset={4} size={0.1} />
 
-          <ParticleField />
+            <ParticleField />
+          </InteractiveGroup>
         </Suspense>
       </Canvas>
     </div>
   );
 }
+

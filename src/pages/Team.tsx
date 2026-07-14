@@ -1,9 +1,11 @@
-﻿import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ArrowRight, Target, Shield, Eye, Clock, Lightbulb, Globe, Leaf, Users } from 'lucide-react';
 import DecryptedText from '../components/DecryptedText';
 import ScrollFloat from '../components/ScrollFloat';
 import Reveal from '../components/Reveal';
 import PageHero3D from '../components/PageHero3D';
+import TiltCard from '../components/TiltCard';
+
 
 const coreValues = [
   { icon: Target, title: 'Impact Over Hype', body: 'We ship what we can prove, not what sounds good in a deck.' },
@@ -82,7 +84,7 @@ export default function Team() {
             </Reveal>
 
             <Reveal delay={100}>
-              <div className="kb-card p-8 space-y-6">
+              <TiltCard className="kb-card p-8 space-y-6" maxTilt={4}>
                 {[
                   { label: 'Who we are', value: 'A cross-disciplinary crew of engineers, designers, and strategists — early in our careers, long on conviction.' },
                   { label: 'What drives us', value: 'Sustainable practice through real technology — not greenwashing, not marketing, but systems that genuinely reduce harm and increase opportunity.' },
@@ -93,7 +95,7 @@ export default function Team() {
                     <p className="text-text-secondary text-[14px] sm:text-[15px] leading-relaxed">{value}</p>
                   </div>
                 ))}
-              </div>
+              </TiltCard>
             </Reveal>
           </div>
         </div>
@@ -117,13 +119,13 @@ export default function Team() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {mentorPillars.map(({ icon: Icon, title, body }, i) => (
               <Reveal key={title} delay={i * 80}>
-                <div className="kb-card p-6 h-full">
+                <TiltCard className="kb-card p-6 h-full" maxTilt={5}>
                   <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
                     <Icon className="w-5 h-5 text-primary" />
                   </div>
                   <h3 className="font-heading font-semibold text-ink text-[17px] sm:text-[18px] leading-[1.3] mb-2">{title}</h3>
                   <p className="text-text-secondary text-[14px] leading-relaxed">{body}</p>
-                </div>
+                </TiltCard>
               </Reveal>
             ))}
           </div>
@@ -142,13 +144,13 @@ export default function Team() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {coreValues.map(({ icon: Icon, title, body }, i) => (
               <Reveal key={title} delay={i * 80}>
-                <div className="kb-card p-6 h-full">
+                <TiltCard className="kb-card p-6 h-full" maxTilt={6}>
                   <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
                     <Icon className="w-5 h-5 text-primary" />
                   </div>
                   <h3 className="font-heading font-semibold text-ink text-[17px] sm:text-[18px] leading-[1.3] mb-2">{title}</h3>
                   <p className="text-text-secondary text-[14px] leading-relaxed">{body}</p>
-                </div>
+                </TiltCard>
               </Reveal>
             ))}
           </div>

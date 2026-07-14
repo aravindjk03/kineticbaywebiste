@@ -15,7 +15,7 @@ const navLinks = [
 function KBLogo({ size = 36 }: { size?: number }) {
   return (
     <img
-      src="/logo-icon.svg"
+      src="/kineticbay.png"
       alt="Kinetic Bay logo icon"
       width={size}
       height={size}

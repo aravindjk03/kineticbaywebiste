@@ -1,9 +1,36 @@
-import { Suspense, useRef } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Suspense, useRef, useEffect } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { MeshDistortMaterial, Float } from '@react-three/drei';
 import * as THREE from 'three';
 
 type Shape = 'torus' | 'icosahedron' | 'octahedron' | 'sphere';
+
+function InteractiveGroup({ children }: { children: React.ReactNode }) {
+  const ref = useRef<THREE.Group>(null);
+  const mouse = useRef({ x: 0, y: 0 });
+  const { viewport } = useThree();
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  useFrame(() => {
+    if (!ref.current) return;
+    const targetX = mouse.current.y * 0.15;
+    const targetY = mouse.current.x * 0.15;
+    ref.current.rotation.x += (targetX - ref.current.rotation.x) * 0.05;
+    ref.current.rotation.y += (targetY - ref.current.rotation.y) * 0.05;
+  });
+
+  const scale = viewport.width < 5 ? 0.7 : 1.0;
+
+  return <group ref={ref} scale={scale}>{children}</group>;
+}
 
 function Shape3D({ shape }: { shape: Shape }) {
   const mesh = useRef<THREE.Mesh>(null);
@@ -66,11 +93,14 @@ export default function PageHero3D({ shape = 'icosahedron' }: { shape?: Shape })
           <ambientLight intensity={0.4} />
           <pointLight position={[4, 4, 4]} intensity={1.8} color="#F97316" />
           <pointLight position={[-4, -2, -4]} intensity={0.8} color="#EA580C" />
-          <Shape3D shape={shape} />
-          <Ring radius={2.2} delay={0} />
-          <Ring radius={3.0} delay={2} />
+          <InteractiveGroup>
+            <Shape3D shape={shape} />
+            <Ring radius={2.2} delay={0} />
+            <Ring radius={3.0} delay={2} />
+          </InteractiveGroup>
         </Canvas>
       </Suspense>
     </div>
   );
 }
+
