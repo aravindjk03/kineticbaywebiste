@@ -29,9 +29,9 @@ export default function Team() {
     target: heroRef,
     offset: ['start start', 'end start'],
   });
-  const heroOrbY = useTransform(heroScroll, [0, 1], [0, 150]);
-  const heroCanvasY = useTransform(heroScroll, [0, 1], [0, 100]);
-  const heroTextY = useTransform(heroScroll, [0, 1], [0, -50]);
+  const heroOrbY = useTransform(heroScroll, [0, 1], [0, 200]);
+  const heroCanvasY = useTransform(heroScroll, [0, 1], [0, 120]);
+  const heroTextY = useTransform(heroScroll, [0, 1], [0, -80]);
 
   // ── ORIGIN SECTION PARALLAX ────────────────────
   const originRef = useRef<HTMLDivElement>(null);
@@ -39,8 +39,8 @@ export default function Team() {
     target: originRef,
     offset: ['start end', 'end start'],
   });
-  const originLeftY = useTransform(originScroll, [0, 1], [50, -50]);
-  const originRightY = useTransform(originScroll, [0, 1], [-50, 50]);
+  const originLeftY = useTransform(originScroll, [0, 1], [80, -80]);
+  const originRightY = useTransform(originScroll, [0, 1], [-80, 80]);
 
   // ── MENTORS SECTION PARALLAX ───────────────────
   const mentorsRef = useRef<HTMLDivElement>(null);
@@ -48,7 +48,7 @@ export default function Team() {
     target: mentorsRef,
     offset: ['start end', 'end start'],
   });
-  const mentorsOrbY = useTransform(mentorsScroll, [0, 1], [-100, 100]);
+  const mentorsOrbY = useTransform(mentorsScroll, [0, 1], [-150, 150]);
 
   // ── VALUES SECTION PARALLAX ────────────────────
   const valuesRef = useRef<HTMLDivElement>(null);
@@ -56,10 +56,10 @@ export default function Team() {
     target: valuesRef,
     offset: ['start end', 'end start'],
   });
-  const card1Y = useTransform(valuesScroll, [0, 1], [25, -25]);
-  const card2Y = useTransform(valuesScroll, [0, 1], [50, -50]);
-  const card3Y = useTransform(valuesScroll, [0, 1], [15, -15]);
-  const card4Y = useTransform(valuesScroll, [0, 1], [40, -40]);
+  const card1Y = useTransform(valuesScroll, [0, 1], [40, -40]);
+  const card2Y = useTransform(valuesScroll, [0, 1], [90, -90]);
+  const card3Y = useTransform(valuesScroll, [0, 1], [30, -30]);
+  const card4Y = useTransform(valuesScroll, [0, 1], [80, -80]);
   const cardYs = [card1Y, card2Y, card3Y, card4Y];
 
   // ── GROWING SECTION PARALLAX ───────────────────
@@ -68,7 +68,7 @@ export default function Team() {
     target: growingRef,
     offset: ['start end', 'end start'],
   });
-  const growingOrbY = useTransform(growingScroll, [0, 1], [-80, 80]);
+  const growingOrbY = useTransform(growingScroll, [0, 1], [-120, 120]);
 
   return (
     <div className="overflow-hidden bg-bg">
