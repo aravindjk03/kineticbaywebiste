@@ -1,7 +1,7 @@
 /**
  * Cloudflare Worker for Kinetic Bay / KB NEXUS
  * Handles all /api/* endpoints natively at the edge with cryptographic zero-trust stateless tokens
- * and proxies all other requests to static assets with single-page application routing.
+ * and persistent Cloudflare KV storage (DB_KV binding) for tickets, enquiries, and telemetry.
  */
 
 // Edge active CMS routes
@@ -92,7 +92,7 @@ const USERS = {
   }
 };
 
-const EDGE_TICKETS = [
+const DEFAULT_TICKETS = [
   {
     id: 'tkt_seed_01',
     public_id: 'KB-7F4K9Q2M',
@@ -104,14 +104,15 @@ const EDGE_TICKETS = [
     description: 'Webhook notifications for customer payment events are experiencing a 4-5 minute latency.',
     status: 'IN_PROGRESS',
     assigned_to: 'usr_admin_01',
-    internal_notes: [{ id: 'note_01', author_name: 'Platform Operations Admin', note: 'Worker queue cleared.', created_at: new Date().toISOString() }],
-    customer_updates: [{ id: 'upd_01', message: 'Worker queue bottleneck mitigated. Telemetry normalizing.', created_at: new Date().toISOString() }],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    internal_notes: [{ id: 'note_01', author_name: 'Platform Operations Admin', note: 'Worker queue cleared.', created_at: '2026-09-20T10:00:00.000Z' }],
+    customer_updates: [{ id: 'upd_01', message: 'Worker queue bottleneck mitigated. Telemetry normalizing.', created_at: '2026-09-20T10:15:00.000Z' }],
+    created_at: '2026-09-20T09:30:00.000Z',
+    updated_at: '2026-09-20T10:15:00.000Z',
+    deleted_at: null,
   }
 ];
 
-const EDGE_ENQUIRIES = [
+const DEFAULT_ENQUIRIES = [
   {
     id: 'enq_seed_01',
     reference_id: 'ENQ-9D82HF',
@@ -124,17 +125,90 @@ const EDGE_ENQUIRIES = [
     message: 'Multi-tenant logistics management MVP with stripe billing and GPS fleet tracking.',
     status: 'PROPOSAL_SENT',
     notes: 'Sent 24-hour scoped roadmap.',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    created_at: '2026-09-19T14:20:00.000Z',
+    updated_at: '2026-09-19T16:00:00.000Z',
+    deleted_at: null,
   }
 ];
 
+// Fallback in-memory lists (backed up by DB_KV when bound)
+const MEMORY_TICKETS = [...DEFAULT_TICKETS];
+const MEMORY_ENQUIRIES = [...DEFAULT_ENQUIRIES];
+
+async function getStoredTickets(env) {
+  if (env && env.DB_KV) {
+    try {
+      const raw = await env.DB_KV.get('kb_tickets_v1');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          MEMORY_TICKETS.length = 0;
+          MEMORY_TICKETS.push(...parsed);
+          return [...parsed];
+        }
+      } else {
+        await env.DB_KV.put('kb_tickets_v1', JSON.stringify(DEFAULT_TICKETS));
+      }
+    } catch (e) {
+      console.warn('KV tickets read error:', e);
+    }
+  }
+  return [...MEMORY_TICKETS];
+}
+
+async function saveStoredTickets(env, tickets) {
+  const cloned = [...tickets];
+  MEMORY_TICKETS.length = 0;
+  MEMORY_TICKETS.push(...cloned);
+  if (env && env.DB_KV) {
+    try {
+      await env.DB_KV.put('kb_tickets_v1', JSON.stringify(cloned));
+    } catch (err) {
+      console.error('Failed to persist tickets to KV:', err);
+    }
+  }
+}
+
+async function getStoredEnquiries(env) {
+  if (env && env.DB_KV) {
+    try {
+      const raw = await env.DB_KV.get('kb_enquiries_v1');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          MEMORY_ENQUIRIES.length = 0;
+          MEMORY_ENQUIRIES.push(...parsed);
+          return [...parsed];
+        }
+      } else {
+        await env.DB_KV.put('kb_enquiries_v1', JSON.stringify(DEFAULT_ENQUIRIES));
+      }
+    } catch (e) {
+      console.warn('KV enquiries read error:', e);
+    }
+  }
+  return [...MEMORY_ENQUIRIES];
+}
+
+async function saveStoredEnquiries(env, enquiries) {
+  const cloned = [...enquiries];
+  MEMORY_ENQUIRIES.length = 0;
+  MEMORY_ENQUIRIES.push(...cloned);
+  if (env && env.DB_KV) {
+    try {
+      await env.DB_KV.put('kb_enquiries_v1', JSON.stringify(cloned));
+    } catch (err) {
+      console.error('Failed to persist enquiries to KV:', err);
+    }
+  }
+}
+
 const EDGE_ANALYTICS = {
-  totalVisits: 28,
-  uniqueVisitors: 19,
-  pageViews: { '/': 42, '/services': 18, '/team': 12, '/solutions': 9, '/contact': 15 },
-  dailyVisits: [{ date: new Date().toISOString().split('T')[0], count: 28 }],
-  deviceBreakdown: { desktop: 19, mobile: 8, tablet: 1 },
+  totalVisits: 32,
+  uniqueVisitors: 21,
+  pageViews: { '/': 48, '/services': 22, '/team': 14, '/solutions': 11, '/contact': 18 },
+  dailyVisits: [{ date: new Date().toISOString().split('T')[0], count: 32 }],
+  deviceBreakdown: { desktop: 21, mobile: 10, tablet: 1 },
   recentVisits: []
 };
 
@@ -305,12 +379,16 @@ export default {
             return json({ error: 'Authentication credentials required.' }, 401);
           }
 
+          const currentTickets = await getStoredTickets(env);
+          const currentEnquiries = await getStoredEnquiries(env);
+
           return json({
             database: {
               engine: 'KineticBay-NoSQL-DocumentDB-v2 (Cloudflare Edge Sync)',
               format: 'JSON Document Store with Atomic Flush & Cloudflare KV Integration',
+              kvBindingActive: !!(env && env.DB_KV),
               totalCollections: 9,
-              totalDocuments: 152,
+              totalDocuments: 152 + currentTickets.length + currentEnquiries.length,
               collections: {
                 users: { documents: 3, file: 'users.nosql.json', sizeBytes: 7554 },
                 settings: { documents: 1, file: 'settings.nosql.json', sizeBytes: 302 },
@@ -318,8 +396,8 @@ export default {
                 content: { documents: 3, file: 'content.nosql.json', sizeBytes: 1623 },
                 audit_logs: { documents: 123, file: 'audit_logs.nosql.json', sizeBytes: 62421 },
                 services: { documents: 9, file: 'services.nosql.json', sizeBytes: 7118 },
-                tickets: { documents: EDGE_TICKETS.length, file: 'tickets.nosql.json', sizeBytes: 7539 },
-                enquiries: { documents: EDGE_ENQUIRIES.length, file: 'enquiries.nosql.json', sizeBytes: 2019 },
+                tickets: { documents: currentTickets.length, file: 'tickets.nosql.json', sizeBytes: JSON.stringify(currentTickets).length },
+                enquiries: { documents: currentEnquiries.length, file: 'enquiries.nosql.json', sizeBytes: JSON.stringify(currentEnquiries).length },
                 analytics: { documents: 1, file: 'analytics.nosql.json', sizeBytes: 1552 }
               },
               persistedAt: new Date().toISOString()
@@ -340,69 +418,353 @@ export default {
           return json({ recorded: true });
         }
 
-        // 8. Tickets (Protected for CMS list, Public for creation and status tracking)
-        if (path === '/api/tickets') {
-          const sessionUser = await getSessionUser(request);
-          if (!sessionUser) {
-            return json({ error: 'Authentication credentials required.' }, 401);
-          }
-          return json({ tickets: EDGE_TICKETS });
-        }
+        // ─── 8. TICKETING SYSTEM (PUBLIC & CMS) ──────────────────────────
+
+        // 8a. Public Ticket Creation (Stores in KV + memory, returns full ticket object)
         if (path === '/api/public/tickets' && method === 'POST') {
           const body = await request.json().catch(() => ({}));
+          const name = (body.name || '').trim();
+          const email = (body.email || '').trim().toLowerCase();
+          const subject = (body.subject || '').trim();
+          const description = (body.description || '').trim();
+          const category = body.category || 'technical_support';
+          const priority = body.priority || 'medium';
+
+          if (!name || !email || !subject || !description) {
+            return json({ error: 'Name, email, subject, and description are required.' }, 400);
+          }
+
           const id = 'KB-' + crypto.randomUUID().replace(/-/g, '').substring(0, 8).toUpperCase();
+          const now = new Date().toISOString();
+
           const newTicket = {
-            id: 'tkt_' + Date.now(),
+            id: 'tkt_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
             public_id: id,
-            requester_name: body.name || 'Visitor',
-            requester_email: body.email || '',
-            category: body.category || 'technical_support',
-            priority: body.priority || 'medium',
-            subject: body.subject || 'Support Ticket',
-            description: body.description || '',
+            requester_name: name,
+            requester_email: email,
+            category,
+            priority,
+            subject,
+            description,
             status: 'NEW',
-            created_at: new Date().toISOString(),
-            customer_updates: [{ id: 'upd_' + Date.now(), message: 'Ticket received and logged into dispatch queue.', created_at: new Date().toISOString() }]
+            assigned_to: null,
+            created_at: now,
+            updated_at: now,
+            deleted_at: null,
+            internal_notes: [],
+            customer_updates: [
+              {
+                id: 'upd_' + Date.now(),
+                message: 'Ticket received and logged into dispatch queue.',
+                created_at: now,
+              }
+            ]
           };
-          EDGE_TICKETS.unshift(newTicket);
-          return json({ public_id: id, status: 'NEW' }, 201);
+
+          const allTickets = await getStoredTickets(env);
+          allTickets.unshift(newTicket);
+          await saveStoredTickets(env, allTickets);
+
+          return json({
+            success: true,
+            message: 'Ticket successfully submitted. Please save your Ticket Reference ID for tracking.',
+            ticket: {
+              public_id: id,
+              requester_email: newTicket.requester_email,
+              subject: newTicket.subject,
+              category: newTicket.category,
+              priority: newTicket.priority,
+              status: newTicket.status,
+              created_at: newTicket.created_at,
+              updated_at: newTicket.updated_at,
+              customer_updates: newTicket.customer_updates,
+            }
+          }, 201);
         }
+
+        // 8b. Public Ticket Status Tracking (Dual-factor: Reference ID + Requester Email)
         if (path === '/api/public/ticket-status' && method === 'POST') {
           const body = await request.json().catch(() => ({}));
-          const t = EDGE_TICKETS.find(x => x.public_id.toUpperCase() === (body.ticketId || '').toUpperCase());
-          if (t && t.requester_email.toLowerCase() === (body.email || '').toLowerCase()) {
-            return json({ ticket: t });
+          const targetId = (body.ticketId || '').trim().toUpperCase();
+          const targetEmail = (body.email || '').trim().toLowerCase();
+
+          if (!targetId || !targetEmail) {
+            return json({ error: 'Both Ticket Reference ID and registered email are required.' }, 400);
+          }
+
+          const allTickets = await getStoredTickets(env);
+          const t = allTickets.find(
+            (x) => x.public_id.toUpperCase() === targetId && !x.deleted_at
+          );
+
+          if (t && t.requester_email.toLowerCase() === targetEmail) {
+            return json({
+              success: true,
+              ticket: {
+                public_id: t.public_id,
+                subject: t.subject,
+                category: t.category,
+                priority: t.priority,
+                status: t.status,
+                created_at: t.created_at,
+                updated_at: t.updated_at,
+                customer_updates: t.customer_updates || []
+              }
+            });
           }
           return json({ error: 'No ticket found matching the provided reference ID and requester email address.' }, 404);
         }
 
-        // 9. Enquiries (Protected for CMS list, Public for submission)
-        if (path === '/api/enquiries') {
+        // 8c. CMS Tickets Listing (Protected)
+        if (path === '/api/tickets' && method === 'GET') {
           const sessionUser = await getSessionUser(request);
           if (!sessionUser) {
             return json({ error: 'Authentication credentials required.' }, 401);
           }
-          return json({ enquiries: EDGE_ENQUIRIES });
+
+          const urlParams = url.searchParams;
+          const status = urlParams.get('status');
+          const priority = urlParams.get('priority');
+          const category = urlParams.get('category');
+          const search = (urlParams.get('search') || '').toLowerCase();
+          const includeDeleted = urlParams.get('includeDeleted') === 'true';
+
+          let list = await getStoredTickets(env);
+          if (!includeDeleted) {
+            list = list.filter((t) => !t.deleted_at);
+          }
+          if (status && status !== 'all') {
+            list = list.filter((t) => t.status === status);
+          }
+          if (priority && priority !== 'all') {
+            list = list.filter((t) => t.priority === priority);
+          }
+          if (category && category !== 'all') {
+            list = list.filter((t) => t.category === category);
+          }
+          if (search) {
+            list = list.filter(
+              (t) =>
+                t.public_id.toLowerCase().includes(search) ||
+                t.subject.toLowerCase().includes(search) ||
+                t.requester_name.toLowerCase().includes(search) ||
+                t.requester_email.toLowerCase().includes(search)
+            );
+          }
+
+          return json({ success: true, count: list.length, tickets: list });
         }
+
+        // 8d. CMS Ticket Updates (Status, Assignment, Notes, Customer Updates, Deletes)
+        if (path.startsWith('/api/tickets/')) {
+          const sessionUser = await getSessionUser(request);
+          if (!sessionUser) {
+            return json({ error: 'Authentication credentials required.' }, 401);
+          }
+
+          const segments = path.replace('/api/tickets/', '').split('/');
+          const ticketId = decodeURIComponent(segments[0] || '').toUpperCase();
+          const subAction = segments[1] || '';
+
+          const allTickets = await getStoredTickets(env);
+          const ticket = allTickets.find(
+            (t) => t.id === ticketId || t.public_id.toUpperCase() === ticketId
+          );
+
+          if (!ticket) {
+            return json({ error: 'Ticket not found.' }, 404);
+          }
+
+          // Status Transition
+          if (subAction === 'status' && method === 'PATCH') {
+            const body = await request.json().catch(() => ({}));
+            ticket.status = body.status || ticket.status;
+            ticket.updated_at = new Date().toISOString();
+            await saveStoredTickets(env, allTickets);
+            return json({ success: true, ticket });
+          }
+
+          // Assignment
+          if (subAction === 'assign' && method === 'PATCH') {
+            const body = await request.json().catch(() => ({}));
+            ticket.assigned_to = body.assignedTo || null;
+            if (ticket.status === 'NEW' && body.assignedTo) {
+              ticket.status = 'ASSIGNED';
+            }
+            ticket.updated_at = new Date().toISOString();
+            await saveStoredTickets(env, allTickets);
+            return json({ success: true, ticket });
+          }
+
+          // Add Internal Staff Note
+          if (subAction === 'notes' && method === 'POST') {
+            const body = await request.json().catch(() => ({}));
+            const noteObj = {
+              id: 'note_' + Date.now(),
+              author_name: sessionUser.name,
+              author_id: sessionUser.id,
+              note: body.note || '',
+              created_at: new Date().toISOString()
+            };
+            if (!ticket.internal_notes) ticket.internal_notes = [];
+            ticket.internal_notes.push(noteObj);
+            ticket.updated_at = new Date().toISOString();
+            await saveStoredTickets(env, allTickets);
+            return json({ success: true, note: noteObj });
+          }
+
+          // Post Customer-Visible Update
+          if (subAction === 'customer-update' && method === 'POST') {
+            const body = await request.json().catch(() => ({}));
+            const updateObj = {
+              id: 'upd_' + Date.now(),
+              message: body.message || '',
+              created_at: new Date().toISOString()
+            };
+            if (!ticket.customer_updates) ticket.customer_updates = [];
+            ticket.customer_updates.push(updateObj);
+            ticket.updated_at = new Date().toISOString();
+            await saveStoredTickets(env, allTickets);
+            return json({ success: true, update: updateObj });
+          }
+
+          // Soft Delete
+          if (!subAction && method === 'DELETE') {
+            ticket.deleted_at = new Date().toISOString();
+            ticket.updated_at = new Date().toISOString();
+            await saveStoredTickets(env, allTickets);
+            return json({ success: true, message: 'Ticket soft deleted.' });
+          }
+
+          // Restore
+          if (subAction === 'restore' && method === 'POST') {
+            ticket.deleted_at = null;
+            ticket.updated_at = new Date().toISOString();
+            await saveStoredTickets(env, allTickets);
+            return json({ success: true, message: 'Ticket restored.' });
+          }
+
+          // Get Single Ticket
+          if (!subAction && method === 'GET') {
+            return json({ success: true, ticket });
+          }
+        }
+
+        // ─── 9. ENQUIRIES SYSTEM (PUBLIC & CMS) ─────────────────────────
+
+        // 9a. Public Enquiry Submission (Stores in KV + memory)
         if (path === '/api/public/enquiries' && method === 'POST') {
           const body = await request.json().catch(() => ({}));
+          const name = (body.name || '').trim();
+          const email = (body.email || '').trim().toLowerCase();
+          const message = (body.message || '').trim();
+
+          if (!name || !email) {
+            return json({ error: 'Name and email are required.' }, 400);
+          }
+
           const ref = 'ENQ-' + crypto.randomUUID().replace(/-/g, '').substring(0, 6).toUpperCase();
+          const now = new Date().toISOString();
+
           const newEnq = {
             id: 'enq_' + Date.now(),
             reference_id: ref,
-            name: body.name || 'Visitor',
-            email: body.email || '',
+            name,
+            email,
             company: body.company || '',
             service_name: body.service_slug || 'General',
-            message: body.message || '',
+            budget_range: body.budget_range || 'Flexible',
+            timeline: body.timeline || 'Standard',
+            message: message || 'Lead submission — Scoped Proposal request.',
             status: 'NEW',
-            created_at: new Date().toISOString()
+            notes: '',
+            created_at: now,
+            updated_at: now,
+            deleted_at: null,
           };
-          EDGE_ENQUIRIES.unshift(newEnq);
-          return json({ reference_id: ref, status: 'NEW' }, 201);
+
+          const allEnquiries = await getStoredEnquiries(env);
+          allEnquiries.unshift(newEnq);
+          await saveStoredEnquiries(env, allEnquiries);
+
+          return json({
+            success: true,
+            message: 'Your enquiry has been received. Our engineering leads will respond within 24 hours.',
+            reference_id: ref,
+            status: 'NEW'
+          }, 201);
         }
 
-        // 10. Content (Protected: requires active session)
+        // 9b. CMS Enquiries Listing (Protected)
+        if (path === '/api/enquiries' && method === 'GET') {
+          const sessionUser = await getSessionUser(request);
+          if (!sessionUser) {
+            return json({ error: 'Authentication credentials required.' }, 401);
+          }
+
+          const urlParams = url.searchParams;
+          const status = urlParams.get('status');
+          const search = (urlParams.get('search') || '').toLowerCase();
+          const includeDeleted = urlParams.get('includeDeleted') === 'true';
+
+          let list = await getStoredEnquiries(env);
+          if (!includeDeleted) {
+            list = list.filter((e) => !e.deleted_at);
+          }
+          if (status && status !== 'all') {
+            list = list.filter((e) => e.status === status);
+          }
+          if (search) {
+            list = list.filter(
+              (e) =>
+                e.name.toLowerCase().includes(search) ||
+                e.email.toLowerCase().includes(search) ||
+                (e.company && e.company.toLowerCase().includes(search)) ||
+                e.reference_id.toLowerCase().includes(search)
+            );
+          }
+
+          return json({ success: true, count: list.length, enquiries: list });
+        }
+
+        // 9c. CMS Enquiry Updates
+        if (path.startsWith('/api/enquiries/')) {
+          const sessionUser = await getSessionUser(request);
+          if (!sessionUser) {
+            return json({ error: 'Authentication credentials required.' }, 401);
+          }
+
+          const segments = path.replace('/api/enquiries/', '').split('/');
+          const enqId = decodeURIComponent(segments[0] || '');
+          const subAction = segments[1] || '';
+
+          const allEnquiries = await getStoredEnquiries(env);
+          const enq = allEnquiries.find(
+            (e) => e.id === enqId || e.reference_id === enqId
+          );
+
+          if (!enq) {
+            return json({ error: 'Enquiry not found.' }, 404);
+          }
+
+          if (subAction === 'status' && method === 'PATCH') {
+            const body = await request.json().catch(() => ({}));
+            if (body.status) enq.status = body.status;
+            if (body.notes !== undefined) enq.notes = body.notes;
+            enq.updated_at = new Date().toISOString();
+            await saveStoredEnquiries(env, allEnquiries);
+            return json({ success: true, enquiry: enq });
+          }
+
+          if (!subAction && method === 'DELETE') {
+            enq.deleted_at = new Date().toISOString();
+            enq.updated_at = new Date().toISOString();
+            await saveStoredEnquiries(env, allEnquiries);
+            return json({ success: true, message: 'Enquiry soft deleted.' });
+          }
+        }
+
+        // ─── 10. CONTENT MANAGEMENT ─────────────────────────────────────
         if (path.startsWith('/api/content')) {
           const sessionUser = await getSessionUser(request);
           if (!sessionUser) {

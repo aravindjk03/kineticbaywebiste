@@ -12,6 +12,12 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
   },
+  "kv_namespaces": [
+    {
+      "binding": "DB_KV",
+      "id": "27c40f0836b0444286d8f273fdf3a993"
+    }
+  ],
   "compatibility_flags": [
     "nodejs_compat"
   ]

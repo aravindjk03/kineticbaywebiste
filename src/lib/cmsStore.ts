@@ -8,6 +8,7 @@ import {
   LeadStatus,
 } from '../types/cms';
 import { supabase } from './supabase';
+import { api } from './api';
 
 const CMS_AUTH_KEY = 'kb_cms_session';
 const PASSCODE_KEY = 'kb_cms_passcode_hash';
@@ -383,6 +384,21 @@ export async function addLead(
 
   const updated = [newLead, ...leads];
   saveLeads(updated);
+
+  // Push to server-side enterprise enquiries queue
+  try {
+    await api.submitPublicEnquiry({
+      name: newLead.name,
+      email: newLead.email,
+      company: newLead.company,
+      service_slug: newLead.service,
+      budget_range: newLead.budget,
+      timeline: newLead.timeline,
+      message: `${newLead.message} [Source: ${newLead.source}] ${newLead.phone ? 'Phone: ' + newLead.phone : ''}`,
+    });
+  } catch (backendErr) {
+    console.warn('Backend enquiry sync skipped or offline:', backendErr);
+  }
 
   // Attempt non-blocking push to Supabase if configured
   try {

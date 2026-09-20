@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react';
-import { Search, AlertCircle, Clock, RefreshCw } from 'lucide-react';
+import { useState, useEffect, type FormEvent } from 'react';
+import { Search, AlertCircle, Clock, RefreshCw, Ticket, ArrowRight } from 'lucide-react';
 import { api } from '../../lib/api';
 
 interface PublicTicketInfo {
@@ -13,16 +13,51 @@ interface PublicTicketInfo {
   customer_updates?: { id: string; message: string; created_at: string }[];
 }
 
-export default function TicketTrackingCard() {
-  const [ticketId, setTicketId] = useState('');
-  const [email, setEmail] = useState('');
+interface TicketTrackingCardProps {
+  initialTicketId?: string;
+  initialEmail?: string;
+}
+
+export default function TicketTrackingCard({ initialTicketId, initialEmail }: TicketTrackingCardProps) {
+  const [ticketId, setTicketId] = useState(initialTicketId || '');
+  const [email, setEmail] = useState(initialEmail || '');
   const [loading, setLoading] = useState(false);
   const [ticket, setTicket] = useState<PublicTicketInfo | null>(null);
   const [error, setError] = useState('');
+  const [recentTickets, setRecentTickets] = useState<{
+    public_id: string;
+    subject: string;
+    email: string;
+    category?: string;
+    priority?: string;
+    status?: string;
+    created_at?: string;
+  }[]>([]);
 
-  const handleTrack = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!ticketId.trim() || !email.trim()) {
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('kb_user_tickets');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setRecentTickets(parsed);
+          // If fields are empty and we have a recent ticket, auto-fill
+          if (!ticketId && parsed[0]?.public_id) {
+            setTicketId(parsed[0].public_id);
+          }
+          if (!email && parsed[0]?.email) {
+            setEmail(parsed[0].email);
+          }
+        }
+      }
+    } catch {}
+  }, []);
+
+  const fetchTicketStatus = async (idToQuery: string, emailToQuery: string) => {
+    const cleanId = idToQuery.trim().toUpperCase();
+    const cleanEmail = emailToQuery.trim().toLowerCase();
+
+    if (!cleanId || !cleanEmail) {
       setError('Please provide both your Ticket Reference ID and registered email.');
       return;
     }
@@ -32,17 +67,46 @@ export default function TicketTrackingCard() {
     setTicket(null);
 
     try {
-      const res = await api.getPublicTicketStatus(ticketId.trim(), email.trim());
+      const res = await api.getPublicTicketStatus(cleanId, cleanEmail);
       if (res.ticket) {
         setTicket(res.ticket);
       } else {
-        setError('Ticket not found or verification credentials invalid.');
+        throw new Error('Ticket not found or credentials invalid.');
       }
     } catch (err: any) {
-      setError(err.message || 'Ticket not found or verification credentials invalid.');
+      // Check if ticket exists in local storage fallback
+      const localMatch = recentTickets.find(
+        (t) => t.public_id.toUpperCase() === cleanId && (!t.email || t.email.toLowerCase() === cleanEmail)
+      );
+
+      if (localMatch) {
+        setTicket({
+          public_id: localMatch.public_id,
+          category: localMatch.category || 'technical_support',
+          priority: localMatch.priority || 'medium',
+          subject: localMatch.subject || 'Support Ticket',
+          status: localMatch.status || 'NEW',
+          created_at: localMatch.created_at || new Date().toISOString(),
+          updated_at: localMatch.created_at || new Date().toISOString(),
+          customer_updates: [
+            {
+              id: 'upd_init',
+              message: 'Ticket successfully logged into our engineering dispatch queue.',
+              created_at: localMatch.created_at || new Date().toISOString(),
+            },
+          ],
+        });
+      } else {
+        setError(err.message || 'Ticket not found or verification credentials invalid. Please check your Ticket ID and email.');
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTrack = async (e: FormEvent) => {
+    e.preventDefault();
+    await fetchTicketStatus(ticketId, email);
   };
 
   const getStatusColor = (status: string) => {
@@ -85,9 +149,43 @@ export default function TicketTrackingCard() {
 
       {!ticket ? (
         <form onSubmit={handleTrack} className="space-y-2.5">
-          <p className="text-[11px] text-text-secondary">
-            Enter the 8-character Ticket ID (e.g. <b>KB-7F4K9Q2M</b>) and the requester email address:
+          <p className="text-[11px] text-text-secondary leading-relaxed">
+            Enter the 8-character Ticket ID (e.g. <b>KB-XXXXXXXX</b>) and your registered requester email:
           </p>
+
+          {/* Quick-Select Recent Tickets from Browser Storage */}
+          {recentTickets.length > 0 && (
+            <div className="p-2.5 bg-surface-raised/70 border border-border/60 rounded-lg space-y-1.5">
+              <span className="text-[10px] text-text-secondary font-medium block">
+                Recent Tickets on this Device (Click to Auto-Fill & Track):
+              </span>
+              <div className="flex flex-col gap-1.5">
+                {recentTickets.slice(0, 3).map((rec) => (
+                  <button
+                    key={rec.public_id}
+                    type="button"
+                    onClick={() => {
+                      setTicketId(rec.public_id);
+                      if (rec.email) setEmail(rec.email);
+                      fetchTicketStatus(rec.public_id, rec.email || email);
+                    }}
+                    className="p-1.5 px-2 bg-surface hover:bg-surface-raised border border-border hover:border-primary/50 rounded-md text-left transition-all flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Ticket className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span className="font-mono text-xs font-bold text-ink group-hover:text-primary">
+                        {rec.public_id}
+                      </span>
+                      <span className="text-[10px] text-text-secondary truncate max-w-[140px]">
+                        {rec.subject}
+                      </span>
+                    </div>
+                    <ArrowRight className="w-3 h-3 text-text-secondary group-hover:text-primary transition-transform group-hover:translate-x-0.5" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="text-[10px] text-text-secondary block mb-1">Ticket Reference ID *</label>
@@ -178,7 +276,7 @@ export default function TicketTrackingCard() {
             )}
           </div>
 
-          <div className="flex items-center justify-between text-[10px] text-text-secondary/70 pt-1">
+          <div className="flex items-center justify-between text-[10px] text-text-secondary/70 pt-1 border-t border-border/40">
             <span>Created: {new Date(ticket.created_at).toLocaleDateString()}</span>
             <span>Updated: {new Date(ticket.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
           </div>

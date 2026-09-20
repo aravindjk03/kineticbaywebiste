@@ -77,14 +77,17 @@ export async function processChatQuery(
   }
 
   /* ─── 2. TICKET TRACKING INTENT ─────────────────────────────── */
-  if (
-    q.includes('track') ||
+  const isTrackingIntent =
+    q.startsWith('kb-') ||
+    /\bkb-[a-z0-9]{4,12}\b/i.test(q) ||
+    /\b(track|tracking|status|lookup|check status)\b/i.test(q) && /\b(ticket|tickets|issue|ref)\b/i.test(q) ||
     q.includes('ticket status') ||
     q.includes('check ticket') ||
     q.includes('ticket update') ||
     q.includes('my ticket') ||
-    q.startsWith('kb-')
-  ) {
+    q.includes('track');
+
+  if (isTrackingIntent) {
     return {
       text: '🔍 **Ticket Status Tracking:**\nYou can check the live progress of any support or project ticket raised with Kinetic Bay. Enter your Ticket Reference ID (e.g. `KB-XXXXXXXX`) and the requester email address below to securely view your status.',
       triggerCard: 'track',
@@ -101,17 +104,21 @@ export async function processChatQuery(
   }
 
   /* ─── 3. TICKET CREATION / SUPPORT INTENT ───────────────────── */
-  if (
+  const isTicketCreationIntent =
+    /\b(raise|open|create|submit|log|file|new|need|want|make)\b.*?\b(ticket|tickets)\b/i.test(q) ||
+    /\b(ticket|tickets)\b/i.test(q) ||
+    /\b(helpdesk|support ticket|tech support|technical support|bug report|customer support|issue report)\b/i.test(q) ||
     q.includes('raise ticket') ||
     q.includes('open ticket') ||
     q.includes('support ticket') ||
-    q.includes('helpdesk') ||
     q.includes('technical issue') ||
     q.includes('bug report') ||
     q.includes('submit ticket') ||
     q.includes('need support') ||
-    q.includes('problem')
-  ) {
+    q.includes('problem') ||
+    q.includes('help');
+
+  if (isTicketCreationIntent) {
     return {
       text: '🎫 **Raise a Support or Service Ticket:**\nOur engineering team triages all incoming tickets within 2 hours during active business cycles. Please provide your ticket details below to receive a secure, high-entropy Ticket Reference ID for tracking:',
       triggerCard: 'ticket',

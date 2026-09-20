@@ -50,6 +50,8 @@ export interface ChatMessage {
   cardType?: 'lead' | 'ticket' | 'track' | 'services_tech' | 'services_training';
   actionButtons?: { label: string; action: string; payload?: string }[];
   selectedService?: string;
+  prefillTicketId?: string;
+  prefillEmail?: string;
 }
 
 export interface ChatbotConfig {

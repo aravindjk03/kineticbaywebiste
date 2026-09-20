@@ -146,7 +146,11 @@ export default function ChatbotWidget() {
         handleSend('I want to raise a support ticket');
         break;
       case 'track':
-        handleSend('Track existing ticket status');
+        if (btn.payload) {
+          handleSend(`Track ticket ${btn.payload}`);
+        } else {
+          handleSend('Track existing ticket status');
+        }
         break;
       case 'integration':
         handleSend('How does Kinetic Bay integrate with our project?');
@@ -253,22 +257,45 @@ export default function ChatbotWidget() {
 
                       {msg.cardType === 'ticket' && (
                         <TicketCreationCard
-                          onSubmitted={({ public_id, subject }) => {
+                          onSubmitted={({ public_id, subject, email }) => {
                             setMessages((prev) => [
                               ...prev,
                               {
                                 id: 'msg_tkt_ack_' + Date.now(),
                                 sender: 'bot',
-                                content: `Support ticket **${public_id}** ("${subject}") has been assigned to our rapid dispatch queue. You can check its live status at any time right here in this chat!`,
+                                content: `🎉 **Ticket Confirmed & Logged!**\n\nYour Ticket Reference ID is:\n# **\`${public_id}\`**\n\n• **Subject:** ${subject}\n• **Status:** \`NEW\` (Queued in Dispatch Queue)\n• **SLA:** First engineering response within 24 hours\n\nPlease keep note of reference **\`${public_id}\`**. You can verify and track live updates at any time right here in this chat!`,
                                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                                actionButtons: [{ label: '🔍 Track This Ticket', action: 'track' }],
+                                actionButtons: [
+                                  { label: `🔍 Track Ticket ${public_id}`, action: 'track', payload: public_id },
+                                  { label: '🚀 Explore Services', action: 'services' },
+                                ],
+                              },
+                            ]);
+                          }}
+                          onTrackRequested={(trackId, trackEmail) => {
+                            setMessages((prev) => [
+                              ...prev,
+                              {
+                                id: 'card_track_' + Date.now(),
+                                sender: 'system',
+                                content: '',
+                                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                                isCard: true,
+                                cardType: 'track',
+                                prefillTicketId: trackId,
+                                prefillEmail: trackEmail,
                               },
                             ]);
                           }}
                         />
                       )}
 
-                      {msg.cardType === 'track' && <TicketTrackingCard />}
+                      {msg.cardType === 'track' && (
+                        <TicketTrackingCard
+                          initialTicketId={msg.prefillTicketId}
+                          initialEmail={msg.prefillEmail}
+                        />
+                      )}
 
                       {msg.cardType === 'services_tech' && (
                         <ServicesCard
