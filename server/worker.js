@@ -485,7 +485,7 @@ export default {
         // 8b. Public Ticket Status Tracking (Dual-factor: Reference ID + Requester Email)
         if (path === '/api/public/ticket-status' && method === 'POST') {
           const body = await request.json().catch(() => ({}));
-          const targetId = (body.ticketId || '').trim().toUpperCase();
+          const targetId = (body.ticketId || body.ticket_id || '').trim().toUpperCase();
           const targetEmail = (body.email || '').trim().toLowerCase();
 
           if (!targetId || !targetEmail) {

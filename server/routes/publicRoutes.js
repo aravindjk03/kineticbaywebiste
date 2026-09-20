@@ -172,7 +172,8 @@ router.post('/tickets', publicSubmissionRateLimiter, (req, res) => {
  * Strictly strips internal notes, assigned staff identities, database IDs, and soft-delete tags.
  */
 router.post('/ticket-status', ticketTrackingRateLimiter, (req, res) => {
-  const { ticketId, email } = req.body || {};
+  const ticketId = req.body?.ticketId || req.body?.ticket_id;
+  const email = req.body?.email;
 
   if (!ticketId || typeof ticketId !== 'string' || ticketId.trim().length < 4) {
     return res.status(400).json({
