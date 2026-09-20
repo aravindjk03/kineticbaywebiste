@@ -205,15 +205,15 @@ export default {
           );
         }
 
-        // 4. Me
+        // 4. Me - Enforces strict authentication (never bypasses login)
         if (path === '/api/auth/me') {
           const cookies = parseCookies(request.headers.get('cookie'));
           const sessToken = cookies['kb_cms_sess'];
-          const sess = EDGE_SESSIONS.get(sessToken);
-          if (sess) {
+          const sess = sessToken ? EDGE_SESSIONS.get(sessToken) : null;
+          if (sess && sess.user) {
             return json({ user: sess.user, csrfToken: 'csrf_edge' });
           }
-          return json({ user: USERS.superadmin, csrfToken: 'csrf_edge' }); // Default fallback for cloudflare preview
+          return json({ error: 'Unauthorized. Authentication challenge required.' }, 401);
         }
 
         // 5. Logout
