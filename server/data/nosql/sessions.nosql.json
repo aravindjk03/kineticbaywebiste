@@ -1,6 +1,32 @@
 [
   {
-    "token": "cms_8b05bc5b74919fd73811f0170d148d34_1789912593101",
+    "token": "cms_86a0c4028eaa2c31a088382f979a2581_1789913085734",
+    "userId": "usr_marketing_01",
+    "email": "marketing@kineticbay.internal",
+    "name": "Growth & Content Specialist",
+    "role": "marketing",
+    "permissions": [
+      "content:read",
+      "content:create",
+      "content:update",
+      "content:submit",
+      "media:create",
+      "analytics:read",
+      "tickets:read",
+      "tickets:create",
+      "tickets:update",
+      "enquiries:read",
+      "enquiries:update"
+    ],
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "createdAt": 1789913085734,
+    "lastActive": 1789913086751,
+    "expiresAt": 1789941885734,
+    "_id": "doc_071c6136ea4e4e8f"
+  },
+  {
+    "token": "cms_863c2cfee51024aa54e2d4579acea2e9_1789913085412",
     "userId": "usr_superadmin_01",
     "email": "superadmin@kineticbay.internal",
     "name": "Chief Security Officer",
@@ -38,41 +64,15 @@
       "audit:read",
       "settings:update"
     ],
-    "ip": "::1",
-    "userAgent": "node",
-    "createdAt": 1789912593101,
-    "lastActive": 1789912593113,
-    "expiresAt": 1789941393101,
-    "_id": "doc_afeac894a98949b0"
-  },
-  {
-    "token": "cms_fe7ba6de37c01b4e2ec4d2e994eac05f_1789912175309",
-    "userId": "usr_marketing_01",
-    "email": "marketing@kineticbay.internal",
-    "name": "Growth & Content Specialist",
-    "role": "marketing",
-    "permissions": [
-      "content:read",
-      "content:create",
-      "content:update",
-      "content:submit",
-      "media:create",
-      "analytics:read",
-      "tickets:read",
-      "tickets:create",
-      "tickets:update",
-      "enquiries:read",
-      "enquiries:update"
-    ],
     "ip": "127.0.0.1",
     "userAgent": "node",
-    "createdAt": 1789912175309,
-    "lastActive": 1789912176318,
-    "expiresAt": 1789940975309,
-    "_id": "doc_7794ab98b58b42d6"
+    "createdAt": 1789913085412,
+    "lastActive": 1789913086675,
+    "expiresAt": 1789941885412,
+    "_id": "doc_d33e42318be34fd9"
   },
   {
-    "token": "cms_13427943ef36cfc9ebf826e7efb209de_1789912174967",
+    "token": "cms_72e7cd9286e7db7c55f3fa9bcd2cfc94_1789913085358",
     "userId": "usr_admin_01",
     "email": "admin@kineticbay.internal",
     "name": "Platform Operations Admin",
@@ -105,9 +105,9 @@
     ],
     "ip": "127.0.0.1",
     "userAgent": "node",
-    "createdAt": 1789912174967,
-    "lastActive": 1789912175456,
-    "expiresAt": 1789940974967,
-    "_id": "doc_e5141bac7958491d"
+    "createdAt": 1789913085358,
+    "lastActive": 1789913085874,
+    "expiresAt": 1789941885358,
+    "_id": "doc_266a3aa42b744bbf"
   }
 ]

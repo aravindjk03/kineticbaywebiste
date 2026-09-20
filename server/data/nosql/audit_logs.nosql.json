@@ -1,5 +1,1090 @@
 [
   {
+    "id": "aud_1789913086752_6k1o",
+    "timestamp": "2026-09-20T14:04:46.752Z",
+    "type": "ROLE_DENIED",
+    "userId": "usr_marketing_01",
+    "role": "marketing",
+    "reqId": "REQ-C6DEB7BE",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/analytics/reset",
+    "action": "POST",
+    "result": "DENIED",
+    "metadata": {
+      "requiredRoles": [
+        "super_admin",
+        "admin"
+      ],
+      "actualRole": "marketing"
+    },
+    "_id": "aud_1789913086752_6k1o",
+    "created_at": "2026-09-20T14:04:46.752Z"
+  },
+  {
+    "id": "aud_1789913086677_1e1t",
+    "timestamp": "2026-09-20T14:04:46.677Z",
+    "type": "ANALYTICS_RESET",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-0817A804",
+    "target": "Analytics:Telemetry",
+    "action": "RESET",
+    "result": "SUCCESS",
+    "_id": "aud_1789913086677_1e1t",
+    "created_at": "2026-09-20T14:04:46.677Z"
+  },
+  {
+    "id": "aud_1789913086669_t67v",
+    "timestamp": "2026-09-20T14:04:46.669Z",
+    "type": "TICKET_RESTORED",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-16054C2C",
+    "target": "Ticket:KB-9LZUWLA5",
+    "action": "RESTORE",
+    "result": "SUCCESS",
+    "metadata": {},
+    "_id": "aud_1789913086669_t67v",
+    "created_at": "2026-09-20T14:04:46.669Z"
+  },
+  {
+    "id": "aud_1789913086653_l6pr",
+    "timestamp": "2026-09-20T14:04:46.653Z",
+    "type": "TICKET_SOFT_DELETED",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-EFAF6A8B",
+    "target": "Ticket:KB-9LZUWLA5",
+    "action": "DELETE",
+    "result": "SUCCESS",
+    "metadata": {
+      "reason": "Resolved and closed by compliance lead"
+    },
+    "_id": "aud_1789913086653_l6pr",
+    "created_at": "2026-09-20T14:04:46.653Z"
+  },
+  {
+    "id": "aud_1789913086633_0clt",
+    "timestamp": "2026-09-20T14:04:46.633Z",
+    "type": "PERMISSION_DENIED",
+    "userId": "usr_marketing_01",
+    "role": "marketing",
+    "reqId": "REQ-390DA236",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/tickets/tkt_1789913086230_4mqsp",
+    "action": "DELETE",
+    "result": "DENIED",
+    "metadata": {
+      "requiredPermission": "tickets:delete",
+      "userRole": "marketing"
+    },
+    "_id": "aud_1789913086633_0clt",
+    "created_at": "2026-09-20T14:04:46.633Z"
+  },
+  {
+    "id": "aud_1789913086602_r50n",
+    "timestamp": "2026-09-20T14:04:46.602Z",
+    "type": "TICKET_CUSTOMER_UPDATE_ADDED",
+    "userId": "usr_marketing_01",
+    "role": "marketing",
+    "reqId": "REQ-CD5DA9ED",
+    "target": "Ticket:KB-9LZUWLA5",
+    "action": "ADD_CUSTOMER_UPDATE",
+    "result": "SUCCESS",
+    "metadata": {
+      "updateId": "upd_1789913086601"
+    },
+    "_id": "aud_1789913086602_r50n",
+    "created_at": "2026-09-20T14:04:46.602Z"
+  },
+  {
+    "id": "aud_1789913086591_apkn",
+    "timestamp": "2026-09-20T14:04:46.591Z",
+    "type": "TICKET_STATUS_UPDATED",
+    "userId": "usr_marketing_01",
+    "role": "marketing",
+    "reqId": "REQ-25A6686A",
+    "target": "Ticket:KB-9LZUWLA5",
+    "action": "STATUS_TRANSITION",
+    "result": "SUCCESS",
+    "metadata": {
+      "oldStatus": "NEW",
+      "newStatus": "IN_PROGRESS"
+    },
+    "_id": "aud_1789913086591_apkn",
+    "created_at": "2026-09-20T14:04:46.591Z"
+  },
+  {
+    "id": "aud_1789913086587_wzn4",
+    "timestamp": "2026-09-20T14:04:46.587Z",
+    "type": "TICKET_INTERNAL_NOTE_ADDED",
+    "userId": "usr_marketing_01",
+    "role": "marketing",
+    "reqId": "REQ-A55B9D80",
+    "target": "Ticket:KB-9LZUWLA5",
+    "action": "ADD_INTERNAL_NOTE",
+    "result": "SUCCESS",
+    "metadata": {
+      "noteId": "note_1789913086586"
+    },
+    "_id": "aud_1789913086587_wzn4",
+    "created_at": "2026-09-20T14:04:46.587Z"
+  },
+  {
+    "id": "aud_1789913086509_8ewd",
+    "timestamp": "2026-09-20T14:04:46.509Z",
+    "type": "ENQUIRY_CREATED_PUBLIC",
+    "userId": "PUBLIC_VISITOR",
+    "role": "PUBLIC",
+    "reqId": "REQ-E2A9E72B",
+    "ip": "127.0.0.1",
+    "userAgent": "WebChatbot/Enquiries",
+    "target": "Enquiry:ENQ-DP6NLR",
+    "action": "CREATE",
+    "result": "SUCCESS",
+    "metadata": {
+      "reference_id": "ENQ-DP6NLR",
+      "service_slug": "custom-software"
+    },
+    "_id": "aud_1789913086509_8ewd",
+    "created_at": "2026-09-20T14:04:46.509Z"
+  },
+  {
+    "id": "aud_1789913086492_k9as",
+    "timestamp": "2026-09-20T14:04:46.492Z",
+    "type": "RATE_LIMIT_EXCEEDED",
+    "userId": "ANONYMOUS",
+    "role": "ANONYMOUS",
+    "reqId": "REQ-89860358",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/public/ticket-status",
+    "action": "POST",
+    "result": "BLOCKED",
+    "metadata": {
+      "limitType": "TICKET_TRACKING",
+      "count": 15,
+      "max": 15
+    },
+    "_id": "aud_1789913086492_k9as",
+    "created_at": "2026-09-20T14:04:46.492Z"
+  },
+  {
+    "id": "aud_1789913086246_6t88",
+    "timestamp": "2026-09-20T14:04:46.246Z",
+    "type": "TICKET_CREATED_PUBLIC",
+    "userId": "PUBLIC_VISITOR",
+    "role": "PUBLIC",
+    "reqId": "REQ-243D303A",
+    "ip": "127.0.0.1",
+    "userAgent": "WebChatbot/Ticketing",
+    "target": "Ticket:KB-L67USNMA",
+    "action": "CREATE",
+    "result": "SUCCESS",
+    "metadata": {
+      "public_id": "KB-L67USNMA",
+      "category": "project_enquiry",
+      "priority": "medium"
+    },
+    "_id": "aud_1789913086246_6t88",
+    "created_at": "2026-09-20T14:04:46.246Z"
+  },
+  {
+    "id": "aud_1789913086231_xprz",
+    "timestamp": "2026-09-20T14:04:46.231Z",
+    "type": "TICKET_CREATED_PUBLIC",
+    "userId": "PUBLIC_VISITOR",
+    "role": "PUBLIC",
+    "reqId": "REQ-479ED27D",
+    "ip": "127.0.0.1",
+    "userAgent": "WebChatbot/Ticketing",
+    "target": "Ticket:KB-9LZUWLA5",
+    "action": "CREATE",
+    "result": "SUCCESS",
+    "metadata": {
+      "public_id": "KB-9LZUWLA5",
+      "category": "technical_support",
+      "priority": "high"
+    },
+    "_id": "aud_1789913086231_xprz",
+    "created_at": "2026-09-20T14:04:46.232Z"
+  },
+  {
+    "id": "aud_1789913086153_6l6t",
+    "timestamp": "2026-09-20T14:04:46.153Z",
+    "type": "RATE_LIMIT_EXCEEDED",
+    "userId": "ANONYMOUS",
+    "role": "ANONYMOUS",
+    "reqId": "REQ-F9DF1200",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "POST",
+    "result": "BLOCKED",
+    "metadata": {
+      "limitType": "LOGIN",
+      "count": 5,
+      "max": 5
+    },
+    "_id": "aud_1789913086153_6l6t",
+    "created_at": "2026-09-20T14:04:46.153Z"
+  },
+  {
+    "id": "aud_1789913086139_trna",
+    "timestamp": "2026-09-20T14:04:46.139Z",
+    "type": "LOGIN_FAILURE",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-E4859E19",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "AUTHENTICATE",
+    "result": "FAILED_INVALID_PASSWORD",
+    "metadata": {
+      "failedAttempts": 5
+    },
+    "_id": "aud_1789913086139_trna",
+    "created_at": "2026-09-20T14:04:46.139Z"
+  },
+  {
+    "id": "aud_1789913086092_qrq8",
+    "timestamp": "2026-09-20T14:04:46.092Z",
+    "type": "LOGIN_FAILURE",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-2D45C2D2",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "AUTHENTICATE",
+    "result": "FAILED_INVALID_PASSWORD",
+    "metadata": {
+      "failedAttempts": 4
+    },
+    "_id": "aud_1789913086092_qrq8",
+    "created_at": "2026-09-20T14:04:46.092Z"
+  },
+  {
+    "id": "aud_1789913086047_w5yl",
+    "timestamp": "2026-09-20T14:04:46.047Z",
+    "type": "LOGIN_FAILURE",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-2F317CA1",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "AUTHENTICATE",
+    "result": "FAILED_INVALID_PASSWORD",
+    "metadata": {
+      "failedAttempts": 3
+    },
+    "_id": "aud_1789913086047_w5yl",
+    "created_at": "2026-09-20T14:04:46.047Z"
+  },
+  {
+    "id": "aud_1789913085998_4yjo",
+    "timestamp": "2026-09-20T14:04:45.998Z",
+    "type": "LOGIN_FAILURE",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-F9635523",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "AUTHENTICATE",
+    "result": "FAILED_INVALID_PASSWORD",
+    "metadata": {
+      "failedAttempts": 2
+    },
+    "_id": "aud_1789913085998_4yjo",
+    "created_at": "2026-09-20T14:04:45.998Z"
+  },
+  {
+    "id": "aud_1789913085948_aztr",
+    "timestamp": "2026-09-20T14:04:45.948Z",
+    "type": "LOGIN_FAILURE",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-973CB6CB",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "AUTHENTICATE",
+    "result": "FAILED_INVALID_PASSWORD",
+    "metadata": {
+      "failedAttempts": 1
+    },
+    "_id": "aud_1789913085948_aztr",
+    "created_at": "2026-09-20T14:04:45.948Z"
+  },
+  {
+    "id": "aud_1789913085874_8k02",
+    "timestamp": "2026-09-20T14:04:45.874Z",
+    "type": "CONTENT_CREATED",
+    "userId": "usr_admin_01",
+    "role": "admin",
+    "reqId": "REQ-90484C3B",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/content/cnt_1789913085874_0hcu",
+    "action": "CREATE_CONTENT",
+    "result": "SUCCESS",
+    "metadata": {
+      "title": "<img src=x >Safe Title",
+      "slug": "xss-test"
+    },
+    "_id": "aud_1789913085874_8k02",
+    "created_at": "2026-09-20T14:04:45.874Z"
+  },
+  {
+    "id": "aud_1789913085843_0rph",
+    "timestamp": "2026-09-20T14:04:45.843Z",
+    "type": "PROBE_INVALIDATED_CMS_ROUTE",
+    "userId": "ANONYMOUS",
+    "role": "ANONYMOUS",
+    "reqId": "REQ-3A2C82F7",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/security/resolve-route",
+    "action": "RESOLVE_ROUTE",
+    "result": "REJECTED_EXPIRED_ROUTE",
+    "metadata": {
+      "probedSegment": "cms_e2b9c7a104f6d5e8237b1c4a9f8e0d35"
+    },
+    "_id": "aud_1789913085843_0rph",
+    "created_at": "2026-09-20T14:04:45.843Z"
+  },
+  {
+    "id": "aud_1789913085835_b3qt",
+    "timestamp": "2026-09-20T14:04:45.835Z",
+    "type": "CMS_ROUTE_ROTATED",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-CB31FA86",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/security/rotate-cms-route",
+    "action": "ROTATE_CMS_ROUTE",
+    "result": "SUCCESS",
+    "metadata": {
+      "oldRouteIdentifier": "cms_e2b9c7a104f6d5e8237b1c4a9f8e0d35",
+      "reason": "Scheduled test rotation"
+    },
+    "_id": "aud_1789913085835_b3qt",
+    "created_at": "2026-09-20T14:04:45.836Z"
+  },
+  {
+    "id": "aud_1789913085787_4ls7",
+    "timestamp": "2026-09-20T14:04:45.787Z",
+    "type": "STEPUP_AUTH_FAILURE",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-60DA99B6",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/security/rotate-cms-route",
+    "action": "ROTATE_ROUTE",
+    "result": "FAILED_STEPUP_PASSWORD",
+    "_id": "aud_1789913085787_4ls7",
+    "created_at": "2026-09-20T14:04:45.787Z"
+  },
+  {
+    "id": "aud_1789913085735_cu87",
+    "timestamp": "2026-09-20T14:04:45.735Z",
+    "type": "AUTHENTICATION_SUCCESS",
+    "userId": "usr_marketing_01",
+    "role": "marketing",
+    "reqId": "REQ-23AA46E5",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/mfa-verify",
+    "action": "SESSION_ESTABLISHED",
+    "result": "SUCCESS",
+    "metadata": {
+      "method": "totp",
+      "sessionExpiry": "2026-09-20T22:04:45.734Z"
+    },
+    "_id": "aud_1789913085735_cu87",
+    "created_at": "2026-09-20T14:04:45.735Z"
+  },
+  {
+    "id": "aud_1789913085719_3f95",
+    "timestamp": "2026-09-20T14:04:45.719Z",
+    "type": "LOGIN_STEP1_SUCCESS",
+    "userId": "usr_marketing_01",
+    "role": "marketing",
+    "reqId": "REQ-3F9EE963",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "MFA_CHALLENGE_ISSUED",
+    "result": "SUCCESS",
+    "metadata": {
+      "mfaEnabled": true
+    },
+    "_id": "aud_1789913085719_3f95",
+    "created_at": "2026-09-20T14:04:45.719Z"
+  },
+  {
+    "id": "aud_1789913085673_i5sk",
+    "timestamp": "2026-09-20T14:04:45.673Z",
+    "type": "USER_ROLE_CHANGED",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-BB79C495",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/users/usr_marketing_01",
+    "action": "CHANGE_ROLE",
+    "result": "SUCCESS",
+    "metadata": {
+      "previousRole": "admin",
+      "newRole": "marketing",
+      "targetUserId": "usr_marketing_01"
+    },
+    "_id": "aud_1789913085673_i5sk",
+    "created_at": "2026-09-20T14:04:45.673Z"
+  },
+  {
+    "id": "aud_1789913085658_bv5o",
+    "timestamp": "2026-09-20T14:04:45.658Z",
+    "type": "USER_ROLE_CHANGED",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-9DDB1AE7",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/users/usr_marketing_01",
+    "action": "CHANGE_ROLE",
+    "result": "SUCCESS",
+    "metadata": {
+      "previousRole": "marketing",
+      "newRole": "admin",
+      "targetUserId": "usr_marketing_01"
+    },
+    "_id": "aud_1789913085658_bv5o",
+    "created_at": "2026-09-20T14:04:45.658Z"
+  },
+  {
+    "id": "aud_1789913085652_fmvi",
+    "timestamp": "2026-09-20T14:04:45.652Z",
+    "type": "PRIVILEGE_ESCALATION_ATTEMPT",
+    "userId": "usr_admin_01",
+    "role": "admin",
+    "reqId": "REQ-016FC55C",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/users/usr_marketing_01/role",
+    "action": "MODIFY_SUPERADMIN_ROLE",
+    "result": "DENIED",
+    "metadata": {
+      "targetRole": "super_admin"
+    },
+    "_id": "aud_1789913085652_fmvi",
+    "created_at": "2026-09-20T14:04:45.652Z"
+  },
+  {
+    "id": "aud_1789913085643_3hf3",
+    "timestamp": "2026-09-20T14:04:45.643Z",
+    "type": "SELF_PRIVILEGE_MODIFICATION_ATTEMPT",
+    "userId": "usr_admin_01",
+    "role": "admin",
+    "reqId": "REQ-AE583171",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/users/usr_admin_01/role",
+    "action": "SELF_ROLE_CHANGE",
+    "result": "DENIED",
+    "_id": "aud_1789913085643_3hf3",
+    "created_at": "2026-09-20T14:04:45.643Z"
+  },
+  {
+    "id": "aud_1789913085627_awzo",
+    "timestamp": "2026-09-20T14:04:45.627Z",
+    "type": "CONTENT_RESTORED",
+    "userId": "usr_admin_01",
+    "role": "admin",
+    "reqId": "REQ-A3D770DA",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/content/cnt_1789913085535_j8b0",
+    "action": "RESTORE_CONTENT",
+    "result": "SUCCESS",
+    "_id": "aud_1789913085627_awzo",
+    "created_at": "2026-09-20T14:04:45.627Z"
+  },
+  {
+    "id": "aud_1789913085599_qjca",
+    "timestamp": "2026-09-20T14:04:45.599Z",
+    "type": "CONTENT_SOFT_DELETED",
+    "userId": "usr_admin_01",
+    "role": "admin",
+    "reqId": "REQ-35DCF74A",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/content/cnt_1789913085535_j8b0",
+    "action": "SOFT_DELETE",
+    "result": "SUCCESS",
+    "metadata": {
+      "reason": "Archiving outdated advisory"
+    },
+    "_id": "aud_1789913085599_qjca",
+    "created_at": "2026-09-20T14:04:45.599Z"
+  },
+  {
+    "id": "aud_1789913085581_mvir",
+    "timestamp": "2026-09-20T14:04:45.581Z",
+    "type": "WORKFLOW_TRANSITION",
+    "userId": "usr_admin_01",
+    "role": "admin",
+    "reqId": "REQ-5AF0163E",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/content/cnt_1789913085535_j8b0",
+    "action": "TRANSITION_STATUS",
+    "result": "SUCCESS",
+    "metadata": {
+      "from": "approved",
+      "to": "published"
+    },
+    "_id": "aud_1789913085581_mvir",
+    "created_at": "2026-09-20T14:04:45.581Z"
+  },
+  {
+    "id": "aud_1789913085565_zd0b",
+    "timestamp": "2026-09-20T14:04:45.565Z",
+    "type": "WORKFLOW_TRANSITION",
+    "userId": "usr_admin_01",
+    "role": "admin",
+    "reqId": "REQ-A78EDE07",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/content/cnt_1789913085535_j8b0",
+    "action": "TRANSITION_STATUS",
+    "result": "SUCCESS",
+    "metadata": {
+      "from": "review",
+      "to": "approved"
+    },
+    "_id": "aud_1789913085565_zd0b",
+    "created_at": "2026-09-20T14:04:45.565Z"
+  },
+  {
+    "id": "aud_1789913085555_qgo9",
+    "timestamp": "2026-09-20T14:04:45.555Z",
+    "type": "WORKFLOW_TRANSITION",
+    "userId": "usr_admin_01",
+    "role": "admin",
+    "reqId": "REQ-311BC46F",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/content/cnt_1789913085535_j8b0",
+    "action": "TRANSITION_STATUS",
+    "result": "SUCCESS",
+    "metadata": {
+      "from": "submitted",
+      "to": "review"
+    },
+    "_id": "aud_1789913085555_qgo9",
+    "created_at": "2026-09-20T14:04:45.555Z"
+  },
+  {
+    "id": "aud_1789913085551_tobx",
+    "timestamp": "2026-09-20T14:04:45.551Z",
+    "type": "WORKFLOW_TRANSITION",
+    "userId": "usr_marketing_01",
+    "role": "marketing",
+    "reqId": "REQ-5FC67093",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/content/cnt_1789913085535_j8b0",
+    "action": "TRANSITION_STATUS",
+    "result": "SUCCESS",
+    "metadata": {
+      "from": "draft",
+      "to": "submitted"
+    },
+    "_id": "aud_1789913085551_tobx",
+    "created_at": "2026-09-20T14:04:45.551Z"
+  },
+  {
+    "id": "aud_1789913085539_4910",
+    "timestamp": "2026-09-20T14:04:45.539Z",
+    "type": "UNAUTHORIZED_PUBLISH_ATTEMPT",
+    "userId": "usr_marketing_01",
+    "role": "marketing",
+    "reqId": "REQ-4940DF78",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/content/cnt_1789913085535_j8b0",
+    "action": "PUBLISH",
+    "result": "DENIED",
+    "_id": "aud_1789913085539_4910",
+    "created_at": "2026-09-20T14:04:45.539Z"
+  },
+  {
+    "id": "aud_1789913085535_it2l",
+    "timestamp": "2026-09-20T14:04:45.535Z",
+    "type": "CONTENT_CREATED",
+    "userId": "usr_marketing_01",
+    "role": "marketing",
+    "reqId": "REQ-30129D98",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/content/cnt_1789913085535_j8b0",
+    "action": "CREATE_CONTENT",
+    "result": "SUCCESS",
+    "metadata": {
+      "title": "Security Advisory",
+      "slug": "sec-adv-01"
+    },
+    "_id": "aud_1789913085535_it2l",
+    "created_at": "2026-09-20T14:04:45.535Z"
+  },
+  {
+    "id": "aud_1789913085504_f7hl",
+    "timestamp": "2026-09-20T14:04:45.504Z",
+    "type": "PERMISSION_DENIED",
+    "userId": "usr_admin_01",
+    "role": "admin",
+    "reqId": "REQ-AD3AFF85",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/security/rotate-cms-route",
+    "action": "POST",
+    "result": "DENIED",
+    "metadata": {
+      "requiredPermission": "cms-route:update",
+      "userRole": "admin"
+    },
+    "_id": "aud_1789913085504_f7hl",
+    "created_at": "2026-09-20T14:04:45.504Z"
+  },
+  {
+    "id": "aud_1789913085474_j63k",
+    "timestamp": "2026-09-20T14:04:45.474Z",
+    "type": "PERMISSION_DENIED",
+    "userId": "usr_marketing_01",
+    "role": "marketing",
+    "reqId": "REQ-6DD4AFE4",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/security/rotate-cms-route",
+    "action": "POST",
+    "result": "DENIED",
+    "metadata": {
+      "requiredPermission": "cms-route:update",
+      "userRole": "marketing"
+    },
+    "_id": "aud_1789913085474_j63k",
+    "created_at": "2026-09-20T14:04:45.474Z"
+  },
+  {
+    "id": "aud_1789913085458_madn",
+    "timestamp": "2026-09-20T14:04:45.458Z",
+    "type": "PERMISSION_DENIED",
+    "userId": "usr_marketing_01",
+    "role": "marketing",
+    "reqId": "REQ-94C066EA",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/security/audit-logs",
+    "action": "GET",
+    "result": "DENIED",
+    "metadata": {
+      "requiredPermission": "audit:read",
+      "userRole": "marketing"
+    },
+    "_id": "aud_1789913085458_madn",
+    "created_at": "2026-09-20T14:04:45.458Z"
+  },
+  {
+    "id": "aud_1789913085443_i73m",
+    "timestamp": "2026-09-20T14:04:45.443Z",
+    "type": "PERMISSION_DENIED",
+    "userId": "usr_marketing_01",
+    "role": "marketing",
+    "reqId": "REQ-D2168DD2",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/users",
+    "action": "GET",
+    "result": "DENIED",
+    "metadata": {
+      "requiredPermission": "users:read",
+      "userRole": "marketing"
+    },
+    "_id": "aud_1789913085443_i73m",
+    "created_at": "2026-09-20T14:04:45.443Z"
+  },
+  {
+    "id": "aud_1789913085413_3bba",
+    "timestamp": "2026-09-20T14:04:45.413Z",
+    "type": "AUTHENTICATION_SUCCESS",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-86D08947",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/mfa-verify",
+    "action": "SESSION_ESTABLISHED",
+    "result": "SUCCESS",
+    "metadata": {
+      "method": "totp",
+      "sessionExpiry": "2026-09-20T22:04:45.412Z"
+    },
+    "_id": "aud_1789913085413_3bba",
+    "created_at": "2026-09-20T14:04:45.413Z"
+  },
+  {
+    "id": "aud_1789913085404_p6vs",
+    "timestamp": "2026-09-20T14:04:45.404Z",
+    "type": "LOGIN_STEP1_SUCCESS",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-73B070FC",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "MFA_CHALLENGE_ISSUED",
+    "result": "SUCCESS",
+    "metadata": {
+      "mfaEnabled": true
+    },
+    "_id": "aud_1789913085404_p6vs",
+    "created_at": "2026-09-20T14:04:45.405Z"
+  },
+  {
+    "id": "aud_1789913085359_p9ry",
+    "timestamp": "2026-09-20T14:04:45.359Z",
+    "type": "AUTHENTICATION_SUCCESS",
+    "userId": "usr_admin_01",
+    "role": "admin",
+    "reqId": "REQ-EA00DABF",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/mfa-verify",
+    "action": "SESSION_ESTABLISHED",
+    "result": "SUCCESS",
+    "metadata": {
+      "method": "totp",
+      "sessionExpiry": "2026-09-20T22:04:45.358Z"
+    },
+    "_id": "aud_1789913085359_p9ry",
+    "created_at": "2026-09-20T14:04:45.359Z"
+  },
+  {
+    "id": "aud_1789913085342_qdam",
+    "timestamp": "2026-09-20T14:04:45.342Z",
+    "type": "LOGIN_STEP1_SUCCESS",
+    "userId": "usr_admin_01",
+    "role": "admin",
+    "reqId": "REQ-65357DEE",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "MFA_CHALLENGE_ISSUED",
+    "result": "SUCCESS",
+    "metadata": {
+      "mfaEnabled": true
+    },
+    "_id": "aud_1789913085342_qdam",
+    "created_at": "2026-09-20T14:04:45.342Z"
+  },
+  {
+    "id": "aud_1789913085296_m8il",
+    "timestamp": "2026-09-20T14:04:45.296Z",
+    "type": "AUTHENTICATION_SUCCESS",
+    "userId": "usr_marketing_01",
+    "role": "marketing",
+    "reqId": "REQ-56DF45A2",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/mfa-verify",
+    "action": "SESSION_ESTABLISHED",
+    "result": "SUCCESS",
+    "metadata": {
+      "method": "totp",
+      "sessionExpiry": "2026-09-20T22:04:45.296Z"
+    },
+    "_id": "aud_1789913085296_m8il",
+    "created_at": "2026-09-20T14:04:45.296Z"
+  },
+  {
+    "id": "aud_1789913085283_rz1x",
+    "timestamp": "2026-09-20T14:04:45.283Z",
+    "type": "LOGIN_STEP1_SUCCESS",
+    "userId": "usr_marketing_01",
+    "role": "marketing",
+    "reqId": "REQ-0776CFDA",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "MFA_CHALLENGE_ISSUED",
+    "result": "SUCCESS",
+    "metadata": {
+      "mfaEnabled": true
+    },
+    "_id": "aud_1789913085283_rz1x",
+    "created_at": "2026-09-20T14:04:45.283Z"
+  },
+  {
+    "id": "aud_1789913085219_wbw4",
+    "timestamp": "2026-09-20T14:04:45.219Z",
+    "type": "LOGOUT",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-091C4F75",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/logout",
+    "action": "INVALIDATE_SESSION",
+    "result": "SUCCESS",
+    "_id": "aud_1789913085219_wbw4",
+    "created_at": "2026-09-20T14:04:45.219Z"
+  },
+  {
+    "id": "aud_1789913085187_fazx",
+    "timestamp": "2026-09-20T14:04:45.187Z",
+    "type": "AUTHENTICATION_SUCCESS",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-A73A8FC2",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/mfa-verify",
+    "action": "SESSION_ESTABLISHED",
+    "result": "SUCCESS",
+    "metadata": {
+      "method": "totp",
+      "sessionExpiry": "2026-09-20T22:04:45.186Z"
+    },
+    "_id": "aud_1789913085187_fazx",
+    "created_at": "2026-09-20T14:04:45.187Z"
+  },
+  {
+    "id": "aud_1789913085171_rmip",
+    "timestamp": "2026-09-20T14:04:45.171Z",
+    "type": "LOGIN_STEP1_SUCCESS",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-E77011ED",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "MFA_CHALLENGE_ISSUED",
+    "result": "SUCCESS",
+    "metadata": {
+      "mfaEnabled": true
+    },
+    "_id": "aud_1789913085171_rmip",
+    "created_at": "2026-09-20T14:04:45.171Z"
+  },
+  {
+    "id": "aud_1789913085127_ywuu",
+    "timestamp": "2026-09-20T14:04:45.127Z",
+    "type": "MFA_VERIFICATION_FAILURE",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-47C4D1C7",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/mfa-verify",
+    "action": "VERIFY_MFA",
+    "result": "FAILED_INVALID_CODE",
+    "metadata": {
+      "method": "totp"
+    },
+    "_id": "aud_1789913085127_ywuu",
+    "created_at": "2026-09-20T14:04:45.127Z"
+  },
+  {
+    "id": "aud_1789913084848_5xd3",
+    "timestamp": "2026-09-20T14:04:44.848Z",
+    "type": "LOGIN_STEP1_SUCCESS",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-3CD84660",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "MFA_CHALLENGE_ISSUED",
+    "result": "SUCCESS",
+    "metadata": {
+      "mfaEnabled": true
+    },
+    "_id": "aud_1789913084848_5xd3",
+    "created_at": "2026-09-20T14:04:44.848Z"
+  },
+  {
+    "id": "aud_1789913084803_klid",
+    "timestamp": "2026-09-20T14:04:44.803Z",
+    "type": "AUTHENTICATION_SUCCESS",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-7F22B289",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/mfa-verify",
+    "action": "SESSION_ESTABLISHED",
+    "result": "SUCCESS",
+    "metadata": {
+      "method": "recovery_code",
+      "sessionExpiry": "2026-09-20T22:04:44.802Z"
+    },
+    "_id": "aud_1789913084803_klid",
+    "created_at": "2026-09-20T14:04:44.803Z"
+  },
+  {
+    "id": "aud_1789913084754_vpn7",
+    "timestamp": "2026-09-20T14:04:44.754Z",
+    "type": "LOGIN_STEP1_SUCCESS",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-BB9232C0",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "MFA_CHALLENGE_ISSUED",
+    "result": "SUCCESS",
+    "metadata": {
+      "mfaEnabled": true
+    },
+    "_id": "aud_1789913084754_vpn7",
+    "created_at": "2026-09-20T14:04:44.754Z"
+  },
+  {
+    "id": "aud_1789913084706_e6ka",
+    "timestamp": "2026-09-20T14:04:44.706Z",
+    "type": "MFA_VERIFICATION_FAILURE",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-A8F90ED7",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/mfa-verify",
+    "action": "VERIFY_MFA",
+    "result": "FAILED_INVALID_CODE",
+    "metadata": {
+      "method": "totp"
+    },
+    "_id": "aud_1789913084706_e6ka",
+    "created_at": "2026-09-20T14:04:44.706Z"
+  },
+  {
+    "id": "aud_1789913084687_y3j4",
+    "timestamp": "2026-09-20T14:04:44.687Z",
+    "type": "LOGIN_STEP1_SUCCESS",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-4401A9B0",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "MFA_CHALLENGE_ISSUED",
+    "result": "SUCCESS",
+    "metadata": {
+      "mfaEnabled": true
+    },
+    "_id": "aud_1789913084687_y3j4",
+    "created_at": "2026-09-20T14:04:44.687Z"
+  },
+  {
+    "id": "aud_1789913084640_wsfy",
+    "timestamp": "2026-09-20T14:04:44.640Z",
+    "type": "AUTHENTICATION_SUCCESS",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-E1F5246F",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/mfa-verify",
+    "action": "SESSION_ESTABLISHED",
+    "result": "SUCCESS",
+    "metadata": {
+      "method": "totp",
+      "sessionExpiry": "2026-09-20T22:04:44.639Z"
+    },
+    "_id": "aud_1789913084640_wsfy",
+    "created_at": "2026-09-20T14:04:44.640Z"
+  },
+  {
+    "id": "aud_1789913084630_w6zz",
+    "timestamp": "2026-09-20T14:04:44.630Z",
+    "type": "MFA_VERIFICATION_FAILURE",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-1D1B39EA",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/mfa-verify",
+    "action": "VERIFY_MFA",
+    "result": "FAILED_INVALID_CODE",
+    "metadata": {
+      "method": "totp"
+    },
+    "_id": "aud_1789913084630_w6zz",
+    "created_at": "2026-09-20T14:04:44.631Z"
+  },
+  {
+    "id": "aud_1789913084613_12l3",
+    "timestamp": "2026-09-20T14:04:44.613Z",
+    "type": "LOGIN_STEP1_SUCCESS",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-4B967000",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "MFA_CHALLENGE_ISSUED",
+    "result": "SUCCESS",
+    "metadata": {
+      "mfaEnabled": true
+    },
+    "_id": "aud_1789913084613_12l3",
+    "created_at": "2026-09-20T14:04:44.613Z"
+  },
+  {
+    "id": "aud_1789913084548_bcem",
+    "timestamp": "2026-09-20T14:04:44.548Z",
+    "type": "LOGIN_FAILURE",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-9AC25EC9",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "AUTHENTICATE",
+    "result": "FAILED_INVALID_PASSWORD",
+    "metadata": {
+      "failedAttempts": 1
+    },
+    "_id": "aud_1789913084548_bcem",
+    "created_at": "2026-09-20T14:04:44.549Z"
+  },
+  {
+    "id": "aud_1789913084488_vugx",
+    "timestamp": "2026-09-20T14:04:44.488Z",
+    "type": "LOGIN_FAILURE",
+    "userId": "UNKNOWN",
+    "role": "ANONYMOUS",
+    "reqId": "REQ-16CF8C9A",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "AUTHENTICATE",
+    "result": "FAILED_INVALID_CREDENTIALS",
+    "metadata": {
+      "identifierAttempted": "nonexistent"
+    },
+    "_id": "aud_1789913084488_vugx",
+    "created_at": "2026-09-20T14:04:44.488Z"
+  },
+  {
     "id": "aud_1789912593102_do7p",
     "timestamp": "2026-09-20T13:56:33.102Z",
     "type": "AUTHENTICATION_SUCCESS",

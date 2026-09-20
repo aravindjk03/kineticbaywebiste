@@ -1,11 +1,13 @@
 [
   {
     "key": "cms_route",
-    "activeCmsRoute": "cms_e2b9c7a104f6d5e8237b1c4a9f8e0d35",
-    "oldCmsRoutes": [],
-    "updatedAt": "2026-09-20T13:49:35.402Z",
+    "activeCmsRoute": "cms_7a4d887b086542572486cf7d64e2e747",
+    "oldCmsRoutes": [
+      "cms_e2b9c7a104f6d5e8237b1c4a9f8e0d35"
+    ],
+    "updatedAt": "2026-09-20T14:04:45.834Z",
     "_id": "doc_f2fba9deb6b24a2f",
     "created_at": "2026-09-20T13:49:07.642Z",
-    "updated_at": "2026-09-20T13:49:35.402Z"
+    "updated_at": "2026-09-20T14:04:45.834Z"
   }
 ]
