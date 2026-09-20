@@ -9,6 +9,7 @@ import {
 import { hashPassword, generateTotpSecret, generateRecoveryCodes } from '../crypto.js';
 import { authenticateMiddleware } from '../middleware/authenticate.js';
 import { requirePermission } from '../middleware/authorize.js';
+import { SECURITY_CONFIG } from '../config.js';
 
 const router = express.Router();
 
@@ -43,6 +44,13 @@ router.post('/', authenticateMiddleware, requirePermission(PERMISSIONS.USERS_CRE
 
   if (!cleanUsername || !name || !role || !initialPassword) {
     return res.status(400).json({ error: 'Username, name, role, and initial password required.', reference: reqId });
+  }
+
+  if (initialPassword.length < SECURITY_CONFIG.PASSWORD_MIN_LENGTH) {
+    return res.status(400).json({
+      error: `Initial password must be at least ${SECURITY_CONFIG.PASSWORD_MIN_LENGTH} characters.`,
+      reference: reqId,
+    });
   }
 
   // Privilege escalation check: Only Super Admin can create Admin or Super Admin

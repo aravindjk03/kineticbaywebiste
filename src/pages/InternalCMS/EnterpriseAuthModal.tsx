@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Shield, KeyRound, Lock, AlertCircle, ArrowRight, Smartphone, RefreshCw, Key } from 'lucide-react';
 import { api } from '../../lib/api';
 
@@ -23,6 +23,10 @@ export default function EnterpriseAuthModal({ onAuthenticated }: EnterpriseAuthM
   const [mfaToken, setMfaToken] = useState('');
   const [demoTotp, setDemoTotp] = useState('');
   const [demoRecovery, setDemoRecovery] = useState('');
+
+  useEffect(() => {
+    document.title = 'KB NEXUS | Enterprise Login';
+  }, []);
   const [isRecovery, setIsRecovery] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<{ message: string; reference?: string } | null>(null);
@@ -46,29 +50,10 @@ export default function EnterpriseAuthModal({ onAuthenticated }: EnterpriseAuthM
         setStep('mfa');
       }
     } catch (err: any) {
-      // Resilient fallback for static edge / offline CDN hosting
-      const u = username.trim().toLowerCase();
-      if (
-        (u === 'superadmin' && password === 'SuperSecurePass2026!') ||
-        (u === 'admin' && password === 'AdminSecurePass2026!') ||
-        (u === 'marketing' && password === 'MarketingPass2026!')
-      ) {
-        setMfaToken('mfa_edge_' + Date.now());
-        setDemoTotp('123456');
-        setDemoRecovery(
-          u === 'superadmin'
-            ? '1111-2222-3333-4444'
-            : u === 'admin'
-            ? '2222-3333-4444-5555'
-            : '3333-4444-5555-6666'
-        );
-        setStep('mfa');
-      } else {
-        setError({
-          message: err.message || 'Authentication failed. Please verify your credentials.',
-          reference: err.reference,
-        });
-      }
+      setError({
+        message: err.message || 'Authentication failed. Please verify your credentials.',
+        reference: err.reference,
+      });
     } finally {
       setLoading(false);
     }
@@ -90,43 +75,10 @@ export default function EnterpriseAuthModal({ onAuthenticated }: EnterpriseAuthM
         onAuthenticated(res.user);
       }
     } catch (err: any) {
-      // Resilient fallback for static edge / offline CDN hosting
-      const cleanCode = mfaCode.trim();
-      const validRecovery = ['1111-2222-3333-4444', '2222-3333-4444-5555', '3333-4444-5555-6666'];
-      if (cleanCode.length === 6 || validRecovery.includes(cleanCode)) {
-        const u = username.trim().toLowerCase();
-        const role = u === 'superadmin' ? 'super_admin' : u === 'admin' ? 'admin' : 'marketing';
-        const fallbackUser: AuthUser = {
-          id: 'usr_' + u,
-          username: u,
-          email: `${u}@kineticbay.internal`,
-          name:
-            u === 'superadmin'
-              ? 'Chief Security Officer'
-              : u === 'admin'
-              ? 'Platform Operations Admin'
-              : 'Growth & Content Specialist',
-          role,
-          permissions:
-            role === 'super_admin'
-              ? [
-                  'content:read', 'content:create', 'content:update', 'content:delete', 'content:publish', 'content:submit',
-                  'media:create', 'media:delete', 'users:read', 'users:create', 'users:update', 'users:disable',
-                  'roles:read', 'roles:update', 'security:read', 'security:update', 'cms-route:update', 'mfa:manage',
-                  'services:read', 'services:update', 'tickets:read', 'tickets:create', 'tickets:update', 'tickets:assign', 'tickets:delete',
-                  'enquiries:read', 'enquiries:update', 'enquiries:delete', 'analytics:read', 'audit:read', 'settings:update'
-                ]
-              : [
-                  'content:read', 'content:create', 'content:update', 'tickets:read', 'tickets:update', 'enquiries:read', 'analytics:read'
-                ],
-        };
-        onAuthenticated(fallbackUser);
-      } else {
-        setError({
-          message: err.message || 'MFA verification failed.',
-          reference: err.reference,
-        });
-      }
+      setError({
+        message: err.message || 'MFA verification failed. Please check your code or recovery key.',
+        reference: err.reference,
+      });
     } finally {
       setLoading(false);
     }
@@ -138,18 +90,30 @@ export default function EnterpriseAuthModal({ onAuthenticated }: EnterpriseAuthM
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-primary/10 rounded-full blur-[140px] pointer-events-none" />
 
       <div className="max-w-md w-full relative z-10">
+        {/* KB NEXUS Brand Logo Header */}
+        <div className="flex flex-col items-center justify-center mb-4">
+          <img
+            src="/kb-nexus-logo.png"
+            alt="KB NEXUS"
+            className="h-20 w-auto object-contain drop-shadow-[0_0_25px_rgba(249,115,22,0.35)] transition-transform hover:scale-105"
+          />
+        </div>
+
         <div className="p-8 rounded-3xl bg-surface/90 border border-border/80 backdrop-blur-2xl shadow-2xl space-y-6">
           <div className="text-center space-y-3">
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center mx-auto text-primary shadow-ember-sm">
-              {step === 'credentials' ? <Lock className="w-7 h-7" /> : <Smartphone className="w-7 h-7" />}
+            <div className="w-16 h-16 rounded-2xl bg-surface-raised/90 border border-primary/40 flex items-center justify-center mx-auto shadow-[0_0_20px_rgba(249,115,22,0.25)] p-2.5">
+              <img src="/favicon.png" alt="KB NEXUS Icon" className="w-full h-full object-contain" />
             </div>
             <div>
               <span className="text-[11px] font-semibold text-primary uppercase tracking-widest">
                 Enterprise Zero-Trust Boundary
               </span>
-              <h1 className="font-heading font-bold text-2xl text-ink mt-1">
-                {step === 'credentials' ? 'Internal CMS Authentication' : 'Two-Factor Challenge'}
+              <h1 className="font-heading font-bold text-2xl text-ink mt-1 tracking-tight">
+                KB NEXUS
               </h1>
+              <h2 className="text-xs font-semibold text-primary/80 uppercase tracking-wider mt-0.5">
+                {step === 'credentials' ? 'Platform Authentication' : 'Two-Factor Challenge'}
+              </h2>
               <p className="text-xs text-text-secondary mt-1">
                 {step === 'credentials'
                   ? 'Server-side scrypt credential verification and session protection.'

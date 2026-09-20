@@ -149,8 +149,6 @@ router.post('/login', loginRateLimiter, (req, res) => {
     mfaRequired: true,
     mfaToken: challengeToken,
     reference: reqId,
-    demoTotp: computeTotp(user.mfaSecret),
-    demoRecoveryCode: user.plainRecoveryCodesSeed?.[0] || '1111-2222-3333-4444',
   });
 });
 

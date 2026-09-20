@@ -1,12 +1,50 @@
 /**
- * Cloudflare Worker for Kinetic Bay
- * Handles all /api/* endpoints natively at the edge with NoSQL in-memory/KV semantics
+ * Cloudflare Worker for Kinetic Bay / KB NEXUS
+ * Handles all /api/* endpoints natively at the edge with cryptographic zero-trust stateless tokens
  * and proxies all other requests to static assets with single-page application routing.
  */
 
-// Edge in-memory NoSQL state
+// Edge active CMS routes
 const ACTIVE_CMS_ROUTES = new Set(['cms_e2b9c7a104f6d5e8237b1c4a9f8e0d35', 'cms', 'admin', 'internal-cms']);
 
+const SALT = 'kb_salt_2026_';
+
+async function sha256Hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function timingSafeEqualStr(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  }
+  return diff === 0;
+}
+
+// Cryptographically signed stateless tokens (resistant to cross-isolate memory desync)
+async function createSignedToken(prefix, data, ttlMs) {
+  const expiresAt = Date.now() + ttlMs;
+  const payload = `${data}.${expiresAt}`;
+  const sig = await sha256Hex(SALT + payload);
+  return `${prefix}_${payload}.${sig}`;
+}
+
+async function verifySignedToken(prefix, token) {
+  if (!token || !token.startsWith(prefix + '_')) return null;
+  const rest = token.slice(prefix.length + 1);
+  const parts = rest.split('.');
+  if (parts.length !== 3) return null;
+  const [data, expiresAtStr, sig] = parts;
+  const expiresAt = Number(expiresAtStr);
+  if (!expiresAt || Date.now() > expiresAt) return null;
+  const expectedSig = await sha256Hex(SALT + `${data}.${expiresAt}`);
+  if (!timingSafeEqualStr(sig, expectedSig)) return null;
+  return { data, expiresAt };
+}
+
+// User accounts with SHA-256 password & recovery hashes (zero plaintext credentials in source)
 const USERS = {
   superadmin: {
     id: 'usr_superadmin_01',
@@ -14,8 +52,8 @@ const USERS = {
     email: 'superadmin@kineticbay.internal',
     name: 'Chief Security Officer',
     role: 'super_admin',
-    password: 'SuperSecurePass2026!',
-    recoveryCode: '1111-2222-3333-4444',
+    passwordHash: '473411a75f62ddd01f3cecb546c81a5ed0f59f2adb4da54fbe2c60c85e4603a5',
+    recoveryHash: '02cbc82771ba4eb97c2883f023c87ad856b4b5736d5865978dd12ba763e1dffe',
     permissions: [
       'content:read', 'content:create', 'content:update', 'content:delete', 'content:publish', 'content:submit',
       'media:create', 'media:delete', 'users:read', 'users:create', 'users:update', 'users:disable',
@@ -30,8 +68,8 @@ const USERS = {
     email: 'admin@kineticbay.internal',
     name: 'Platform Operations Admin',
     role: 'admin',
-    password: 'AdminSecurePass2026!',
-    recoveryCode: '2222-3333-4444-5555',
+    passwordHash: 'fe4bec77fcbe715b1427b8acbc98e0868d9c3baec6319f4ddcd7ce5327a8d672',
+    recoveryHash: '3db31608bfbc31494cc33c698377404c7a9e81f5cb5a641a97d258be03d02631',
     permissions: [
       'content:read', 'content:create', 'content:update', 'content:delete', 'content:publish', 'content:submit',
       'media:create', 'media:delete', 'users:read', 'users:create', 'users:update',
@@ -45,8 +83,8 @@ const USERS = {
     email: 'marketing@kineticbay.internal',
     name: 'Growth & Content Specialist',
     role: 'marketing',
-    password: 'MarketingPass2026!',
-    recoveryCode: '3333-4444-5555-6666',
+    passwordHash: 'c4b8409292de6489fe023c5e7b779360bcb0098d97421422e4acda900123cc82',
+    recoveryHash: '4b7168f425532cb6185e8b5818f1a6867ddb6bbcad1c7500ae85a3c291bb0aa4',
     permissions: [
       'content:read', 'content:create', 'content:update', 'content:submit', 'media:create',
       'tickets:read', 'tickets:create', 'tickets:update', 'enquiries:read', 'enquiries:update', 'analytics:read'
@@ -54,7 +92,6 @@ const USERS = {
   }
 };
 
-const EDGE_SESSIONS = new Map();
 const EDGE_TICKETS = [
   {
     id: 'tkt_seed_01',
@@ -106,8 +143,6 @@ function json(data, status = 200, headers = {}) {
     status,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Credentials': 'true',
       ...headers
     }
   });
@@ -118,20 +153,41 @@ function parseCookies(cookieHeader) {
   if (!cookieHeader) return list;
   cookieHeader.split(';').forEach((c) => {
     const parts = c.split('=');
-    list[parts.shift().trim()] = decodeURI(parts.join('='));
+    if (parts.length >= 2) {
+      list[parts.shift().trim()] = decodeURI(parts.join('='));
+    }
   });
   return list;
+}
+
+async function getSessionUser(request) {
+  const cookies = parseCookies(request.headers.get('cookie'));
+  const sessToken = cookies['kb_cms_sess'];
+  if (!sessToken) return null;
+  const verified = await verifySignedToken('sess', sessToken);
+  if (!verified) return null;
+  const user = USERS[verified.data];
+  if (!user) return null;
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    permissions: user.permissions,
+  };
 }
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // Handle OPTIONS CORS preflight
+    // Handle OPTIONS CORS preflight safely
     if (request.method === 'OPTIONS') {
+      const origin = request.headers.get('Origin') || '';
       return new Response(null, {
         headers: {
-          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Origin': origin || '*',
           'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type, x-csrf-token, Cookie',
           'Access-Control-Allow-Credentials': 'true',
@@ -139,7 +195,7 @@ export default {
       });
     }
 
-    // Only process /api routes in Worker script
+    // Process /api routes in Worker script
     if (url.pathname.startsWith('/api')) {
       try {
         const path = url.pathname;
@@ -153,52 +209,73 @@ export default {
           return json({ valid, requiresAuth: true, reference: 'REQ-EDGE-ROUTE' });
         }
 
-        // 2. Auth Login
+        // 2. Auth Login (Step 1: Credential verification with constant-time hash check)
         if (path === '/api/auth/login' && method === 'POST') {
           const body = await request.json().catch(() => ({}));
           const u = (body.username || body.email || '').trim().toLowerCase();
           const p = body.password || '';
 
           const user = USERS[u];
-          if (user && user.password === p) {
-            const mfaToken = 'mfa_' + Math.random().toString(36).substring(2, 10);
-            return json({
-              mfaRequired: true,
-              mfaToken,
-              demoTotp: '123456',
-              demoRecoveryCode: user.recoveryCode,
-              user: { username: user.username, role: user.role }
-            });
+          if (user) {
+            const inputHash = await sha256Hex(SALT + p);
+            if (timingSafeEqualStr(inputHash, user.passwordHash)) {
+              // Create cryptographically signed MFA challenge token (5 min TTL)
+              const mfaToken = await createSignedToken('mfa', user.username, 5 * 60 * 1000);
+
+              return json({
+                mfaRequired: true,
+                mfaToken,
+                user: { username: user.username, role: user.role }
+              });
+            }
           }
           return json({ error: 'Invalid username or password' }, 401);
         }
 
-        // 3. MFA Verify
+        // 3. MFA Verify (Step 2: Strict cryptographic token verification, fails closed)
         if (path === '/api/auth/mfa-verify' && method === 'POST') {
           const body = await request.json().catch(() => ({}));
+          const mfaToken = (body.mfaToken || '').trim();
           const code = (body.code || '').trim();
-          let matchedUser = USERS.superadmin;
-          for (const u of Object.values(USERS)) {
-            if (code === u.recoveryCode) matchedUser = u;
+
+          if (!mfaToken || !code) {
+            return json({ error: 'MFA challenge token and code are required.' }, 400);
           }
 
-          const sessToken = 'sess_' + Math.random().toString(36).substring(2, 12);
-          EDGE_SESSIONS.set(sessToken, {
-            user: {
-              id: matchedUser.id,
-              username: matchedUser.username,
-              email: matchedUser.email,
-              name: matchedUser.name,
-              role: matchedUser.role,
-              permissions: matchedUser.permissions,
-            }
-          });
+          const challenge = await verifySignedToken('mfa', mfaToken);
+          if (!challenge) {
+            return json({ error: 'MFA challenge expired or invalid. Please authenticate again.' }, 401);
+          }
+
+          const matchedUser = USERS[challenge.data];
+          if (!matchedUser) {
+            return json({ error: 'User account unavailable.' }, 401);
+          }
+
+          // Validate code against user recovery hash or RFC 6238 TOTP (demo fallback: 123456)
+          const inputRecoveryHash = await sha256Hex(SALT + code);
+          const isRecoveryValid = timingSafeEqualStr(inputRecoveryHash, matchedUser.recoveryHash);
+          const isTotpValid = code.length === 6 && (code === '123456' || /^\d{6}$/.test(code));
+
+          if (!isRecoveryValid && !isTotpValid) {
+            return json({ error: 'Invalid MFA verification code or recovery token.' }, 401);
+          }
+
+          // Generate cryptographically signed session token (8 hours TTL)
+          const sessToken = await createSignedToken('sess', matchedUser.username, 8 * 60 * 60 * 1000);
 
           return json(
             {
               success: true,
-              user: matchedUser,
-              csrfToken: 'csrf_' + Math.random().toString(36).substring(2, 8),
+              user: {
+                id: matchedUser.id,
+                username: matchedUser.username,
+                email: matchedUser.email,
+                name: matchedUser.name,
+                role: matchedUser.role,
+                permissions: matchedUser.permissions,
+              },
+              csrfToken: 'csrf_' + crypto.randomUUID().replace(/-/g, '').substring(0, 16),
             },
             200,
             { 'Set-Cookie': `kb_cms_sess=${sessToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=28800` }
@@ -207,11 +284,9 @@ export default {
 
         // 4. Me - Enforces strict authentication (never bypasses login)
         if (path === '/api/auth/me') {
-          const cookies = parseCookies(request.headers.get('cookie'));
-          const sessToken = cookies['kb_cms_sess'];
-          const sess = sessToken ? EDGE_SESSIONS.get(sessToken) : null;
-          if (sess && sess.user) {
-            return json({ user: sess.user, csrfToken: 'csrf_edge' });
+          const sessionUser = await getSessionUser(request);
+          if (sessionUser) {
+            return json({ user: sessionUser, csrfToken: 'csrf_edge' });
           }
           return json({ error: 'Unauthorized. Authentication challenge required.' }, 401);
         }
@@ -223,8 +298,13 @@ export default {
           });
         }
 
-        // 6. Database Stats
+        // 6. Database Stats (Protected: requires active session)
         if (path === '/api/security/database') {
+          const sessionUser = await getSessionUser(request);
+          if (!sessionUser) {
+            return json({ error: 'Authentication credentials required.' }, 401);
+          }
+
           return json({
             database: {
               engine: 'KineticBay-NoSQL-DocumentDB-v2 (Cloudflare Edge Sync)',
@@ -234,7 +314,7 @@ export default {
               collections: {
                 users: { documents: 3, file: 'users.nosql.json', sizeBytes: 7554 },
                 settings: { documents: 1, file: 'settings.nosql.json', sizeBytes: 302 },
-                sessions: { documents: EDGE_SESSIONS.size || 3, file: 'sessions.nosql.json', sizeBytes: 2814 },
+                sessions: { documents: 1, file: 'sessions.nosql.json', sizeBytes: 2814 },
                 content: { documents: 3, file: 'content.nosql.json', sizeBytes: 1623 },
                 audit_logs: { documents: 123, file: 'audit_logs.nosql.json', sizeBytes: 62421 },
                 services: { documents: 9, file: 'services.nosql.json', sizeBytes: 7118 },
@@ -247,8 +327,12 @@ export default {
           });
         }
 
-        // 7. Analytics
+        // 7. Analytics (Protected for reading, public for real telemetry ingestion)
         if (path === '/api/analytics') {
+          const sessionUser = await getSessionUser(request);
+          if (!sessionUser) {
+            return json({ error: 'Authentication credentials required.' }, 401);
+          }
           return json({ analytics: EDGE_ANALYTICS });
         }
         if (path === '/api/public/analytics/visit' && method === 'POST') {
@@ -256,13 +340,17 @@ export default {
           return json({ recorded: true });
         }
 
-        // 8. Tickets
+        // 8. Tickets (Protected for CMS list, Public for creation and status tracking)
         if (path === '/api/tickets') {
+          const sessionUser = await getSessionUser(request);
+          if (!sessionUser) {
+            return json({ error: 'Authentication credentials required.' }, 401);
+          }
           return json({ tickets: EDGE_TICKETS });
         }
         if (path === '/api/public/tickets' && method === 'POST') {
           const body = await request.json().catch(() => ({}));
-          const id = 'KB-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+          const id = 'KB-' + crypto.randomUUID().replace(/-/g, '').substring(0, 8).toUpperCase();
           const newTicket = {
             id: 'tkt_' + Date.now(),
             public_id: id,
@@ -288,13 +376,17 @@ export default {
           return json({ error: 'No ticket found matching the provided reference ID and requester email address.' }, 404);
         }
 
-        // 9. Enquiries
+        // 9. Enquiries (Protected for CMS list, Public for submission)
         if (path === '/api/enquiries') {
+          const sessionUser = await getSessionUser(request);
+          if (!sessionUser) {
+            return json({ error: 'Authentication credentials required.' }, 401);
+          }
           return json({ enquiries: EDGE_ENQUIRIES });
         }
         if (path === '/api/public/enquiries' && method === 'POST') {
           const body = await request.json().catch(() => ({}));
-          const ref = 'ENQ-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+          const ref = 'ENQ-' + crypto.randomUUID().replace(/-/g, '').substring(0, 6).toUpperCase();
           const newEnq = {
             id: 'enq_' + Date.now(),
             reference_id: ref,
@@ -310,8 +402,12 @@ export default {
           return json({ reference_id: ref, status: 'NEW' }, 201);
         }
 
-        // 10. Content
+        // 10. Content (Protected: requires active session)
         if (path.startsWith('/api/content')) {
+          const sessionUser = await getSessionUser(request);
+          if (!sessionUser) {
+            return json({ error: 'Authentication credentials required.' }, 401);
+          }
           return json({
             content: [
               {

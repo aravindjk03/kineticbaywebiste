@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Shield, KeyRound, ArrowRight, Lock, AlertCircle } from 'lucide-react';
+import { Shield, KeyRound, ArrowRight, AlertCircle } from 'lucide-react';
 import { authenticateCMS } from '../../lib/cmsStore';
 
 interface CMSGateProps {
@@ -38,17 +38,25 @@ export default function CMSGate({ onAuthenticated }: CMSGateProps) {
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="max-w-md w-full relative z-10">
+        <div className="flex flex-col items-center justify-center mb-4">
+          <img
+            src="/kb-nexus-logo.png"
+            alt="KB NEXUS"
+            className="h-16 w-auto object-contain drop-shadow-[0_0_20px_rgba(249,115,22,0.3)]"
+          />
+        </div>
+
         <div className="p-8 rounded-3xl bg-surface/80 border border-border/80 backdrop-blur-2xl shadow-2xl space-y-6">
           <div className="text-center space-y-3">
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center mx-auto text-primary shadow-ember-sm">
-              <Lock className="w-7 h-7" />
+            <div className="w-14 h-14 rounded-2xl bg-surface-raised border border-primary/40 flex items-center justify-center mx-auto shadow-[0_0_15px_rgba(249,115,22,0.25)] p-2">
+              <img src="/favicon.png" alt="KB NEXUS Icon" className="w-full h-full object-contain" />
             </div>
             <div>
               <span className="text-[11px] font-semibold text-primary uppercase tracking-widest">
                 Internal Enterprise Hub
               </span>
               <h1 className="font-heading font-bold text-2xl text-ink mt-1">
-                Kinetic Bay CMS Portal
+                KB NEXUS
               </h1>
               <p className="text-xs text-text-secondary mt-1">
                 Restricted access. Internal team authentication required.
@@ -81,7 +89,7 @@ export default function CMSGate({ onAuthenticated }: CMSGateProps) {
               </div>
               <p className="text-[11px] text-text-secondary/50 mt-1.5 flex items-center gap-1">
                 <Shield className="w-3 h-3 text-emerald-400" />
-                <span>Default setup passcode: <code className="text-primary">kineticbay2026</code></span>
+                <span>Requires authorized internal security key</span>
               </p>
             </div>
 

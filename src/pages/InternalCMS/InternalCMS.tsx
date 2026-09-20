@@ -352,6 +352,10 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
   };
 
   useEffect(() => {
+    document.title = 'KB NEXUS | Enterprise Platform';
+  }, []);
+
+  useEffect(() => {
     if (activeTab === 'analytics') {
       loadRealAnalytics();
     }
@@ -625,13 +629,16 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
       {/* ── TOP NAV BAR ── */}
       <header className="h-16 px-6 bg-surface/90 border-b border-border/80 backdrop-blur-xl flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary font-bold shadow-ember-sm">
-            KB
+          <div className="w-10 h-10 rounded-xl bg-surface-raised/90 border border-primary/40 flex items-center justify-center p-1.5 shadow-[0_0_15px_rgba(249,115,22,0.25)] shrink-0">
+            <img src="/favicon.png" alt="KB NEXUS Icon" className="w-full h-full object-contain" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-heading font-bold text-sm text-ink tracking-wide">
-                Kinetic Bay Enterprise CMS
+              <h1 className="font-heading font-bold text-sm text-ink tracking-wide flex items-center gap-2">
+                <span>KB NEXUS</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-primary/15 text-primary border border-primary/30 font-semibold font-mono uppercase tracking-wider">
+                  CMS
+                </span>
               </h1>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-medium">
                 Server-Authenticated Session
@@ -858,6 +865,18 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
             <Cookie className="w-4 h-4" />
             <span>Cookie Connection</span>
           </button>
+
+          <div className="pt-4 mt-4 border-t border-border/60 px-2">
+            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-surface-raised/40 border border-border/60">
+              <div className="w-7 h-7 rounded-lg bg-surface flex items-center justify-center p-1 shrink-0 border border-primary/20">
+                <img src="/favicon.png" alt="KB NEXUS" className="w-full h-full object-contain" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[11px] font-bold text-ink tracking-wide truncate">KB NEXUS</div>
+                <div className="text-[9px] text-primary/80 font-mono">Enterprise Console</div>
+              </div>
+            </div>
+          </div>
         </aside>
 
         {/* Main Workspace View */}

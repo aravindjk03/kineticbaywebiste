@@ -233,7 +233,7 @@ async function runTests() {
       method: 'POST',
       body: { username: 'superadmin', password: 'SuperSecurePass2026!' },
     });
-    const recoveryCode = superUser.plainRecoveryCodesSeed[0];
+    const recoveryCode = '1111-2222-3333-4444';
     const recRes = await request('/api/auth/mfa-verify', {
       method: 'POST',
       body: { mfaToken: step1Recovery.body.mfaToken, code: recoveryCode },
@@ -888,6 +888,49 @@ async function runTests() {
       headers: { Cookie: mktgCookie },
     });
     assert(mktgReset.status === 403, 'Marketing role CANNOT reset analytics (403 Forbidden)');
+
+    // --- 21. Security Audit Remediation Regression Tests ---
+    console.log('\n--- 21. Security Audit Remediation Regression Tests ---');
+    resetAllRateLimiters();
+    superUser.lockoutUntil = null;
+    superUser.failedAttempts = 0;
+
+    // SEC-04 regression: /api/auth/login must NEVER disclose demoTotp or demoRecoveryCode
+    const loginPayloadCheck = await request('/api/auth/login', {
+      method: 'POST',
+      body: { username: 'superadmin', password: 'SuperSecurePass2026!' },
+    });
+    assert(loginPayloadCheck.status === 200, 'Login step 1 succeeds for valid credentials');
+    assert(loginPayloadCheck.body.demoTotp === undefined, 'CRITICAL: demoTotp is NOT leaked in login response');
+    assert(loginPayloadCheck.body.demoRecoveryCode === undefined, 'CRITICAL: demoRecoveryCode is NOT leaked in login response');
+
+    // SEC-13 regression: user creation must reject passwords shorter than 12 characters
+    const { cookie: sec21SuperCookie } = await authenticateUser(
+      'superadmin',
+      'SuperSecurePass2026!',
+      superUser.mfaSecret
+    );
+    const weakUserCreate = await request('/api/users', {
+      method: 'POST',
+      headers: { Cookie: sec21SuperCookie },
+      body: {
+        username: 'weakuser',
+        email: 'weakuser@kineticbay.internal',
+        name: 'Weak Password User',
+        role: 'marketing',
+        initialPassword: 'short',
+      },
+    });
+    assert(weakUserCreate.status === 400, 'User creation with short password (< 12 chars) REJECTED (400)');
+
+    // SEC-07 regression: NoSQL user models must not store plainRecoveryCodesSeed
+    const superRecord = USERS.find((u) => u.username === 'superadmin');
+    assert(superRecord.plainRecoveryCodesSeed === undefined, 'Plaintext recovery codes seed purged from user objects');
+
+    // SEC-12 regression: CSP script-src must not contain images.pexels.com
+    const cspCheck = await request('/api/public/services');
+    const cspHeader = cspCheck.headers['content-security-policy'] || '';
+    assert(!cspHeader.includes("script-src 'self' 'unsafe-inline' https://images.pexels.com"), 'CSP script-src does not allow third-party image CDN as script origin');
 
     resetAllRateLimiters();
 

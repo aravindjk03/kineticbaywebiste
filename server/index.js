@@ -47,12 +47,12 @@ const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
   const cmsRoute = getActiveCmsRoute();
   console.log(`\n===============================================================`);
-  console.log(`   KINETIC BAY PRODUCTION & ENTERPRISE SECURITY SERVER`);
+  console.log(`   KB NEXUS — ENTERPRISE SECURITY & CMS PLATFORM`);
   console.log(`===============================================================`);
   console.log(`  🚀 Public Website:       http://localhost:${PORT}/`);
-  console.log(`  🔐 Obfuscated CMS URL:   http://localhost:${PORT}/${cmsRoute}`);
+  console.log(`  🔐 KB NEXUS Secure URL:  http://localhost:${PORT}/${cmsRoute}`);
   console.log(`---------------------------------------------------------------`);
-  console.log(`  Default CMS Credentials (Password + Recovery Code):`);
+  console.log(`  Default KB NEXUS Credentials (Password + Recovery Code):`);
   console.log(`  • Super Admin:  superadmin  /  SuperSecurePass2026!  /  1111-2222-3333-4444`);
   console.log(`  • Admin:        admin       /  AdminSecurePass2026!  /  2222-3333-4444-5555`);
   console.log(`  • Marketing:    marketing   /  MarketingPass2026!    /  3333-4444-5555-6666`);

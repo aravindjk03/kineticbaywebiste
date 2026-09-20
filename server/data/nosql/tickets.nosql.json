@@ -1,5 +1,395 @@
 [
   {
+    "id": "tkt_1789916327103_aah57",
+    "public_id": "KB-CZM2LU9F",
+    "requester_name": "Alex Rivera",
+    "requester_email": "alex.rivera@finops.io",
+    "category": "project_enquiry",
+    "priority": "medium",
+    "subject": "Custom PaaS fleet telemetry requirements",
+    "description": "We require high-throughput fleet telemetry monitoring for 500+ IoT gateway edge nodes.",
+    "status": "NEW",
+    "assigned_to": null,
+    "internal_notes": [],
+    "customer_updates": [
+      {
+        "id": "upd_1789916327103",
+        "message": "Ticket received and logged into our engineering dispatch queue.",
+        "created_at": "2026-09-20T14:58:47.103Z"
+      }
+    ],
+    "deleted_at": null,
+    "deleted_by": null,
+    "deletion_reason": null,
+    "created_at": "2026-09-20T14:58:47.103Z",
+    "updated_at": "2026-09-20T14:58:47.103Z",
+    "_id": "tkt_1789916327103_aah57"
+  },
+  {
+    "id": "tkt_1789916327088_jpmfe",
+    "public_id": "KB-P28J2LCL",
+    "requester_name": "Dr. Evelyn Reed",
+    "requester_email": "evelyn.reed@biotechlabs.org",
+    "category": "technical_support",
+    "priority": "high",
+    "subject": "SSO SAML authentication gateway timeout",
+    "description": "The SAML IdP redirect is timing out during identity provider assertion callbacks on the production cluster.",
+    "status": "IN_PROGRESS",
+    "assigned_to": null,
+    "internal_notes": [
+      {
+        "id": "note_1789916327510",
+        "author_id": "usr_marketing_01",
+        "author_name": "Growth & Content Specialist",
+        "note": "CONFIDENTIAL: Customer is an enterprise prospect with 250 enterprise seats. Escalating to platform team.",
+        "created_at": "2026-09-20T14:58:47.510Z"
+      }
+    ],
+    "customer_updates": [
+      {
+        "id": "upd_1789916327088",
+        "message": "Ticket received and logged into our engineering dispatch queue.",
+        "created_at": "2026-09-20T14:58:47.088Z"
+      },
+      {
+        "id": "upd_1789916327545",
+        "message": "We have identified the authentication assertion timeout and deployed a hotfix to edge proxy nodes.",
+        "created_at": "2026-09-20T14:58:47.545Z"
+      }
+    ],
+    "deleted_at": null,
+    "deleted_by": null,
+    "deletion_reason": null,
+    "created_at": "2026-09-20T14:58:47.088Z",
+    "updated_at": "2026-09-20T14:58:47.597Z",
+    "_id": "tkt_1789916327088_jpmfe"
+  },
+  {
+    "id": "tkt_1789916313580_vsrbr",
+    "public_id": "KB-H4V8FY48",
+    "requester_name": "Alex Rivera",
+    "requester_email": "alex.rivera@finops.io",
+    "category": "project_enquiry",
+    "priority": "medium",
+    "subject": "Custom PaaS fleet telemetry requirements",
+    "description": "We require high-throughput fleet telemetry monitoring for 500+ IoT gateway edge nodes.",
+    "status": "NEW",
+    "assigned_to": null,
+    "internal_notes": [],
+    "customer_updates": [
+      {
+        "id": "upd_1789916313580",
+        "message": "Ticket received and logged into our engineering dispatch queue.",
+        "created_at": "2026-09-20T14:58:33.580Z"
+      }
+    ],
+    "deleted_at": null,
+    "deleted_by": null,
+    "deletion_reason": null,
+    "created_at": "2026-09-20T14:58:33.580Z",
+    "updated_at": "2026-09-20T14:58:33.580Z",
+    "_id": "tkt_1789916313580_vsrbr"
+  },
+  {
+    "id": "tkt_1789916313564_ilmh2",
+    "public_id": "KB-9MCNDY4F",
+    "requester_name": "Dr. Evelyn Reed",
+    "requester_email": "evelyn.reed@biotechlabs.org",
+    "category": "technical_support",
+    "priority": "high",
+    "subject": "SSO SAML authentication gateway timeout",
+    "description": "The SAML IdP redirect is timing out during identity provider assertion callbacks on the production cluster.",
+    "status": "IN_PROGRESS",
+    "assigned_to": null,
+    "internal_notes": [
+      {
+        "id": "note_1789916313920",
+        "author_id": "usr_marketing_01",
+        "author_name": "Growth & Content Specialist",
+        "note": "CONFIDENTIAL: Customer is an enterprise prospect with 250 enterprise seats. Escalating to platform team.",
+        "created_at": "2026-09-20T14:58:33.920Z"
+      }
+    ],
+    "customer_updates": [
+      {
+        "id": "upd_1789916313564",
+        "message": "Ticket received and logged into our engineering dispatch queue.",
+        "created_at": "2026-09-20T14:58:33.564Z"
+      },
+      {
+        "id": "upd_1789916313939",
+        "message": "We have identified the authentication assertion timeout and deployed a hotfix to edge proxy nodes.",
+        "created_at": "2026-09-20T14:58:33.939Z"
+      }
+    ],
+    "deleted_at": null,
+    "deleted_by": null,
+    "deletion_reason": null,
+    "created_at": "2026-09-20T14:58:33.564Z",
+    "updated_at": "2026-09-20T14:58:33.984Z",
+    "_id": "tkt_1789916313564_ilmh2"
+  },
+  {
+    "id": "tkt_1789916270113_s9gie",
+    "public_id": "KB-QEY2KFQL",
+    "requester_name": "Alex Rivera",
+    "requester_email": "alex.rivera@finops.io",
+    "category": "project_enquiry",
+    "priority": "medium",
+    "subject": "Custom PaaS fleet telemetry requirements",
+    "description": "We require high-throughput fleet telemetry monitoring for 500+ IoT gateway edge nodes.",
+    "status": "NEW",
+    "assigned_to": null,
+    "internal_notes": [],
+    "customer_updates": [
+      {
+        "id": "upd_1789916270113",
+        "message": "Ticket received and logged into our engineering dispatch queue.",
+        "created_at": "2026-09-20T14:57:50.113Z"
+      }
+    ],
+    "deleted_at": null,
+    "deleted_by": null,
+    "deletion_reason": null,
+    "created_at": "2026-09-20T14:57:50.113Z",
+    "updated_at": "2026-09-20T14:57:50.113Z",
+    "_id": "tkt_1789916270113_s9gie"
+  },
+  {
+    "id": "tkt_1789916270108_e8kyr",
+    "public_id": "KB-WW9BM5GA",
+    "requester_name": "Dr. Evelyn Reed",
+    "requester_email": "evelyn.reed@biotechlabs.org",
+    "category": "technical_support",
+    "priority": "high",
+    "subject": "SSO SAML authentication gateway timeout",
+    "description": "The SAML IdP redirect is timing out during identity provider assertion callbacks on the production cluster.",
+    "status": "IN_PROGRESS",
+    "assigned_to": null,
+    "internal_notes": [
+      {
+        "id": "note_1789916270482",
+        "author_id": "usr_marketing_01",
+        "author_name": "Growth & Content Specialist",
+        "note": "CONFIDENTIAL: Customer is an enterprise prospect with 250 enterprise seats. Escalating to platform team.",
+        "created_at": "2026-09-20T14:57:50.482Z"
+      }
+    ],
+    "customer_updates": [
+      {
+        "id": "upd_1789916270108",
+        "message": "Ticket received and logged into our engineering dispatch queue.",
+        "created_at": "2026-09-20T14:57:50.108Z"
+      },
+      {
+        "id": "upd_1789916270513",
+        "message": "We have identified the authentication assertion timeout and deployed a hotfix to edge proxy nodes.",
+        "created_at": "2026-09-20T14:57:50.513Z"
+      }
+    ],
+    "deleted_at": null,
+    "deleted_by": null,
+    "deletion_reason": null,
+    "created_at": "2026-09-20T14:57:50.108Z",
+    "updated_at": "2026-09-20T14:57:50.561Z",
+    "_id": "tkt_1789916270108_e8kyr"
+  },
+  {
+    "id": "tkt_1789916251192_bcqex",
+    "public_id": "KB-JUGUPTXG",
+    "requester_name": "Alex Rivera",
+    "requester_email": "alex.rivera@finops.io",
+    "category": "project_enquiry",
+    "priority": "medium",
+    "subject": "Custom PaaS fleet telemetry requirements",
+    "description": "We require high-throughput fleet telemetry monitoring for 500+ IoT gateway edge nodes.",
+    "status": "NEW",
+    "assigned_to": null,
+    "internal_notes": [],
+    "customer_updates": [
+      {
+        "id": "upd_1789916251192",
+        "message": "Ticket received and logged into our engineering dispatch queue.",
+        "created_at": "2026-09-20T14:57:31.192Z"
+      }
+    ],
+    "deleted_at": null,
+    "deleted_by": null,
+    "deletion_reason": null,
+    "created_at": "2026-09-20T14:57:31.192Z",
+    "updated_at": "2026-09-20T14:57:31.192Z",
+    "_id": "tkt_1789916251192_bcqex"
+  },
+  {
+    "id": "tkt_1789916251185_vj3ox",
+    "public_id": "KB-Q9E4N8JW",
+    "requester_name": "Dr. Evelyn Reed",
+    "requester_email": "evelyn.reed@biotechlabs.org",
+    "category": "technical_support",
+    "priority": "high",
+    "subject": "SSO SAML authentication gateway timeout",
+    "description": "The SAML IdP redirect is timing out during identity provider assertion callbacks on the production cluster.",
+    "status": "IN_PROGRESS",
+    "assigned_to": null,
+    "internal_notes": [
+      {
+        "id": "note_1789916251573",
+        "author_id": "usr_marketing_01",
+        "author_name": "Growth & Content Specialist",
+        "note": "CONFIDENTIAL: Customer is an enterprise prospect with 250 enterprise seats. Escalating to platform team.",
+        "created_at": "2026-09-20T14:57:31.573Z"
+      }
+    ],
+    "customer_updates": [
+      {
+        "id": "upd_1789916251185",
+        "message": "Ticket received and logged into our engineering dispatch queue.",
+        "created_at": "2026-09-20T14:57:31.185Z"
+      },
+      {
+        "id": "upd_1789916251603",
+        "message": "We have identified the authentication assertion timeout and deployed a hotfix to edge proxy nodes.",
+        "created_at": "2026-09-20T14:57:31.603Z"
+      }
+    ],
+    "deleted_at": null,
+    "deleted_by": null,
+    "deletion_reason": null,
+    "created_at": "2026-09-20T14:57:31.185Z",
+    "updated_at": "2026-09-20T14:57:31.660Z",
+    "_id": "tkt_1789916251185_vj3ox"
+  },
+  {
+    "id": "tkt_1789916180614_fyp55",
+    "public_id": "KB-UB6GK3WD",
+    "requester_name": "Alex Rivera",
+    "requester_email": "alex.rivera@finops.io",
+    "category": "project_enquiry",
+    "priority": "medium",
+    "subject": "Custom PaaS fleet telemetry requirements",
+    "description": "We require high-throughput fleet telemetry monitoring for 500+ IoT gateway edge nodes.",
+    "status": "NEW",
+    "assigned_to": null,
+    "internal_notes": [],
+    "customer_updates": [
+      {
+        "id": "upd_1789916180614",
+        "message": "Ticket received and logged into our engineering dispatch queue.",
+        "created_at": "2026-09-20T14:56:20.613Z"
+      }
+    ],
+    "deleted_at": null,
+    "deleted_by": null,
+    "deletion_reason": null,
+    "created_at": "2026-09-20T14:56:20.613Z",
+    "updated_at": "2026-09-20T14:56:20.613Z",
+    "_id": "tkt_1789916180614_fyp55"
+  },
+  {
+    "id": "tkt_1789916180599_6bp2x",
+    "public_id": "KB-PQMRJH5F",
+    "requester_name": "Dr. Evelyn Reed",
+    "requester_email": "evelyn.reed@biotechlabs.org",
+    "category": "technical_support",
+    "priority": "high",
+    "subject": "SSO SAML authentication gateway timeout",
+    "description": "The SAML IdP redirect is timing out during identity provider assertion callbacks on the production cluster.",
+    "status": "IN_PROGRESS",
+    "assigned_to": null,
+    "internal_notes": [
+      {
+        "id": "note_1789916180984",
+        "author_id": "usr_marketing_01",
+        "author_name": "Growth & Content Specialist",
+        "note": "CONFIDENTIAL: Customer is an enterprise prospect with 250 enterprise seats. Escalating to platform team.",
+        "created_at": "2026-09-20T14:56:20.984Z"
+      }
+    ],
+    "customer_updates": [
+      {
+        "id": "upd_1789916180599",
+        "message": "Ticket received and logged into our engineering dispatch queue.",
+        "created_at": "2026-09-20T14:56:20.599Z"
+      },
+      {
+        "id": "upd_1789916181015",
+        "message": "We have identified the authentication assertion timeout and deployed a hotfix to edge proxy nodes.",
+        "created_at": "2026-09-20T14:56:21.015Z"
+      }
+    ],
+    "deleted_at": null,
+    "deleted_by": null,
+    "deletion_reason": null,
+    "created_at": "2026-09-20T14:56:20.599Z",
+    "updated_at": "2026-09-20T14:56:21.073Z",
+    "_id": "tkt_1789916180599_6bp2x"
+  },
+  {
+    "id": "tkt_1789915887306_v2qfc",
+    "public_id": "KB-3LYC3HCU",
+    "requester_name": "Alex Rivera",
+    "requester_email": "alex.rivera@finops.io",
+    "category": "project_enquiry",
+    "priority": "medium",
+    "subject": "Custom PaaS fleet telemetry requirements",
+    "description": "We require high-throughput fleet telemetry monitoring for 500+ IoT gateway edge nodes.",
+    "status": "NEW",
+    "assigned_to": null,
+    "internal_notes": [],
+    "customer_updates": [
+      {
+        "id": "upd_1789915887306",
+        "message": "Ticket received and logged into our engineering dispatch queue.",
+        "created_at": "2026-09-20T14:51:27.306Z"
+      }
+    ],
+    "deleted_at": null,
+    "deleted_by": null,
+    "deletion_reason": null,
+    "created_at": "2026-09-20T14:51:27.306Z",
+    "updated_at": "2026-09-20T14:51:27.306Z",
+    "_id": "tkt_1789915887306_v2qfc"
+  },
+  {
+    "id": "tkt_1789915887291_a7ya6",
+    "public_id": "KB-UHWTB9HS",
+    "requester_name": "Dr. Evelyn Reed",
+    "requester_email": "evelyn.reed@biotechlabs.org",
+    "category": "technical_support",
+    "priority": "high",
+    "subject": "SSO SAML authentication gateway timeout",
+    "description": "The SAML IdP redirect is timing out during identity provider assertion callbacks on the production cluster.",
+    "status": "IN_PROGRESS",
+    "assigned_to": null,
+    "internal_notes": [
+      {
+        "id": "note_1789915887739",
+        "author_id": "usr_marketing_01",
+        "author_name": "Growth & Content Specialist",
+        "note": "CONFIDENTIAL: Customer is an enterprise prospect with 250 enterprise seats. Escalating to platform team.",
+        "created_at": "2026-09-20T14:51:27.739Z"
+      }
+    ],
+    "customer_updates": [
+      {
+        "id": "upd_1789915887291",
+        "message": "Ticket received and logged into our engineering dispatch queue.",
+        "created_at": "2026-09-20T14:51:27.291Z"
+      },
+      {
+        "id": "upd_1789915887769",
+        "message": "We have identified the authentication assertion timeout and deployed a hotfix to edge proxy nodes.",
+        "created_at": "2026-09-20T14:51:27.769Z"
+      }
+    ],
+    "deleted_at": null,
+    "deleted_by": null,
+    "deletion_reason": null,
+    "created_at": "2026-09-20T14:51:27.291Z",
+    "updated_at": "2026-09-20T14:51:27.826Z",
+    "_id": "tkt_1789915887291_a7ya6"
+  },
+  {
     "id": "tkt_1789913086245_qxpcx",
     "public_id": "KB-L67USNMA",
     "requester_name": "Alex Rivera",

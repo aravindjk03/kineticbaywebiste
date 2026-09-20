@@ -32,7 +32,7 @@ export const SECURITY_CONFIG = {
   // Security Headers
   CSP_POLICY: [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://images.pexels.com", // unsafe-inline scoped for Three.js/Vite chunk loader
+    "script-src 'self' 'unsafe-inline'", // scoped for Three.js / WebGL / Vite chunk loaders
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https://images.pexels.com",

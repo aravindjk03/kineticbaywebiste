@@ -19,17 +19,6 @@
       "b072966eac82f60a6c769b8f674a434e:c45b6c816f74517b804f15e8a776fcd1cfa88d3ba42db1eee6c32d75cce626031b320d878ae3a94a50c54da2fda391287987e222b4c44be13f79e7a2b397671d",
       "90488f3df4b1879107b00969db76d1b8:12270c0a1f405075a4d340c6a0277e4f661385337dbe746612c30fb6dfe994532355e6228ca2a9a0f8ff1c8ed810d34873c4ee469e746f37abf0dfa086cb9bf5"
     ],
-    "plainRecoveryCodesSeed": [
-      "1111-2222-3333-4444",
-      "834D-6A5F-5D0E-395E",
-      "C516-5609-83E1-E4A6",
-      "96CB-4F85-1039-A260",
-      "64E7-8CAA-E528-5487",
-      "9692-185F-D04C-2F9C",
-      "73BB-3810-7A72-B7EC",
-      "4C93-4E09-AD7C-AAB2",
-      "8C2E-49BC-C24B-F70E"
-    ],
     "status": "active",
     "failedAttempts": 0,
     "lockoutUntil": null,
@@ -57,17 +46,6 @@
       "d7a1807c59ca65edc5e90e836efc62a8:3672b19eb2f823c2e05d3ce87631a60cf659014c46d92aed48e07b6242cbf4787f0e296e4938c985d6ed308a0eba1c3c32f5e4ad2a06fd16951863a4f2207392",
       "bad07e8994c26f751ecb754564f2d404:f034e2c79f7a9c24aa4d4f749ece141c07af81d10f569152cde2a9c79f1cdb23908f8207582ede4cc981722d4ee1a6139047dfadff78e2d7e019cb93b8d4398b"
     ],
-    "plainRecoveryCodesSeed": [
-      "2222-3333-4444-5555",
-      "9DA3-F3B1-5256-70F7",
-      "F19A-E5D1-2153-4A3C",
-      "0ED3-340E-9D0B-E08E",
-      "534B-B51B-BC7A-72B7",
-      "9695-EA06-C4EC-97F6",
-      "1745-628C-D936-C525",
-      "E913-095C-F419-92D8",
-      "DCC9-D5C9-BAA2-EAAB"
-    ],
     "status": "active",
     "failedAttempts": 0,
     "lockoutUntil": null,
@@ -94,17 +72,6 @@
       "2bbc76f927b5fa7495101cde4a3fee04:03f0f968b895c150834543384562ff8fb699c9f0f9101365aef57958d49f3ba27dbbf2aca273164aa2581c0d1de272802fec613f00dbe39373a8256c5050e3fe",
       "e6d6b3b588b0c161330dea22bfc1f7de:962dbf972460cdd6e101c038f29a0930fa5eec6c91e1e5781bd82a508f4be52de05ce672ee4999546e5f321741ea5a0d99df734062ae0c4cf7a320792be321ea",
       "5c24c94484a2a0b1d3bcd3dd8d109fbe:4e4a9d0001852ca2c1a2c13545f39f909018acc77d9f4481718cab0f98c475625d98076a694e4c0ce5f19b726e4ba5c06f751e4aaec8a63b76f579f917d542fa"
-    ],
-    "plainRecoveryCodesSeed": [
-      "3333-4444-5555-6666",
-      "00DB-1863-72FE-E60E",
-      "E5B9-4F14-4C29-C959",
-      "5EEB-C95A-4909-A76E",
-      "85C5-FE90-0E23-A0B2",
-      "4CB4-971C-A255-28A8",
-      "BE16-8A40-78BB-7F40",
-      "5736-5F4D-822B-39A9",
-      "DDD4-847C-D070-419D"
     ],
     "status": "active",
     "failedAttempts": 0,

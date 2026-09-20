@@ -75,9 +75,14 @@ export default function DynamicCMSEntry() {
   if (resolving) {
     return (
       <div className="min-h-screen bg-[#07080a] text-ink flex items-center justify-center">
-        <div className="flex items-center gap-3 text-xs text-text-secondary font-mono">
-          <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
-          <span>Verifying secure route boundary...</span>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-surface-raised/90 border border-primary/40 flex items-center justify-center p-2.5 shadow-[0_0_25px_rgba(249,115,22,0.3)] animate-pulse">
+            <img src="/favicon.png" alt="KB NEXUS" className="w-full h-full object-contain" />
+          </div>
+          <div className="flex items-center gap-2.5 text-xs text-text-secondary font-mono">
+            <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
+            <span>KB NEXUS — Verifying secure route boundary...</span>
+          </div>
         </div>
       </div>
     );

@@ -16,8 +16,8 @@ const CONTENT_KEY = 'kb_cms_content_v1';
 const CHATBOT_CONFIG_KEY = 'kb_cms_chatbot_v1';
 const LEADS_KEY = 'kb_crm_leads_v1';
 
-// Default Master Passcode: kineticbay2026
-const DEFAULT_PASSCODE = 'kineticbay2026';
+// Internal local storage keys
+const DEFAULT_PASSCODE = '';
 
 /* ─── INITIAL SEED DATA ────────────────────────────────────────── */
 
@@ -235,6 +235,7 @@ export function isCMSAuthenticated(): boolean {
 
 export function authenticateCMS(passcodeInput: string): boolean {
   const currentPasscode = localStorage.getItem(PASSCODE_KEY) || DEFAULT_PASSCODE;
+  if (!currentPasscode || !passcodeInput.trim()) return false;
   if (passcodeInput.trim() === currentPasscode.trim()) {
     const sessionData = {
       authenticated: true,
