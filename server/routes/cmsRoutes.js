@@ -6,6 +6,7 @@ import {
   AUDIT_LOGS,
   logAuditEvent,
   PERMISSIONS,
+  getNoSqlDatabaseStats,
 } from '../store.js';
 import { generateRandomRouteIdentifier, verifyPassword } from '../crypto.js';
 import { authenticateMiddleware } from '../middleware/authenticate.js';
@@ -161,6 +162,19 @@ router.get(
         hashingAlgorithm: 'scrypt (N=16384, r=8, p=1)',
         auditLogEntries: AUDIT_LOGS.length,
       },
+      reference: req.id,
+    });
+  }
+);
+
+/* ─── 5. NOSQL DATABASE DIAGNOSTICS ────────────────────────── */
+router.get(
+  '/database',
+  authenticateMiddleware,
+  requirePermission(PERMISSIONS.SECURITY_READ),
+  (req, res) => {
+    res.json({
+      database: getNoSqlDatabaseStats(),
       reference: req.id,
     });
   }

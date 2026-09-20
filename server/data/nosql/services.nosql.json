@@ -1,0 +1,166 @@
+[
+  {
+    "id": "srv_saas_01",
+    "slug": "saas-platforms",
+    "category": "technology",
+    "name": "SaaS Platforms",
+    "short": "Scalable, multi-tenant software products built for growth.",
+    "description": "We design, architect, and ship full SaaS platforms — from subscription billing to dashboards, role-based access, and API integrations. Built on modern stacks that scale from first user to millionth.",
+    "features": [
+      "Multi-tenant architecture & RBAC",
+      "Subscription billing & invoicing",
+      "Real-time analytics dashboards",
+      "REST & GraphQL API design",
+      "Automated CI/CD & infrastructure as code"
+    ],
+    "outcome": "Launch your SaaS in 4–8 weeks, not quarters.",
+    "price": "From $12K",
+    "active": true,
+    "_id": "srv_saas_01"
+  },
+  {
+    "id": "srv_custom_02",
+    "slug": "custom-software",
+    "category": "technology",
+    "name": "Custom Enterprise Software",
+    "short": "Tailored enterprise software that fits your exact workflow.",
+    "description": "When off-the-shelf software falls short, we build systems mapping precisely to your operations: ERP, CRM, workflow engines, and automated business logic.",
+    "features": [
+      "Tailored ERP & CRM workflows",
+      "Legacy modernization & microservices",
+      "End-to-end data pipelines & automations",
+      "High-throughput internal tools",
+      "Cloud migrations (Azure, AWS, GCP)"
+    ],
+    "outcome": "Replace 5 fragmented tools with 1 unified solution.",
+    "price": "Custom Roadmap",
+    "active": true,
+    "_id": "srv_custom_02"
+  },
+  {
+    "id": "srv_brand_03",
+    "slug": "brand-identity",
+    "category": "technology",
+    "name": "Brand Making & Visual Identity",
+    "short": "High-conversion design systems and market positioning.",
+    "description": "Distinctive brand identities, interactive design tokens, pitch decks, and digital positioning that elevate your company above commodity competitors.",
+    "features": [
+      "Complete brand identity systems & guidelines",
+      "Figma design tokens & design system kits",
+      "Interactive landing page visual experience",
+      "High-impact investor pitch decks"
+    ],
+    "outcome": "Premium positioning and instant enterprise credibility.",
+    "price": "From $5K",
+    "active": true,
+    "_id": "srv_brand_03"
+  },
+  {
+    "id": "srv_seo_04",
+    "slug": "seo-aio",
+    "category": "technology",
+    "name": "SEO & AI Search Optimization (AIO)",
+    "short": "Dominate organic search and modern AI answer engines.",
+    "description": "Comprehensive search optimization engineered for dual visibility: traditional Google organic ranking plus modern LLM citation engines (ChatGPT, Gemini, Perplexity).",
+    "features": [
+      "Technical SEO architecture & Core Web Vitals",
+      "AI citation & answer-engine optimization (AIO)",
+      "High-authority technical content strategies",
+      "Structured semantic markup & schema graphs"
+    ],
+    "outcome": "Sustained organic acquisition across Google & AI platforms.",
+    "price": "From $2K/mo",
+    "active": true,
+    "_id": "srv_seo_04"
+  },
+  {
+    "id": "srv_mgmt_05",
+    "slug": "management-software",
+    "category": "technology",
+    "name": "PaaS & Operations Management Software",
+    "short": "Scalable internal infrastructure and administrative software.",
+    "description": "Custom Platform-as-a-Service tools, telemetry dashboards, inventory engines, and automated scheduling systems.",
+    "features": [
+      "Resource scheduling & fleet management",
+      "Custom metrics dashboards & log analytics",
+      "Granular role-based security & audit logging",
+      "Webhook notification systems"
+    ],
+    "outcome": "Complete operational visibility with zero vendor lock-in.",
+    "price": "Custom Scope",
+    "active": true,
+    "_id": "srv_mgmt_05"
+  },
+  {
+    "id": "srv_ai_06",
+    "slug": "ai-agents",
+    "category": "technology",
+    "name": "Autonomous AI Agents & Workflows",
+    "short": "Intelligent automation agents powered by Microsoft Azure AI Foundry.",
+    "description": "We build autonomous agent systems that handle repetitive knowledge work, customer triage, and document intelligence with human-in-the-loop oversight.",
+    "features": [
+      "Enterprise RAG & vector database architectures",
+      "Multi-agent task orchestration",
+      "Azure AI Foundry integration & compliance",
+      "Deterministic fallback & safety guardrails"
+    ],
+    "outcome": "Multiply team throughput while preserving strict confidentiality.",
+    "price": "From $8K",
+    "active": true,
+    "_id": "srv_ai_06"
+  },
+  {
+    "id": "srv_prod_07",
+    "slug": "productivity-systems",
+    "category": "training",
+    "name": "Productivity Systems & Deep Work",
+    "short": "High-leverage async protocols, tool mastery, and focus frameworks.",
+    "description": "Transform how engineering and operations teams work: eliminate meeting drag, implement structured async communication, and establish high-focus deep work cycles.",
+    "features": [
+      "Async-first operational frameworks",
+      "Deep work scheduling & focus architecture",
+      "Engineering tooling optimization",
+      "Knowledge management & documentation systems"
+    ],
+    "outcome": "Gain back 15+ hours per engineer every week.",
+    "price": "From $1.5K / squad",
+    "active": true,
+    "_id": "srv_prod_07"
+  },
+  {
+    "id": "srv_startup_08",
+    "slug": "it-startup-mindset",
+    "category": "training",
+    "name": "IT Startup Mindset & MVP Execution",
+    "short": "Founder frameworks, rapid prototyping, and validation loops.",
+    "description": "Empower intrapreneurs and startup teams to move fast without breaking architecture: rapid customer validation, MVP scoping, and metrics-first iteration.",
+    "features": [
+      "Lean product discovery & validation sprints",
+      "Scope negotiation & rapid prototyping",
+      "Customer feedback loops & metric definitions",
+      "Technical risk de-risking strategies"
+    ],
+    "outcome": "Ship validated products 3x faster with lower burn.",
+    "price": "From $2K / workshop",
+    "active": true,
+    "_id": "srv_startup_08"
+  },
+  {
+    "id": "srv_lead_09",
+    "slug": "leadership-development",
+    "category": "training",
+    "name": "Engineering Leadership & Team Coaching",
+    "short": "Turn senior engineers into empathetic, high-output managers.",
+    "description": "Hands-on leadership mentoring for tech leads, engineering managers, and technical founders navigating growth and high-stakes delivery.",
+    "features": [
+      "1-on-1 coaching & constructive feedback frameworks",
+      "Managing high-performing remote/hybrid squads",
+      "Handling architectural disagreements & technical debt",
+      "Strategic hiring and culture cultivation"
+    ],
+    "outcome": "Resilient, cohesive engineering leadership that retains top talent.",
+    "price": "From $3K / track",
+    "active": true,
+    "_id": "srv_lead_09"
+  }
+]

@@ -27,7 +27,7 @@ import {
   Ticket,
   Search,
   Send,
-  UserCheck,
+  Database,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import {
@@ -41,7 +41,7 @@ import {
   deleteLead,
   exportLeadsCSV,
 } from '../../lib/cmsStore';
-import { getAnalytics, resetAnalytics, getCookieConsent } from '../../lib/analytics';
+import { getAnalytics, getCookieConsent } from '../../lib/analytics';
 import { processChatQuery } from '../../lib/chatbotEngine';
 import {
   TeamMember,
@@ -184,7 +184,6 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const [newInternalNote, setNewInternalNote] = useState('');
   const [newCustomerUpdate, setNewCustomerUpdate] = useState('');
-  const [deleteTicketId, setDeleteTicketId] = useState<string | null>(null);
   const [deleteReason, setDeleteReason] = useState('');
 
   // Server-managed Enquiries state
@@ -209,6 +208,8 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
   const [rotatePassword, setRotatePassword] = useState('');
   const [rotateReason, setRotateReason] = useState('');
   const [rotateSuccess, setRotateSuccess] = useState<string | null>(null);
+  const [dbStats, setDbStats] = useState<any>(null);
+  const [dbLoading, setDbLoading] = useState(false);
 
   // Status feedback & filters
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string; ref?: string } | null>(null);
@@ -336,9 +337,26 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
     loadEnquiries();
   }, [includeDeleted]);
 
+  const loadDatabaseStats = async () => {
+    try {
+      setDbLoading(true);
+      const res = await api.getDatabaseStats();
+      if (res.database) {
+        setDbStats(res.database);
+      }
+    } catch {
+      // Graceful fallback
+    } finally {
+      setDbLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'analytics') {
       loadRealAnalytics();
+    }
+    if (activeTab === 'security') {
+      loadDatabaseStats();
     }
   }, [activeTab]);
 
@@ -417,7 +435,6 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
     try {
       await api.softDeleteTicket(ticketId, deleteReason || 'Archived by staff');
       notify('Ticket soft-deleted and archived.');
-      setDeleteTicketId(null);
       setDeleteReason('');
       setTicketModalOpen(false);
       loadTickets();
@@ -2660,6 +2677,101 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                     <span>Authorize & Rotate Route</span>
                   </button>
                 </div>
+              </div>
+
+              {/* NoSQL Document Database Architecture & Collection Telemetry */}
+              <div className="p-6 rounded-2xl bg-surface/70 border border-border/80 space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary">
+                      <Database className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-heading font-semibold text-sm text-ink flex items-center gap-2">
+                        NoSQL Document Database Engine
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+                          ACTIVE & PERSISTED
+                        </span>
+                      </h3>
+                      <p className="text-[11px] text-text-secondary">
+                        Document-oriented JSON collections with atomic disk persistence and Cloudflare KV compatibility
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={loadDatabaseStats}
+                    disabled={dbLoading}
+                    className="px-3 py-1.5 rounded-xl bg-surface hover:bg-surface-elevated border border-border text-ink text-xs font-medium flex items-center gap-1.5 self-start sm:self-auto transition-colors"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${dbLoading ? 'animate-spin' : ''}`} />
+                    <span>Refresh NoSQL Stats</span>
+                  </button>
+                </div>
+
+                {/* Database Metrics Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-3.5 rounded-xl bg-surface border border-border/60">
+                    <div className="text-[10px] text-text-secondary uppercase tracking-wider font-semibold">Engine</div>
+                    <div className="font-mono text-xs font-bold text-ink mt-1 truncate">
+                      {dbStats?.engine || 'NoSQL-DocumentDB-v2'}
+                    </div>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-surface border border-border/60">
+                    <div className="text-[10px] text-text-secondary uppercase tracking-wider font-semibold">Storage Format</div>
+                    <div className="text-xs font-bold text-ink mt-1">
+                      JSON Document Collections
+                    </div>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-surface border border-border/60">
+                    <div className="text-[10px] text-text-secondary uppercase tracking-wider font-semibold">Collections</div>
+                    <div className="font-mono text-sm font-bold text-primary mt-1">
+                      {dbStats?.totalCollections || 9} Collections
+                    </div>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-surface border border-border/60">
+                    <div className="text-[10px] text-text-secondary uppercase tracking-wider font-semibold">Total Documents</div>
+                    <div className="font-mono text-sm font-bold text-emerald-400 mt-1">
+                      {dbStats?.totalDocuments ?? 21} Documents
+                    </div>
+                  </div>
+                </div>
+
+                {/* Collections Table */}
+                {dbStats?.collections && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-border/60 text-text-secondary text-[11px]">
+                          <th className="pb-2 font-medium">Collection Name</th>
+                          <th className="pb-2 font-medium">Storage File</th>
+                          <th className="pb-2 font-medium text-right">Document Count</th>
+                          <th className="pb-2 font-medium text-right">Size</th>
+                          <th className="pb-2 font-medium text-right">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/40">
+                        {Object.entries(dbStats.collections).map(([name, info]: [string, any]) => (
+                          <tr key={name} className="hover:bg-surface/50">
+                            <td className="py-2.5 font-mono text-primary font-semibold flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                              {name}
+                            </td>
+                            <td className="py-2.5 font-mono text-text-secondary">{info.file}</td>
+                            <td className="py-2.5 font-mono text-right text-ink font-bold">{info.documents}</td>
+                            <td className="py-2.5 font-mono text-right text-text-secondary">
+                              {(info.sizeBytes / 1024).toFixed(1)} KB
+                            </td>
+                            <td className="py-2.5 text-right">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Synced
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           )}

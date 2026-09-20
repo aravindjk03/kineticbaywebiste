@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Search, AlertCircle, Clock, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Search, AlertCircle, Clock, RefreshCw } from 'lucide-react';
 import { api } from '../../lib/api';
 
 interface PublicTicketInfo {

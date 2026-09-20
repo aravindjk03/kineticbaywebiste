@@ -321,4 +321,9 @@ export const api = {
       method: 'POST',
     });
   },
+
+  // ── NoSQL Database Diagnostics ──
+  async getDatabaseStats() {
+    return request('/api/security/database');
+  },
 };

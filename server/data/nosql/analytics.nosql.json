@@ -1,0 +1,64 @@
+[
+  {
+    "_id": "global_telemetry",
+    "totalVisits": 2,
+    "uniqueVisitors": 2,
+    "pageViews": {
+      "/": 1,
+      "/services": 1,
+      "/contact": 1
+    },
+    "dailyVisits": [
+      {
+        "date": "2026-09-20",
+        "count": 3
+      }
+    ],
+    "deviceBreakdown": {
+      "desktop": 2,
+      "mobile": 1,
+      "tablet": 0
+    },
+    "recentVisits": [
+      {
+        "id": "vis_861dc9c0",
+        "path": "/contact",
+        "timestamp": "07:19:36 pm",
+        "isoTime": "2026-09-20T13:49:36.305Z",
+        "referrer": "Direct",
+        "deviceType": "mobile",
+        "visitorFingerprint": "d6d07e94",
+        "isNewSession": true
+      },
+      {
+        "id": "vis_1fd16ab1",
+        "path": "/services",
+        "timestamp": "07:19:36 pm",
+        "isoTime": "2026-09-20T13:49:36.300Z",
+        "referrer": "Direct",
+        "deviceType": "desktop",
+        "visitorFingerprint": "b424bc4b",
+        "isNewSession": false
+      },
+      {
+        "id": "vis_556ba53d",
+        "path": "/",
+        "timestamp": "07:19:36 pm",
+        "isoTime": "2026-09-20T13:49:36.295Z",
+        "referrer": "Direct",
+        "deviceType": "desktop",
+        "visitorFingerprint": "b424bc4b",
+        "isNewSession": true
+      }
+    ],
+    "activeSessions": {
+      "b424bc4b34931dcd": 1789912176300,
+      "d6d07e947cd32a0c": 1789912176305
+    },
+    "knownVisitors": [
+      "b424bc4b34931dcd",
+      "d6d07e947cd32a0c"
+    ],
+    "created_at": "2026-09-20T13:49:07.649Z"
+  }
+]

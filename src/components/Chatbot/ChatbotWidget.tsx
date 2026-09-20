@@ -10,7 +10,6 @@ import {
   ShieldCheck,
   ChevronDown,
   ArrowUpRight,
-  Sparkles,
   Ticket,
   Search,
   FileText,

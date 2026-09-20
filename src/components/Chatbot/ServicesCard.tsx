@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Cloud, Sparkles, ArrowRight, ExternalLink } from 'lucide-react';
+import { Cloud, Sparkles, ArrowRight } from 'lucide-react';
 import { api } from '../../lib/api';
 
 interface ServiceItem {
