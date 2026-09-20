@@ -67,6 +67,9 @@ export default function TicketCreationCard({ onSubmitted, onTrackRequested, defa
         });
         finalTicket = res.ticket || (res.public_id ? res : null);
       } catch (apiErr: any) {
+        if (apiErr?.status === 429) {
+          throw apiErr;
+        }
         console.warn('Edge/server ticket submission fallback triggered:', apiErr);
         // Resilient fallback: generate high-entropy ticket ID locally so user is never stranded
         const entropy = Array.from(crypto.getRandomValues(new Uint8Array(4)))

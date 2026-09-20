@@ -8,7 +8,8 @@ import {
   recordRealVisit,
 } from '../store.js';
 import {
-  publicSubmissionRateLimiter,
+  ticketSubmissionBucket,
+  messageSubmissionBucket,
   ticketTrackingRateLimiter,
 } from '../middleware/rateLimiter.js';
 
@@ -60,7 +61,7 @@ router.get('/services/:slug', (req, res) => {
  * POST /api/public/enquiries
  * Captures lead / quote enquiry from public visitors or chatbot
  */
-router.post('/enquiries', publicSubmissionRateLimiter, (req, res) => {
+router.post('/enquiries', messageSubmissionBucket, (req, res) => {
   const { name, email, company, service_slug, budget_range, timeline, message } = req.body || {};
 
   if (!name || typeof name !== 'string' || name.trim().length < 2) {
@@ -110,7 +111,7 @@ router.post('/enquiries', publicSubmissionRateLimiter, (req, res) => {
  * POST /api/public/tickets
  * Raises a support or service ticket with a cryptographically secure high-entropy public ID (KB-XXXXXXXX)
  */
-router.post('/tickets', publicSubmissionRateLimiter, (req, res) => {
+router.post('/tickets', ticketSubmissionBucket, (req, res) => {
   const { name, email, category, priority, subject, description } = req.body || {};
 
   if (!name || typeof name !== 'string' || name.trim().length < 2) {

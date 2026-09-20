@@ -84,6 +84,11 @@ export default function TicketTrackingCard({ initialTicketId, initialEmail }: Ti
         throw new Error('Ticket not found or credentials invalid.');
       }
     } catch (err: any) {
+      if (err?.status === 429) {
+        setError(err.message || 'Too many ticket tracking attempts. Please wait before retrying.');
+        return;
+      }
+
       // Check if ticket exists in local storage fallback
       const localMatch = recentTickets.find(
         (t) => t.public_id.toUpperCase() === cleanId && (!t.email || t.email.toLowerCase() === cleanEmail)

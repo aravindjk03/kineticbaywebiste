@@ -55,7 +55,10 @@ export default function LeadCaptureCard({ onSubmitted, conversationSnippet, defa
         company: form.company.trim() || undefined,
         service_slug: form.service.toLowerCase().replace(/[^a-z0-9]/g, '-'),
         message: form.message.trim() || `Proposal request for ${form.service}`,
-      }).catch((err) => console.warn('Backend enquiry submission sync warning:', err));
+      }).catch((err) => {
+        if (err?.status === 429) throw err;
+        console.warn('Backend enquiry submission sync warning:', err);
+      });
 
       // 2. Also log to local CMS store for redundancy
       await addLead({
@@ -71,9 +74,9 @@ export default function LeadCaptureCard({ onSubmitted, conversationSnippet, defa
 
       setSubmitted(true);
       onSubmitted({ name: form.name, service: form.service });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Lead submission failed', err);
-      setError('Something went wrong. Please try again or email us directly.');
+      setError(err?.message || 'Something went wrong. Please try again or email us directly.');
     } finally {
       setSubmitting(false);
     }

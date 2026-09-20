@@ -932,6 +932,142 @@ async function runTests() {
     const cspHeader = cspCheck.headers['content-security-policy'] || '';
     assert(!cspHeader.includes("script-src 'self' 'unsafe-inline' https://images.pexels.com"), 'CSP script-src does not allow third-party image CDN as script origin');
 
+    /* ─── TEST SUITE 22: REQUEST BUCKET LIST ANTI-DOS & ANTI-DDOS ── */
+    console.log('\n--- 22. Request Bucket List Anti-DoS & Anti-DDoS Defense ---');
+    resetAllRateLimiters();
+
+    // 1. Ticket System: Micro-Burst Flood Protection (Bucket Capacity: 6)
+    for (let i = 1; i <= 6; i++) {
+      const res = await request('/api/public/tickets', {
+        method: 'POST',
+        headers: { 'x-forwarded-for': '198.51.100.1' },
+        body: {
+          name: 'Burst Tester',
+          email: `burst_user_${i}@example.com`,
+          category: 'technical_support',
+          priority: 'medium',
+          subject: `Burst Ticket ${i}`,
+          description: `Testing token bucket micro-burst capacity item ${i}`,
+        },
+      });
+      assert(res.status === 201, `Ticket burst request ${i}/6 permitted within bucket capacity`);
+      assert(Boolean(res.headers['x-ratelimit-remaining']), `Ticket burst response ${i} contains X-RateLimit-Remaining header`);
+    }
+
+    // 7th rapid ticket submission exceeds burst bucket capacity
+    const burstExceededTicket = await request('/api/public/tickets', {
+      method: 'POST',
+      headers: { 'x-forwarded-for': '198.51.100.1' },
+      body: {
+        name: 'Burst Tester',
+        email: 'burst_user_7@example.com',
+        category: 'technical_support',
+        priority: 'medium',
+        subject: 'Burst Ticket 7',
+        description: 'Exceeding burst token bucket capacity should be blocked',
+      },
+    });
+    assert(burstExceededTicket.status === 429, 'Ticket micro-burst flood blocked with 429 Too Many Requests');
+    assert(burstExceededTicket.body.limitType === 'BURST_BUCKET', 'Ticket micro-burst blocked with limitType BURST_BUCKET');
+    assert(Boolean(burstExceededTicket.headers['retry-after']), 'Ticket burst block includes Retry-After header');
+
+    // 2. Message / Enquiry System: Micro-Burst Protection (Bucket Capacity: 5)
+    resetAllRateLimiters();
+    for (let i = 1; i <= 5; i++) {
+      const res = await request('/api/public/enquiries', {
+        method: 'POST',
+        headers: { 'x-forwarded-for': '198.51.100.2' },
+        body: {
+          name: 'Message Spammer',
+          email: `msg_${i}@example.com`,
+          service_slug: 'saas-platforms',
+          message: `Enquiry micro-burst payload ${i}`,
+        },
+      });
+      assert(res.status === 201, `Message burst request ${i}/5 permitted within bucket capacity`);
+    }
+
+    // 6th rapid message submission exceeds burst bucket
+    const burstExceededMsg = await request('/api/public/enquiries', {
+      method: 'POST',
+      headers: { 'x-forwarded-for': '198.51.100.2' },
+      body: {
+        name: 'Message Spammer',
+        email: 'msg_6@example.com',
+        service_slug: 'saas-platforms',
+        message: '6th rapid enquiry flood payload',
+      },
+    });
+    assert(burstExceededMsg.status === 429, 'Message micro-burst flood blocked with 429 Too Many Requests');
+    assert(burstExceededMsg.body.limitType === 'BURST_BUCKET', 'Message micro-burst blocked with limitType BURST_BUCKET');
+
+    // 3. Anti-Distributed DoS Proxy Rotation (Target Fingerprint Bucket)
+    // Attacker rotates 5 distinct IPs (simulating botnet / proxy proxies), but targets the SAME victim email address
+    resetAllRateLimiters();
+    const victimEmail = 'victim_target@corporate.internal';
+    for (let i = 1; i <= 4; i++) {
+      const distributedReq = await request('/api/public/tickets', {
+        method: 'POST',
+        headers: { 'x-forwarded-for': `203.0.113.${i}` }, // 4 distinct proxy IPs
+        body: {
+          name: `Distributed Bot ${i}`,
+          email: victimEmail,
+          category: 'technical_support',
+          priority: 'medium',
+          subject: `Distributed Ticket ${i}`,
+          description: `Simulating proxy rotation attack targeting same email ${i}`,
+        },
+      });
+      assert(distributedReq.status === 201, `Distributed proxy submission ${i}/4 permitted (IP: 203.0.113.${i})`);
+    }
+
+    // 5th submission from a BRAND NEW IP (203.0.113.99) targeting the SAME victim email
+    const proxyRotationIntercepted = await request('/api/public/tickets', {
+      method: 'POST',
+      headers: { 'x-forwarded-for': '203.0.113.99' }, // New proxy IP!
+      body: {
+        name: 'Distributed Bot 5',
+        email: victimEmail,
+        category: 'technical_support',
+        priority: 'medium',
+        subject: 'Distributed Ticket 5',
+        description: 'Targeted email flood via rotating proxy IP',
+      },
+    });
+    assert(proxyRotationIntercepted.status === 429, 'Distributed proxy rotation attack intercepted with 429');
+    assert(proxyRotationIntercepted.body.limitType === 'TARGET_FINGERPRINT', 'Distributed attack throttled by TARGET_FINGERPRINT bucket');
+
+    // 4. Automated Penalty Jail on Repeated DoS Violations
+    resetAllRateLimiters();
+    const hostileIp = '198.51.100.99';
+    // Trigger burst limit 3 times to earn penalty jail
+    for (let violation = 1; violation <= 3; violation++) {
+      // Consume burst tokens
+      for (let j = 0; j < 6; j++) {
+        await request('/api/public/tickets', {
+          method: 'POST',
+          headers: { 'x-forwarded-for': hostileIp },
+          body: { name: 'Hostile', email: `h_${violation}_${j}@hostile.com`, subject: 'Sub', description: 'Description long enough' },
+        });
+      }
+      // Trigger violation
+      await request('/api/public/tickets', {
+        method: 'POST',
+        headers: { 'x-forwarded-for': hostileIp },
+        body: { name: 'Hostile', email: `h_${violation}_fail@hostile.com`, subject: 'Sub', description: 'Description long enough' },
+      });
+    }
+
+    // 4th attempt from hostile IP is immediately blocked by PENALTY JAIL
+    const jailedBlock = await request('/api/public/tickets', {
+      method: 'POST',
+      headers: { 'x-forwarded-for': hostileIp },
+      body: { name: 'Hostile', email: 'h_jailed@hostile.com', subject: 'Sub', description: 'Description long enough' },
+    });
+    assert(jailedBlock.status === 429, 'Hostile DoS origin blocked with 429 Too Many Requests');
+    assert(jailedBlock.body.limitType === 'PENALTY_JAIL', 'Hostile DoS origin placed in PENALTY_JAIL');
+    assert(Number(jailedBlock.headers['retry-after']) >= 60, 'Penalty jail assigns full duration Retry-After header');
+
     resetAllRateLimiters();
 
     console.log('\n═══════════════════════════════════════════════════════════════');

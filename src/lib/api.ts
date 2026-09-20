@@ -32,10 +32,28 @@ async function request(endpoint: string, options: RequestInit = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const errorMsg = data?.error || `Request failed with status ${response.status}`;
-    const err = new Error(errorMsg) as Error & { status: number; reference?: string };
+    let errorMsg = data?.error || `Request failed with status ${response.status}`;
+    const retryHeader = response.headers.get('Retry-After');
+    const retryAfter = retryHeader ? parseInt(retryHeader, 10) : (data?.retryAfter ? Number(data.retryAfter) : undefined);
+
+    if (response.status === 429) {
+      if (retryAfter && retryAfter > 0) {
+        errorMsg = `${data?.error || 'Rate limit reached.'} Please wait ${retryAfter}s before retrying.`;
+      } else {
+        errorMsg = data?.error || 'Too many requests. Please slow down and try again shortly.';
+      }
+    }
+
+    const err = new Error(errorMsg) as Error & {
+      status: number;
+      reference?: string;
+      retryAfter?: number;
+      limitType?: string;
+    };
     err.status = response.status;
     err.reference = data?.reference;
+    err.retryAfter = retryAfter;
+    err.limitType = data?.limitType;
     throw err;
   }
 
