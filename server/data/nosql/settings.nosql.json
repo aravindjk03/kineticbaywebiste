@@ -1,11 +1,8 @@
 [
   {
     "key": "cms_route",
-    "activeCmsRoute": "cms_ec8b0ee6e76349521ebc4e30b1a71648",
-    "oldCmsRoutes": [
-      "cms_e2b9c7a104f6d5e8237b1c4a9f8e0d35",
-      "cms_313affa851673c62bc5d57445652d8ca"
-    ],
+    "activeCmsRoute": "cms_e2b9c7a104f6d5e8237b1c4a9f8e0d35",
+    "oldCmsRoutes": [],
     "updatedAt": "2026-09-20T13:49:35.402Z",
     "_id": "doc_f2fba9deb6b24a2f",
     "created_at": "2026-09-20T13:49:07.642Z",

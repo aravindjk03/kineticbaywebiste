@@ -1,5 +1,42 @@
 [
   {
+    "id": "aud_1789912593102_do7p",
+    "timestamp": "2026-09-20T13:56:33.102Z",
+    "type": "AUTHENTICATION_SUCCESS",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-D6AD5249",
+    "ip": "::1",
+    "userAgent": "node",
+    "target": "/api/auth/mfa-verify",
+    "action": "SESSION_ESTABLISHED",
+    "result": "SUCCESS",
+    "metadata": {
+      "method": "recovery_code",
+      "sessionExpiry": "2026-09-20T21:56:33.101Z"
+    },
+    "_id": "aud_1789912593102_do7p",
+    "created_at": "2026-09-20T13:56:33.102Z"
+  },
+  {
+    "id": "aud_1789912593048_lctf",
+    "timestamp": "2026-09-20T13:56:33.048Z",
+    "type": "LOGIN_STEP1_SUCCESS",
+    "userId": "usr_superadmin_01",
+    "role": "super_admin",
+    "reqId": "REQ-147AB899",
+    "ip": "::1",
+    "userAgent": "node",
+    "target": "/api/auth/login",
+    "action": "MFA_CHALLENGE_ISSUED",
+    "result": "SUCCESS",
+    "metadata": {
+      "mfaEnabled": true
+    },
+    "_id": "aud_1789912593048_lctf",
+    "created_at": "2026-09-20T13:56:33.048Z"
+  },
+  {
     "id": "aud_1789912176318_6q1v",
     "timestamp": "2026-09-20T13:49:36.318Z",
     "type": "ROLE_DENIED",

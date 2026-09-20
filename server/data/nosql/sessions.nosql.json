@@ -1,32 +1,6 @@
 [
   {
-    "token": "cms_fe7ba6de37c01b4e2ec4d2e994eac05f_1789912175309",
-    "userId": "usr_marketing_01",
-    "email": "marketing@kineticbay.internal",
-    "name": "Growth & Content Specialist",
-    "role": "marketing",
-    "permissions": [
-      "content:read",
-      "content:create",
-      "content:update",
-      "content:submit",
-      "media:create",
-      "analytics:read",
-      "tickets:read",
-      "tickets:create",
-      "tickets:update",
-      "enquiries:read",
-      "enquiries:update"
-    ],
-    "ip": "127.0.0.1",
-    "userAgent": "node",
-    "createdAt": 1789912175309,
-    "lastActive": 1789912176318,
-    "expiresAt": 1789940975309,
-    "_id": "doc_7794ab98b58b42d6"
-  },
-  {
-    "token": "cms_60f1285e8a6eb1167f1103659ccbcf51_1789912175019",
+    "token": "cms_8b05bc5b74919fd73811f0170d148d34_1789912593101",
     "userId": "usr_superadmin_01",
     "email": "superadmin@kineticbay.internal",
     "name": "Chief Security Officer",
@@ -64,12 +38,38 @@
       "audit:read",
       "settings:update"
     ],
+    "ip": "::1",
+    "userAgent": "node",
+    "createdAt": 1789912593101,
+    "lastActive": 1789912593113,
+    "expiresAt": 1789941393101,
+    "_id": "doc_afeac894a98949b0"
+  },
+  {
+    "token": "cms_fe7ba6de37c01b4e2ec4d2e994eac05f_1789912175309",
+    "userId": "usr_marketing_01",
+    "email": "marketing@kineticbay.internal",
+    "name": "Growth & Content Specialist",
+    "role": "marketing",
+    "permissions": [
+      "content:read",
+      "content:create",
+      "content:update",
+      "content:submit",
+      "media:create",
+      "analytics:read",
+      "tickets:read",
+      "tickets:create",
+      "tickets:update",
+      "enquiries:read",
+      "enquiries:update"
+    ],
     "ip": "127.0.0.1",
     "userAgent": "node",
-    "createdAt": 1789912175019,
-    "lastActive": 1789912176258,
-    "expiresAt": 1789940975019,
-    "_id": "doc_3c327ae5c8634cb0"
+    "createdAt": 1789912175309,
+    "lastActive": 1789912176318,
+    "expiresAt": 1789940975309,
+    "_id": "doc_7794ab98b58b42d6"
   },
   {
     "token": "cms_13427943ef36cfc9ebf826e7efb209de_1789912174967",
