@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight, Target, Shield, Eye, Clock, Lightbulb, Globe, Leaf, Users } from 'lucide-react';
@@ -7,6 +7,8 @@ import ScrollFloat from '../components/ScrollFloat';
 import Reveal from '../components/Reveal';
 import PageHero3D from '../components/PageHero3D';
 import TiltCard from '../components/TiltCard';
+import { getTeamMembers } from '../lib/cmsStore';
+import { TeamMember } from '../types/cms';
 
 const coreValues = [
   { icon: Target, title: 'Impact Over Hype', body: 'We ship what we can prove, not what sounds good in a deck.' },
@@ -23,6 +25,14 @@ const mentorPillars = [
 ];
 
 export default function Team() {
+  const [teamList, setTeamList] = useState<TeamMember[]>(getTeamMembers());
+
+  useEffect(() => {
+    const handleUpdate = () => setTeamList(getTeamMembers());
+    window.addEventListener('kb:team_updated', handleUpdate);
+    return () => window.removeEventListener('kb:team_updated', handleUpdate);
+  }, []);
+
   // ── HERO SCROLL PARALLAX ───────────────────────
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress: heroScroll } = useScroll({
@@ -153,6 +163,64 @@ export default function Team() {
                 </TiltCard>
               </Reveal>
             </motion.div>
+          </div>
+        </div>
+      </section>
+
+      <div className="max-w-[1200px] mx-auto px-6"><div className="current-mark" /></div>
+
+      {/* ── CORE LEADERSHIP & ENGINEERING SQUAD ─── */}
+      <section className="section-py relative overflow-hidden">
+        <div className="max-w-[1200px] mx-auto px-6 relative z-10">
+          <Reveal>
+            <p className="eyebrow mb-3">Our Core Team</p>
+            <h2 className="font-heading font-semibold text-ink leading-[1.15] tracking-[-0.01em] mb-4 text-2xl sm:text-3xl md:text-4xl">
+              Architects, Engineers &amp; <br />
+              <span className="text-primary">Builders at Kinetic Bay.</span>
+            </h2>
+            <p className="text-text-secondary text-[15px] sm:text-[16px] leading-relaxed max-w-2xl mb-12">
+              A high-performing collective combining cloud architectures, applied generative AI, enterprise interface design, and deep human performance frameworks.
+            </p>
+          </Reveal>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {teamList.map((member, i) => (
+              <Reveal key={member.id} delay={i * 60}>
+                <TiltCard className="kb-card p-6 h-full flex flex-col justify-between group" maxTilt={5}>
+                  <div>
+                    <div className="relative mb-5 overflow-hidden rounded-xl border border-border/80 aspect-[4/3] bg-surface">
+                      <img
+                        src={member.image}
+                        alt={member.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-transparent opacity-50" />
+                    </div>
+                    <span className="text-primary font-semibold text-xs uppercase tracking-wider block mb-1">
+                      {member.role}
+                    </span>
+                    <h3 className="font-heading font-semibold text-ink text-lg mb-2">
+                      {member.name}
+                    </h3>
+                    <p className="text-text-secondary text-xs sm:text-sm leading-relaxed mb-4 line-clamp-3">
+                      {member.bio}
+                    </p>
+                  </div>
+                  {member.linkedin && (
+                    <div className="pt-3 border-t border-border/60">
+                      <a
+                        href={member.linkedin}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-primary hover:text-primary-light font-medium inline-flex items-center gap-1.5"
+                      >
+                        <span>Connect on LinkedIn</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </a>
+                    </div>
+                  )}
+                </TiltCard>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>

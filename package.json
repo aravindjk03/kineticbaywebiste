@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "start": "node server/index.js",
+    "test:security": "node server/test-security.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
@@ -15,6 +17,8 @@
     "@react-three/drei": "^9.114.0",
     "@react-three/fiber": "^8.17.10",
     "@supabase/supabase-js": "^2.57.4",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.2.1",
     "framer-motion": "^11.15.0",
     "gsap": "^3.15.0",
     "lucide-react": "^0.344.0",
@@ -26,6 +30,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^5.0.6",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@types/three": "^0.169.0",

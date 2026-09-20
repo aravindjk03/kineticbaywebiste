@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, CheckCircle2, AlertCircle } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { addLead } from '../lib/cmsStore';
 import Reveal from './Reveal';
 
 const serviceOptions = [
@@ -37,14 +37,14 @@ export default function LeadGenForm() {
     setStatus('submitting');
 
     try {
-      const { error } = await supabase.from('contact_inquiries').insert({
+      await addLead({
         name: form.name.trim(),
         email: form.email.trim(),
         service: form.service,
         message: form.details.trim() || 'Lead submission — Scoped Proposal request.',
+        source: 'lead_gen_form',
       });
 
-      if (error) throw error;
       setStatus('success');
       setForm({ name: '', email: '', service: '', details: '' });
     } catch (err) {

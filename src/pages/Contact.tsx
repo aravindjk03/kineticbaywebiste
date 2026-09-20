@@ -4,7 +4,7 @@ import DecryptedText from '../components/DecryptedText';
 import { Mail, Linkedin, Github, Send, CheckCircle2, Clock, MessageSquare } from 'lucide-react';
 import Reveal from '../components/Reveal';
 import PageHero3D from '../components/PageHero3D';
-import { supabase } from '../lib/supabase';
+import { addLead } from '../lib/cmsStore';
 
 const interestOptions = [
   'Custom Project',
@@ -38,13 +38,13 @@ export default function Contact() {
     setErrors({});
     setStatus('submitting');
     try {
-      const { error } = await supabase.from('contact_inquiries').insert({
+      await addLead({
         name: form.name.trim(),
         email: form.email.trim(),
         service: form.interest,
         message: form.message.trim(),
+        source: 'contact_form',
       });
-      if (error) throw error;
       setStatus('success');
       setForm({ name: '', email: '', interest: '', message: '' });
     } catch (err) {

@@ -7,6 +7,7 @@ import ServiceDetail from './pages/ServiceDetail';
 import Team from './pages/Team';
 import Contact from './pages/Contact';
 import Solutions from './pages/Solutions';
+import DynamicCMSEntry from './pages/InternalCMS/DynamicCMSEntry';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -28,6 +29,8 @@ function App() {
           <Route path="/solutions" element={<Solutions />} />
           <Route path="/team" element={<Team />} />
           <Route path="/contact" element={<Contact />} />
+          {/* Obfuscated non-obvious CMS entry route dynamically resolved by the server */}
+          <Route path="/:cmsRoute" element={<DynamicCMSEntry />} />
         </Routes>
       </Layout>
     </BrowserRouter>
