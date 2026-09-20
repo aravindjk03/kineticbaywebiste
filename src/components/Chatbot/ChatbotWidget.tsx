@@ -14,6 +14,8 @@ import {
   Search,
   FileText,
   Layers,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { processChatQuery, ActionButton } from '../../lib/chatbotEngine';
 import { getChatbotConfig } from '../../lib/cmsStore';
@@ -23,6 +25,115 @@ import TicketCreationCard from './TicketCreationCard';
 import TicketTrackingCard from './TicketTrackingCard';
 import ServicesCard from './ServicesCard';
 
+function FormattedChatMessage({ content, isBot }: { content: string; isBot: boolean }) {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopy = (id: string) => {
+    try {
+      navigator.clipboard.writeText(id);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {}
+  };
+
+  const lines = content.split('\n');
+
+  return (
+    <div className="space-y-1.5">
+      {lines.map((line, idx) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <div key={idx} className="h-1" />;
+        }
+
+        // Check if line is a prominent Ticket ID reference heading: e.g. # **`KB-XXXXXXXX`**
+        const ticketMatch = trimmed.match(/^#\s*(?:\*\*)?(?:`|')?(KB-[A-Z0-9]{4,12})(?:`|')?(?:\*\*)?/i);
+        if (ticketMatch) {
+          const tktId = ticketMatch[1].toUpperCase();
+          return (
+            <div
+              key={idx}
+              className="my-2.5 p-3 bg-emerald-950/50 rounded-xl border border-emerald-500/50 flex items-center justify-between shadow-inner"
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <div>
+                  <span className="text-[10px] text-emerald-400/90 uppercase tracking-wider block font-semibold">
+                    Ticket Reference ID
+                  </span>
+                  <span className="font-mono font-bold text-base text-emerald-300 tracking-wider">
+                    {tktId}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleCopy(tktId)}
+                className="px-2.5 py-1.5 rounded-lg bg-surface/90 border border-emerald-500/40 hover:border-emerald-400 text-ink hover:text-emerald-300 text-xs font-mono flex items-center gap-1 transition-all shadow-sm"
+                title="Copy Reference ID to clipboard"
+              >
+                {copiedId === tktId ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-[11px] text-emerald-400 font-semibold">Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 text-text-secondary" />
+                    <span className="text-[11px]">Copy</span>
+                  </>
+                )}
+              </button>
+            </div>
+          );
+        }
+
+        // Markdown inline parser for bold and code
+        const renderFormattedSpans = (text: string) => {
+          const regex = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+          const parts = text.split(regex);
+
+          return parts.map((part, pIdx) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+              return (
+                <strong key={pIdx} className="font-semibold text-ink">
+                  {part.slice(2, -2)}
+                </strong>
+              );
+            }
+            if (part.startsWith('`') && part.endsWith('`')) {
+              return (
+                <code
+                  key={pIdx}
+                  className="px-1.5 py-0.5 rounded bg-surface-raised border border-border/80 font-mono text-[11px] text-primary"
+                >
+                  {part.slice(1, -1)}
+                </code>
+              );
+            }
+            return <span key={pIdx}>{part}</span>;
+          });
+        };
+
+        if (trimmed.startsWith('• ') || trimmed.startsWith('- ')) {
+          return (
+            <div key={idx} className="flex items-start gap-1.5 ml-1 text-xs">
+              <span className="text-primary font-bold mt-0.5">•</span>
+              <div className="flex-1 leading-relaxed">{renderFormattedSpans(trimmed.slice(2))}</div>
+            </div>
+          );
+        }
+
+        return (
+          <p key={idx} className="leading-relaxed">
+            {renderFormattedSpans(trimmed)}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [config, setConfig] = useState(getChatbotConfig());
@@ -31,29 +142,81 @@ export default function ChatbotWidget() {
   const [hasUnread, setHasUnread] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const [messages, setMessages] = useState<ChatMessage[]>(() => [
-    {
-      id: 'msg-init',
-      sender: 'bot',
-      content: `${config.greetingMessage}\n\nI am your deterministic service guide. How can I assist you today?`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      actionButtons: [
-        { label: '🚀 Explore Services', action: 'services' },
-        { label: '📋 Request Proposal', action: 'proposal' },
-        { label: '🎫 Support Ticket', action: 'ticket' },
-        { label: '🔍 Track Ticket', action: 'track' },
-      ],
-    },
-  ]);
+  const [activeTicket, setActiveTicket] = useState<{ public_id: string; subject: string; status: string } | null>(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const raw = localStorage.getItem('kb_user_tickets');
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list) && list.length > 0) {
+            return {
+              public_id: list[0].public_id,
+              subject: list[0].subject || 'Support Ticket',
+              status: list[0].status || 'NEW',
+            };
+          }
+        }
+      }
+    } catch {}
+    return null;
+  });
 
-  // Sync config when CMS updates it
-  useEffect(() => {
-    const handleConfigUpdate = () => {
-      setConfig(getChatbotConfig());
-    };
-    window.addEventListener('kb:chatbot_updated', handleConfigUpdate);
-    return () => window.removeEventListener('kb:chatbot_updated', handleConfigUpdate);
-  }, []);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    // 1. Try restore from sessionStorage
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        const saved = sessionStorage.getItem('kb_chat_history');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      }
+    } catch {}
+
+    // 2. Check if recent tickets exist in localStorage
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const raw = localStorage.getItem('kb_user_tickets');
+        if (raw) {
+          const userTickets = JSON.parse(raw);
+          if (Array.isArray(userTickets) && userTickets.length > 0) {
+            const latest = userTickets[0];
+            return [
+              {
+                id: 'msg-init',
+                sender: 'bot',
+                content: `${config.greetingMessage}\n\n👋 **Welcome back!**\n\n📌 **Active Ticket on File:** \`${latest.public_id}\` (${latest.subject})\n• **Status:** \`${latest.status || 'NEW'}\` (Queued in Dispatch Queue)\n• **SLA:** First engineering response within 24 hours\n\nHow can I assist you with your project or support ticket today?`,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                actionButtons: [
+                  { label: `🔍 Track Ticket ${latest.public_id}`, action: 'track', payload: latest.public_id },
+                  { label: '🎫 Support Ticket', action: 'ticket' },
+                  { label: '🚀 Explore Services', action: 'services' },
+                  { label: '📋 Request Proposal', action: 'proposal' },
+                ],
+              },
+            ];
+          }
+        }
+      }
+    } catch {}
+
+    return [
+      {
+        id: 'msg-init',
+        sender: 'bot',
+        content: `${config.greetingMessage}\n\nI am your deterministic service guide. How can I assist you today?`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        actionButtons: [
+          { label: '🚀 Explore Services', action: 'services' },
+          { label: '📋 Request Proposal', action: 'proposal' },
+          { label: '🎫 Support Ticket', action: 'ticket' },
+          { label: '🔍 Track Ticket', action: 'track' },
+        ],
+      },
+    ];
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -100,6 +263,21 @@ export default function ChatbotWidget() {
       };
 
       if (res.triggerCard) {
+        let prefillId: string | undefined;
+        let prefillMail: string | undefined;
+
+        // Check if query contains a ticket ID
+        const match = query.match(/\b(kb-[a-z0-9]{4,12})\b/i);
+        if (match) {
+          prefillId = match[1].toUpperCase();
+        } else if (activeTicket) {
+          prefillId = activeTicket.public_id;
+        }
+
+        try {
+          prefillMail = localStorage.getItem('kb_last_ticket_email') || undefined;
+        } catch {}
+
         const cardMsg: ChatMessage = {
           id: 'card_' + Date.now(),
           sender: 'system',
@@ -107,6 +285,8 @@ export default function ChatbotWidget() {
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           isCard: true,
           cardType: res.triggerCard,
+          prefillTicketId: prefillId,
+          prefillEmail: prefillMail,
         };
         setMessages((prev) => [...prev, botMsg, cardMsg]);
       } else {
@@ -148,6 +328,8 @@ export default function ChatbotWidget() {
       case 'track':
         if (btn.payload) {
           handleSend(`Track ticket ${btn.payload}`);
+        } else if (activeTicket) {
+          handleSend(`Track ticket ${activeTicket.public_id}`);
         } else {
           handleSend('Track existing ticket status');
         }
@@ -161,18 +343,37 @@ export default function ChatbotWidget() {
   };
 
   const handleResetChat = () => {
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        sessionStorage.removeItem('kb_chat_history');
+      }
+    } catch {}
+
+    let initialGreeting = `${config.greetingMessage}\n\nI am your deterministic service guide. How can I assist you today?`;
+    let initialButtons: ActionButton[] = [
+      { label: '🚀 Explore Services', action: 'services' },
+      { label: '📋 Request Proposal', action: 'proposal' },
+      { label: '🎫 Support Ticket', action: 'ticket' },
+      { label: '🔍 Track Ticket', action: 'track' },
+    ];
+
+    if (activeTicket) {
+      initialGreeting = `${config.greetingMessage}\n\n👋 **Welcome back!**\n\n📌 **Active Ticket on File:** \`${activeTicket.public_id}\` (${activeTicket.subject})\n• **Status:** \`${activeTicket.status || 'NEW'}\` (Queued in Dispatch Queue)\n\nHow can I assist you today?`;
+      initialButtons = [
+        { label: `🔍 Track Ticket ${activeTicket.public_id}`, action: 'track', payload: activeTicket.public_id },
+        { label: '🎫 Support Ticket', action: 'ticket' },
+        { label: '🚀 Explore Services', action: 'services' },
+        { label: '📋 Request Proposal', action: 'proposal' },
+      ];
+    }
+
     setMessages([
       {
         id: 'msg-init-' + Date.now(),
         sender: 'bot',
-        content: `${config.greetingMessage}\n\nI am your deterministic service guide. How can I assist you today?`,
+        content: initialGreeting,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        actionButtons: [
-          { label: '🚀 Explore Services', action: 'services' },
-          { label: '📋 Request Proposal', action: 'proposal' },
-          { label: '🎫 Support Ticket', action: 'ticket' },
-          { label: '🔍 Track Ticket', action: 'track' },
-        ],
+        actionButtons: initialButtons,
       },
     ]);
   };
@@ -229,6 +430,28 @@ export default function ChatbotWidget() {
               </div>
             </div>
 
+            {/* ── ACTIVE TICKET PERSISTENT BANNER ── */}
+            {activeTicket && (
+              <div className="px-3.5 py-2 bg-emerald-950/40 border-b border-emerald-500/20 flex items-center justify-between text-xs animate-in fade-in">
+                <div className="flex items-center gap-2 text-emerald-400 font-medium truncate">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  <span className="text-[11px] text-text-secondary">Logged Ticket:</span>
+                  <span className="font-mono font-bold text-emerald-300">{activeTicket.public_id}</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase font-semibold">
+                    {activeTicket.status || 'NEW'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSend(`Track ticket ${activeTicket.public_id}`)}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-[10px] font-semibold border border-emerald-500/40 shrink-0 ml-2 transition-colors flex items-center gap-1"
+                >
+                  <Search className="w-2.5 h-2.5" />
+                  <span>Track Status</span>
+                </button>
+              </div>
+            )}
+
             {/* ── CHAT MESSAGES BODY ── */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3.5 scrollbar-thin scrollbar-thumb-border">
               {messages.map((msg) => {
@@ -257,20 +480,29 @@ export default function ChatbotWidget() {
 
                       {msg.cardType === 'ticket' && (
                         <TicketCreationCard
+                          defaultSubject={msg.ticketInitialSubject}
                           onSubmitted={({ public_id, subject, email }) => {
-                            setMessages((prev) => [
-                              ...prev,
-                              {
-                                id: 'msg_tkt_ack_' + Date.now(),
-                                sender: 'bot',
-                                content: `🎉 **Ticket Confirmed & Logged!**\n\nYour Ticket Reference ID is:\n# **\`${public_id}\`**\n\n• **Subject:** ${subject}\n• **Status:** \`NEW\` (Queued in Dispatch Queue)\n• **SLA:** First engineering response within 24 hours\n\nPlease keep note of reference **\`${public_id}\`**. You can verify and track live updates at any time right here in this chat!`,
-                                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                                actionButtons: [
-                                  { label: `🔍 Track Ticket ${public_id}`, action: 'track', payload: public_id },
-                                  { label: '🚀 Explore Services', action: 'services' },
-                                ],
-                              },
-                            ]);
+                            setActiveTicket({
+                              public_id,
+                              subject,
+                              status: 'NEW',
+                            });
+                            setMessages((prev) => {
+                              if (prev.some((m) => m.content.includes(public_id))) return prev;
+                              return [
+                                ...prev,
+                                {
+                                  id: 'msg_tkt_ack_' + Date.now(),
+                                  sender: 'bot',
+                                  content: `🎉 **Ticket Confirmed & Logged!**\n\nYour Ticket Reference ID is:\n# **\`${public_id}\`**\n\n• **Subject:** ${subject}\n• **Status:** \`NEW\` (Queued in Dispatch Queue)\n• **SLA:** First engineering response within 24 hours\n\nPlease keep note of reference **\`${public_id}\`**. You can verify and track live updates at any time right here in this chat!`,
+                                  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                                  actionButtons: [
+                                    { label: `🔍 Track Ticket ${public_id}`, action: 'track', payload: public_id },
+                                    { label: '🚀 Explore Services', action: 'services' },
+                                  ],
+                                },
+                              ];
+                            });
                           }}
                           onTrackRequested={(trackId, trackEmail) => {
                             setMessages((prev) => [
@@ -382,13 +614,13 @@ export default function ChatbotWidget() {
 
                     <div className={`max-w-[84%] ${isBot ? 'items-start' : 'items-end'}`}>
                       <div
-                        className={`p-3 rounded-2xl text-[13px] leading-relaxed whitespace-pre-line ${
+                        className={`p-3 rounded-2xl text-[13px] leading-relaxed ${
                           isBot
                             ? 'bg-surface text-ink border border-border/80 rounded-tl-sm'
                             : 'bg-primary text-ink font-medium rounded-tr-sm shadow-ember-sm'
                         }`}
                       >
-                        {msg.content}
+                        <FormattedChatMessage content={msg.content} isBot={isBot} />
                       </div>
 
                       {/* Action buttons attached to bot response */}

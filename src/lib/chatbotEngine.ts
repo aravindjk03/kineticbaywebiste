@@ -76,11 +76,64 @@ export async function processChatQuery(
     };
   }
 
-  /* ─── 2. TICKET TRACKING INTENT ─────────────────────────────── */
+  /* ─── 2. TICKET SUBMISSION INQUIRY & STATUS CHECK ─────────── */
+  let storedTickets: any[] = [];
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const raw = localStorage.getItem('kb_user_tickets');
+      if (raw) storedTickets = JSON.parse(raw);
+    }
+  } catch {}
+
+  const isSubmissionInquiry =
+    /\b(is|was|did|has|show|check|view|get|see|my)\b.*?\b(submitted|logged|created|received|filed|registered|saved|confirmed)\b/i.test(q) ||
+    /\b(ticket|tickets|issue)\b.*?\b(submitted|status|update|progress|reference|id|exist|saved)\b/i.test(q) ||
+    /\b(is it submitted|did it submit|is my ticket submitted|ticket submitted|submitted ticket|my ticket|where is my ticket|ticket id)\b/i.test(q) ||
+    q.includes('is it submitted') ||
+    q.includes('ticket is submitted') ||
+    q.includes('did it submit') ||
+    q.includes('submitted ticket') ||
+    q.includes('ticket submitted');
+
+  if (isSubmissionInquiry) {
+    if (storedTickets.length > 0) {
+      const latest = storedTickets[0];
+      return {
+        text: `✅ **Yes! Your ticket is successfully submitted and queued in our system.**\n\nHere are the details on file:\n• **Ticket Reference ID:** \`${latest.public_id}\`\n• **Subject:** ${latest.subject}\n• **Status:** \`${latest.status || 'NEW'}\` (Queued in Dispatch Queue)\n• **Registered Email:** \`${latest.email}\`\n• **Submitted:** ${new Date(latest.created_at || Date.now()).toLocaleString()}\n\nOur engineering team triages all queued tickets within our guaranteed 24-hour SLA. You can inspect live progress, logs, or agent responses right below:`,
+        triggerCard: 'track',
+        suggestedPrompts: [
+          `Track ticket ${latest.public_id}`,
+          'Raise another ticket',
+          'Explore our services',
+        ],
+        actionButtons: [
+          { label: `🔍 Track Ticket ${latest.public_id}`, action: 'track', payload: latest.public_id },
+          { label: '🎫 Raise Another Ticket', action: 'ticket' },
+          { label: '🚀 Explore Services', action: 'services' },
+        ],
+      };
+    } else {
+      return {
+        text: `🔍 **Ticket Verification & Status Lookup:**\nIf you recently submitted a ticket, you can verify and track its live status below by entering your **Ticket Reference ID** (format \`KB-XXXXXXXX\`) and email.\n\nIf you haven't raised one yet, click **Raise Support Ticket** below:`,
+        triggerCard: 'track',
+        suggestedPrompts: [
+          'Raise a new ticket',
+          'Request a project proposal',
+          'Browse our services',
+        ],
+        actionButtons: [
+          { label: '🎫 Raise Support Ticket', action: 'ticket' },
+          { label: '📋 Request Proposal', action: 'proposal' },
+        ],
+      };
+    }
+  }
+
+  /* ─── 2.5 TICKET TRACKING INTENT ────────────────────────────── */
   const isTrackingIntent =
     q.startsWith('kb-') ||
     /\bkb-[a-z0-9]{4,12}\b/i.test(q) ||
-    /\b(track|tracking|status|lookup|check status)\b/i.test(q) && /\b(ticket|tickets|issue|ref)\b/i.test(q) ||
+    (/\b(track|tracking|status|lookup|check status)\b/i.test(q) && /\b(ticket|tickets|issue|ref)\b/i.test(q)) ||
     q.includes('ticket status') ||
     q.includes('check ticket') ||
     q.includes('ticket update') ||
@@ -88,24 +141,44 @@ export async function processChatQuery(
     q.includes('track');
 
   if (isTrackingIntent) {
-    return {
-      text: '🔍 **Ticket Status Tracking:**\nYou can check the live progress of any support or project ticket raised with Kinetic Bay. Enter your Ticket Reference ID (e.g. `KB-XXXXXXXX`) and the requester email address below to securely view your status.',
-      triggerCard: 'track',
-      suggestedPrompts: [
-        'Raise a new ticket',
-        'Request a project proposal',
-        'Browse our services',
-      ],
-      actionButtons: [
-        { label: '🎫 Raise New Ticket', action: 'ticket' },
-        { label: '🚀 Explore Services', action: 'services' },
-      ],
-    };
+    if (storedTickets.length > 0) {
+      const latest = storedTickets[0];
+      return {
+        text: `🔍 **Ticket Status Tracking:**\nYou can check the live progress of any support or project ticket raised with Kinetic Bay.\n\n📌 **Your Active Ticket:** \`${latest.public_id}\` (${latest.subject})\n• Status: \`${latest.status || 'NEW'}\`\n• Registered Email: \`${latest.email}\`\n\nClick below to track this ticket or enter another reference ID:`,
+        triggerCard: 'track',
+        suggestedPrompts: [
+          `Track ticket ${latest.public_id}`,
+          'Raise a new ticket',
+          'Browse our services',
+        ],
+        actionButtons: [
+          { label: `🔍 Track Ticket ${latest.public_id}`, action: 'track', payload: latest.public_id },
+          { label: '🎫 Raise New Ticket', action: 'ticket' },
+          { label: '🚀 Explore Services', action: 'services' },
+        ],
+      };
+    } else {
+      return {
+        text: '🔍 **Ticket Status Tracking:**\nYou can check the live progress of any support or project ticket raised with Kinetic Bay. Enter your Ticket Reference ID (e.g. `KB-XXXXXXXX`) and the requester email address below to securely view your status.',
+        triggerCard: 'track',
+        suggestedPrompts: [
+          'Raise a new ticket',
+          'Request a project proposal',
+          'Browse our services',
+        ],
+        actionButtons: [
+          { label: '🎫 Raise New Ticket', action: 'ticket' },
+          { label: '🚀 Explore Services', action: 'services' },
+        ],
+      };
+    }
   }
 
   /* ─── 3. TICKET CREATION / SUPPORT INTENT ───────────────────── */
   const isTicketCreationIntent =
-    /\b(raise|open|create|submit|log|file|new|need|want|make)\b.*?\b(ticket|tickets)\b/i.test(q) ||
+    !isSubmissionInquiry &&
+    !isTrackingIntent &&
+    (/\b(raise|open|create|submit|log|file|new|need|want|make)\b.*?\b(ticket|tickets)\b/i.test(q) ||
     /\b(ticket|tickets)\b/i.test(q) ||
     /\b(helpdesk|support ticket|tech support|technical support|bug report|customer support|issue report)\b/i.test(q) ||
     q.includes('raise ticket') ||
@@ -113,10 +186,9 @@ export async function processChatQuery(
     q.includes('support ticket') ||
     q.includes('technical issue') ||
     q.includes('bug report') ||
-    q.includes('submit ticket') ||
     q.includes('need support') ||
     q.includes('problem') ||
-    q.includes('help');
+    q.includes('help'));
 
   if (isTicketCreationIntent) {
     return {

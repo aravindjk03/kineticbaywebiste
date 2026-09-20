@@ -52,6 +52,7 @@ export interface ChatMessage {
   selectedService?: string;
   prefillTicketId?: string;
   prefillEmail?: string;
+  ticketInitialSubject?: string;
 }
 
 export interface ChatbotConfig {

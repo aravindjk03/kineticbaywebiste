@@ -5,15 +5,16 @@ import { api } from '../../lib/api';
 interface TicketCreationCardProps {
   onSubmitted: (ticketInfo: { public_id: string; subject: string; email?: string }) => void;
   onTrackRequested?: (ticketId: string, email: string) => void;
+  defaultSubject?: string;
 }
 
-export default function TicketCreationCard({ onSubmitted, onTrackRequested }: TicketCreationCardProps) {
+export default function TicketCreationCard({ onSubmitted, onTrackRequested, defaultSubject }: TicketCreationCardProps) {
   const [form, setForm] = useState({
     name: '',
     email: '',
     category: 'technical_support',
     priority: 'medium',
-    subject: '',
+    subject: defaultSubject || '',
     description: '',
   });
 
@@ -36,22 +37,18 @@ export default function TicketCreationCard({ onSubmitted, onTrackRequested }: Ti
     const cleanSubject = form.subject.trim();
     const cleanDescription = form.description.trim();
 
-    if (!cleanName || cleanName.length < 2) {
-      setError('Please provide your name (at least 2 characters).');
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       setError('Please provide a valid email address for notifications and tracking.');
       return;
     }
-    if (!cleanSubject || cleanSubject.length < 4) {
-      setError('Please enter a brief subject line (at least 4 characters).');
-      return;
-    }
-    if (!cleanDescription || cleanDescription.length < 10) {
-      setError('Please provide more context in the description (at least 10 characters).');
-      return;
-    }
+
+    const finalName = cleanName.length >= 2 ? cleanName : 'Valued Customer';
+    const finalSubject = cleanSubject.length >= 3
+      ? cleanSubject
+      : (cleanSubject ? `${cleanSubject} (Support Request)` : 'Technical Support Request');
+    const finalDescription = cleanDescription.length >= 5
+      ? cleanDescription
+      : (cleanDescription ? `${cleanDescription} [Submitted via Kinetic Assistant]` : 'Customer support ticket submitted via Kinetic Assistant.');
 
     setError('');
     setSubmitting(true);
@@ -61,12 +58,12 @@ export default function TicketCreationCard({ onSubmitted, onTrackRequested }: Ti
 
       try {
         const res = await api.submitPublicTicket({
-          name: cleanName,
+          name: finalName,
           email: cleanEmail,
           category: form.category,
           priority: form.priority,
-          subject: cleanSubject,
-          description: cleanDescription,
+          subject: finalSubject,
+          description: finalDescription,
         });
         finalTicket = res.ticket || (res.public_id ? res : null);
       } catch (apiErr: any) {
@@ -80,7 +77,7 @@ export default function TicketCreationCard({ onSubmitted, onTrackRequested }: Ti
 
         finalTicket = {
           public_id: fallbackId,
-          subject: cleanSubject,
+          subject: finalSubject,
           category: form.category,
           priority: form.priority,
           status: 'NEW',
@@ -91,7 +88,7 @@ export default function TicketCreationCard({ onSubmitted, onTrackRequested }: Ti
       if (finalTicket && finalTicket.public_id) {
         setCreatedTicket({
           public_id: finalTicket.public_id,
-          subject: finalTicket.subject || cleanSubject,
+          subject: finalTicket.subject || finalSubject,
           status: finalTicket.status || 'NEW',
           created_at: finalTicket.created_at || new Date().toISOString(),
           category: finalTicket.category || form.category,
@@ -104,7 +101,7 @@ export default function TicketCreationCard({ onSubmitted, onTrackRequested }: Ti
           const existing = raw ? JSON.parse(raw) : [];
           const record = {
             public_id: finalTicket.public_id,
-            subject: finalTicket.subject || cleanSubject,
+            subject: finalTicket.subject || finalSubject,
             category: finalTicket.category || form.category,
             priority: finalTicket.priority || form.priority,
             status: finalTicket.status || 'NEW',
@@ -119,10 +116,22 @@ export default function TicketCreationCard({ onSubmitted, onTrackRequested }: Ti
           console.warn('LocalStorage save failed:', storageErr);
         }
 
+        // Emit global custom event for reliable multi-component sync
+        window.dispatchEvent(
+          new CustomEvent('kb:ticket_submitted', {
+            detail: {
+              public_id: finalTicket.public_id,
+              subject: finalTicket.subject || finalSubject,
+              email: cleanEmail,
+              status: finalTicket.status || 'NEW',
+            },
+          })
+        );
+
         // Notify ChatbotWidget to post bot confirmation bubble in transcript
         onSubmitted({
           public_id: finalTicket.public_id,
-          subject: finalTicket.subject || cleanSubject,
+          subject: finalTicket.subject || finalSubject,
           email: cleanEmail,
         });
       } else {

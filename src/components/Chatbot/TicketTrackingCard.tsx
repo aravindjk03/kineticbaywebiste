@@ -53,6 +53,16 @@ export default function TicketTrackingCard({ initialTicketId, initialEmail }: Ti
     } catch {}
   }, []);
 
+  useEffect(() => {
+    const targetId = initialTicketId || ticketId;
+    const targetEmail = initialEmail || email || (typeof localStorage !== 'undefined' ? localStorage.getItem('kb_last_ticket_email') || '' : '');
+    if (initialTicketId) setTicketId(initialTicketId);
+    if (targetEmail && !email) setEmail(targetEmail);
+    if (targetId && targetEmail) {
+      fetchTicketStatus(targetId, targetEmail);
+    }
+  }, [initialTicketId, initialEmail]);
+
   const fetchTicketStatus = async (idToQuery: string, emailToQuery: string) => {
     const cleanId = idToQuery.trim().toUpperCase();
     const cleanEmail = emailToQuery.trim().toLowerCase();
