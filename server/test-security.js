@@ -804,6 +804,48 @@ async function runTests() {
     });
     assert(restoreTicketRes.status === 200, 'Super Admin can restore soft-deleted ticket');
 
+    // 8. Staff creates ticket directly in CMS
+    const staffCreateTicketRes = await request('/api/tickets', {
+      method: 'POST',
+      headers: { Cookie: mktgCookie },
+      body: {
+        subject: 'Internal Infrastructure Review',
+        description: 'Scheduled quarterly security and performance inspection of edge nodes.',
+        category: 'technical_support',
+        priority: 'high',
+        name: 'DevOps Lead',
+        email: 'devops@kineticbay.internal',
+        initialNote: 'Initiated from Internal CMS Service Desk',
+      },
+    });
+    assert(staffCreateTicketRes.status === 201, 'Staff can create new ticket in CMS');
+    const staffCreatedTicket = staffCreateTicketRes.body.ticket;
+    assert(Boolean(staffCreatedTicket), 'CMS created ticket object returned');
+    assert(staffCreatedTicket.subject === 'Internal Infrastructure Review', 'Ticket subject matches');
+    assert(staffCreatedTicket.internal_notes?.length === 1, 'Initial note attached to staff created ticket');
+
+    // 9. Staff updates ticket details (subject, category, priority, requester info)
+    const staffUpdateTicketRes = await request(`/api/tickets/${staffCreatedTicket.id}`, {
+      method: 'PATCH',
+      headers: { Cookie: mktgCookie },
+      body: {
+        subject: 'Internal Infrastructure Review (Urgent)',
+        priority: 'urgent',
+        status: 'IN_PROGRESS',
+        requester_name: 'Principal DevOps Architect',
+      },
+    });
+    assert(staffUpdateTicketRes.status === 200, 'Staff can update ticket details in CMS');
+    assert(staffUpdateTicketRes.body.ticket.subject === 'Internal Infrastructure Review (Urgent)', 'Updated ticket subject persisted');
+    assert(staffUpdateTicketRes.body.ticket.priority === 'urgent', 'Updated ticket priority persisted');
+    assert(staffUpdateTicketRes.body.ticket.requester_name === 'Principal DevOps Architect', 'Updated requester name persisted');
+
+    // 10. Case-insensitive lookup check
+    const caseInsensitiveRes = await request(`/api/tickets/${staffCreatedTicket.id.toUpperCase()}`, {
+      headers: { Cookie: mktgCookie },
+    });
+    assert(caseInsensitiveRes.status === 200, 'Ticket lookup is case-insensitive on ticket ID');
+
     /* ─── TEST SUITE 20: REAL VISITS TELEMETRY & ANTI-BOT ENFORCEMENT ─ */
     console.log('\n--- 20. Real Visitor Telemetry, Anti-Bot Guard & Deduplication ---');
     resetAllRateLimiters();

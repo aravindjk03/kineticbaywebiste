@@ -258,6 +258,39 @@ export const api = {
     return request(`/api/tickets/${encodeURIComponent(id)}`);
   },
 
+  async createCmsTicket(data: {
+    name?: string;
+    email?: string;
+    category?: string;
+    priority?: string;
+    subject: string;
+    description: string;
+    status?: string;
+    assignedTo?: string | null;
+    initialNote?: string;
+  }) {
+    return request('/api/tickets', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateCmsTicket(id: string, data: {
+    subject?: string;
+    description?: string;
+    category?: string;
+    priority?: string;
+    status?: string;
+    assignedTo?: string | null;
+    requester_name?: string;
+    requester_email?: string;
+  }) {
+    return request(`/api/tickets/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
   async updateTicketStatus(id: string, status: string) {
     return request(`/api/tickets/${encodeURIComponent(id)}/status`, {
       method: 'PATCH',

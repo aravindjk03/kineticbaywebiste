@@ -850,7 +850,75 @@ export default {
           return json({ success: true, count: list.length, tickets: list });
         }
 
-        // 8d. CMS Ticket Updates (Status, Assignment, Notes, Customer Updates, Deletes)
+        // 8c-2. CMS Ticket Creation (Protected for staff)
+        if (path === '/api/tickets' && method === 'POST') {
+          const sessionUser = await getSessionUser(request);
+          if (!sessionUser) {
+            return json({ error: 'Authentication credentials required.' }, 401);
+          }
+
+          const body = await request.json().catch(() => ({}));
+          const name = (body.name || 'Valued Customer').trim();
+          const email = (body.email || 'customer@kineticbay.internal').trim().toLowerCase();
+          const subject = (body.subject || '').trim();
+          const description = (body.description || '').trim();
+          const category = body.category || 'technical_support';
+          const priority = body.priority || 'medium';
+          const status = body.status || (body.assignedTo ? 'ASSIGNED' : 'NEW');
+          const assignedTo = body.assignedTo || body.assigned_to || null;
+          const initialNote = body.initialNote || null;
+
+          if (!subject) {
+            return json({ error: 'Ticket subject is required.' }, 400);
+          }
+
+          const id = 'KB-' + crypto.randomUUID().replace(/-/g, '').substring(0, 8).toUpperCase();
+          const now = new Date().toISOString();
+
+          const newTicket = {
+            id: 'tkt_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+            public_id: id,
+            requester_name: name,
+            requester_email: email,
+            category,
+            priority,
+            subject,
+            description: description || 'Ticket created directly from CMS Service Desk.',
+            status,
+            assigned_to: assignedTo,
+            created_at: now,
+            updated_at: now,
+            deleted_at: null,
+            internal_notes: initialNote && typeof initialNote === 'string' && initialNote.trim() ? [
+              {
+                id: 'note_' + Date.now(),
+                author_name: sessionUser.name,
+                author_id: sessionUser.id,
+                note: initialNote.trim(),
+                created_at: now,
+              }
+            ] : [],
+            customer_updates: [
+              {
+                id: 'upd_' + Date.now(),
+                message: 'Ticket created and registered in service queue.',
+                created_at: now,
+              }
+            ]
+          };
+
+          const allTickets = await getStoredTickets(env);
+          allTickets.unshift(newTicket);
+          await saveStoredTickets(env, allTickets);
+
+          return json({
+            success: true,
+            message: `Ticket ${id} created successfully.`,
+            ticket: newTicket,
+          }, 201);
+        }
+
+        // 8d. CMS Ticket Updates (Details, Status, Assignment, Notes, Customer Updates, Deletes)
         if (path.startsWith('/api/tickets/')) {
           const sessionUser = await getSessionUser(request);
           if (!sessionUser) {
@@ -858,16 +926,56 @@ export default {
           }
 
           const segments = path.replace('/api/tickets/', '').split('/');
-          const ticketId = decodeURIComponent(segments[0] || '').toUpperCase();
+          const rawTicketId = decodeURIComponent(segments[0] || '').trim();
           const subAction = segments[1] || '';
 
           const allTickets = await getStoredTickets(env);
           const ticket = allTickets.find(
-            (t) => t.id === ticketId || t.public_id.toUpperCase() === ticketId
+            (t) =>
+              t.id === rawTicketId ||
+              t.id.toLowerCase() === rawTicketId.toLowerCase() ||
+              t.public_id === rawTicketId ||
+              t.public_id.toUpperCase() === rawTicketId.toUpperCase()
           );
 
           if (!ticket) {
             return json({ error: 'Ticket not found.' }, 404);
+          }
+
+          // Full Ticket Update (PATCH /:id or PUT /:id or /:id/update)
+          if ((!subAction || subAction === 'update') && (method === 'PATCH' || method === 'PUT')) {
+            const body = await request.json().catch(() => ({}));
+            if (typeof body.subject === 'string' && body.subject.trim()) {
+              ticket.subject = body.subject.trim();
+            }
+            if (typeof body.description === 'string' && body.description.trim()) {
+              ticket.description = body.description.trim();
+            }
+            if (body.category) {
+              ticket.category = body.category;
+            }
+            if (body.priority) {
+              ticket.priority = body.priority;
+            }
+            if (body.status) {
+              ticket.status = body.status;
+            }
+            if ('assignedTo' in body || 'assigned_to' in body) {
+              const targetAssignee = body.assignedTo !== undefined ? body.assignedTo : body.assigned_to;
+              ticket.assigned_to = targetAssignee || null;
+              if (ticket.status === 'NEW' && targetAssignee) {
+                ticket.status = 'ASSIGNED';
+              }
+            }
+            if (typeof body.requester_name === 'string' && body.requester_name.trim()) {
+              ticket.requester_name = body.requester_name.trim();
+            }
+            if (typeof body.requester_email === 'string' && body.requester_email.trim()) {
+              ticket.requester_email = body.requester_email.trim().toLowerCase();
+            }
+            ticket.updated_at = new Date().toISOString();
+            await saveStoredTickets(env, allTickets);
+            return json({ success: true, message: 'Ticket details updated successfully.', ticket });
           }
 
           // Status Transition

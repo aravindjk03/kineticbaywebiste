@@ -769,7 +769,14 @@ export function getCmsTickets({ status, priority, category, search, includeDelet
 }
 
 export function getCmsTicketById(id) {
-  return ticketsCol.findOne({ id }) || ticketsCol.findOne({ public_id: id?.toUpperCase() });
+  if (!id || typeof id !== 'string') return null;
+  const clean = id.trim();
+  return (
+    ticketsCol.findOne({ id: clean }) ||
+    ticketsCol.findOne({ id: clean.toLowerCase() }) ||
+    ticketsCol.findOne({ public_id: clean.toUpperCase() }) ||
+    ticketsCol.findOne({ public_id: clean })
+  );
 }
 
 export function updateTicketStatus(ticketId, newStatus, user, reqId) {
@@ -924,6 +931,140 @@ export function restoreTicket(ticketId, user, reqId) {
     action: 'RESTORE',
     result: 'SUCCESS',
     metadata: {},
+  });
+
+  return ticket;
+}
+
+export function createCmsTicket({
+  name,
+  email,
+  category = 'technical_support',
+  priority = 'medium',
+  subject,
+  description,
+  status = 'NEW',
+  assignedTo = null,
+  initialNote = null,
+}, user, reqId) {
+  const publicId = generatePublicTicketId();
+  const now = new Date().toISOString();
+  const newTicket = {
+    id: 'tkt_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+    public_id: publicId,
+    requester_name: (name || 'Valued Customer').trim(),
+    requester_email: (email || 'customer@kineticbay.internal').trim().toLowerCase(),
+    category: TICKET_CATEGORIES.includes(category) ? category : 'technical_support',
+    priority: TICKET_PRIORITIES.includes(priority) ? priority : 'medium',
+    subject: (subject || 'Internal Support Request').trim(),
+    description: (description || 'Ticket created directly from CMS Service Desk.').trim(),
+    status: TICKET_STATUSES.includes(status) ? status : (assignedTo ? 'ASSIGNED' : 'NEW'),
+    assigned_to: assignedTo || null,
+    internal_notes: initialNote && typeof initialNote === 'string' && initialNote.trim() ? [
+      {
+        id: 'note_' + Date.now(),
+        author_id: user.id,
+        author_name: user.name,
+        note: initialNote.trim(),
+        created_at: now,
+      }
+    ] : [],
+    customer_updates: [
+      {
+        id: 'upd_' + Date.now(),
+        message: 'Ticket created and registered in service queue.',
+        created_at: now,
+      }
+    ],
+    deleted_at: null,
+    deleted_by: null,
+    deletion_reason: null,
+    created_at: now,
+    updated_at: now,
+  };
+
+  ticketsCol.insertOne(newTicket);
+
+  logAuditEvent({
+    type: 'TICKET_CREATED_CMS',
+    userId: user.id,
+    role: user.role,
+    reqId,
+    target: `Ticket:${publicId}`,
+    action: 'CREATE_CMS',
+    result: 'SUCCESS',
+    metadata: { public_id: publicId, category: newTicket.category, priority: newTicket.priority, assignedTo },
+  });
+
+  return newTicket;
+}
+
+export function updateCmsTicket(ticketId, data = {}, user, reqId) {
+  const ticket = getCmsTicketById(ticketId);
+  if (!ticket) return null;
+
+  const changes = {};
+
+  if (typeof data.subject === 'string' && data.subject.trim()) {
+    changes.oldSubject = ticket.subject;
+    ticket.subject = data.subject.trim();
+    changes.newSubject = ticket.subject;
+  }
+
+  if (typeof data.description === 'string' && data.description.trim()) {
+    changes.oldDescription = ticket.description;
+    ticket.description = data.description.trim();
+    changes.newDescription = ticket.description;
+  }
+
+  if (data.category && TICKET_CATEGORIES.includes(data.category)) {
+    changes.oldCategory = ticket.category;
+    ticket.category = data.category;
+    changes.newCategory = ticket.category;
+  }
+
+  if (data.priority && TICKET_PRIORITIES.includes(data.priority)) {
+    changes.oldPriority = ticket.priority;
+    ticket.priority = data.priority;
+    changes.newPriority = ticket.priority;
+  }
+
+  if (data.status && TICKET_STATUSES.includes(data.status)) {
+    changes.oldStatus = ticket.status;
+    ticket.status = data.status;
+    changes.newStatus = ticket.status;
+  }
+
+  if ('assignedTo' in data || 'assigned_to' in data) {
+    const targetAssignee = data.assignedTo !== undefined ? data.assignedTo : data.assigned_to;
+    changes.oldAssigned = ticket.assigned_to;
+    ticket.assigned_to = targetAssignee || null;
+    changes.newAssigned = ticket.assigned_to;
+    if (ticket.status === 'NEW' && targetAssignee) {
+      ticket.status = 'ASSIGNED';
+    }
+  }
+
+  if (typeof data.requester_name === 'string' && data.requester_name.trim()) {
+    ticket.requester_name = data.requester_name.trim();
+  }
+
+  if (typeof data.requester_email === 'string' && data.requester_email.trim()) {
+    ticket.requester_email = data.requester_email.trim().toLowerCase();
+  }
+
+  ticket.updated_at = new Date().toISOString();
+  ticketsCol.flush();
+
+  logAuditEvent({
+    type: 'TICKET_UPDATED_CMS',
+    userId: user.id,
+    role: user.role,
+    reqId,
+    target: `Ticket:${ticket.public_id}`,
+    action: 'UPDATE_CMS',
+    result: 'SUCCESS',
+    metadata: { changes },
   });
 
   return ticket;

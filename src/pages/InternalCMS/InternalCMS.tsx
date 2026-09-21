@@ -186,6 +186,30 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
   const [newCustomerUpdate, setNewCustomerUpdate] = useState('');
   const [deleteReason, setDeleteReason] = useState('');
 
+  // Ticket creation & detail editing states
+  const [createTicketModalOpen, setCreateTicketModalOpen] = useState(false);
+  const [ticketSubmitting, setTicketSubmitting] = useState(false);
+  const [ticketForm, setTicketForm] = useState({
+    name: '',
+    email: '',
+    category: 'technical_support',
+    priority: 'medium',
+    status: 'NEW',
+    assignedTo: '',
+    subject: '',
+    description: '',
+    initialNote: '',
+  });
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
+  const [editTicketForm, setEditTicketForm] = useState({
+    subject: '',
+    description: '',
+    category: 'technical_support',
+    priority: 'medium',
+    requester_name: '',
+    requester_email: '',
+  });
+
   // Server-managed Enquiries state
   const [serverEnquiries, setServerEnquiries] = useState<CmsEnquiry[]>([]);
   const [enquiryLoading, setEnquiryLoading] = useState(false);
@@ -457,6 +481,106 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
       }
     } catch (err: any) {
       notify(err.message || 'Failed to restore ticket', 'error', err.reference);
+    }
+  };
+
+  const openTicketDetails = (t: CmsTicket, startEditing = false) => {
+    setSelectedTicket(t);
+    setEditTicketForm({
+      subject: t.subject || '',
+      description: t.description || '',
+      category: t.category || 'technical_support',
+      priority: t.priority || 'medium',
+      requester_name: t.requester_name || '',
+      requester_email: t.requester_email || '',
+    });
+    setIsEditingDetails(startEditing);
+    setTicketModalOpen(true);
+  };
+
+  const handleCreateTicket = async () => {
+    if (!ticketForm.subject.trim()) {
+      notify('Ticket subject is required.', 'error');
+      return;
+    }
+    if (!ticketForm.description.trim()) {
+      notify('Ticket description is required.', 'error');
+      return;
+    }
+
+    setTicketSubmitting(true);
+    try {
+      const res = await api.createCmsTicket({
+        name: ticketForm.name.trim() || 'Valued Customer',
+        email: ticketForm.email.trim() || 'customer@kineticbay.internal',
+        category: ticketForm.category,
+        priority: ticketForm.priority,
+        status: ticketForm.status,
+        assignedTo: ticketForm.assignedTo || null,
+        subject: ticketForm.subject.trim(),
+        description: ticketForm.description.trim(),
+        initialNote: ticketForm.initialNote.trim() || undefined,
+      });
+
+      notify(`Ticket ${res.ticket?.public_id || ''} created successfully!`);
+      setCreateTicketModalOpen(false);
+      setTicketForm({
+        name: '',
+        email: '',
+        category: 'technical_support',
+        priority: 'medium',
+        status: 'NEW',
+        assignedTo: '',
+        subject: '',
+        description: '',
+        initialNote: '',
+      });
+      loadTickets();
+    } catch (err: any) {
+      notify(err.message || 'Failed to create ticket', 'error', err.reference);
+    } finally {
+      setTicketSubmitting(false);
+    }
+  };
+
+  const handleSaveTicketDetails = async (ticketId: string) => {
+    if (!editTicketForm.subject.trim()) {
+      notify('Subject cannot be empty.', 'error');
+      return;
+    }
+    if (!editTicketForm.description.trim()) {
+      notify('Description cannot be empty.', 'error');
+      return;
+    }
+
+    try {
+      const res = await api.updateCmsTicket(ticketId, {
+        subject: editTicketForm.subject.trim(),
+        description: editTicketForm.description.trim(),
+        category: editTicketForm.category,
+        priority: editTicketForm.priority,
+        requester_name: editTicketForm.requester_name.trim(),
+        requester_email: editTicketForm.requester_email.trim(),
+      });
+
+      notify('Ticket details updated successfully!');
+      setIsEditingDetails(false);
+      loadTickets();
+      if (res.ticket) {
+        setSelectedTicket(res.ticket);
+      } else if (selectedTicket) {
+        setSelectedTicket({
+          ...selectedTicket,
+          subject: editTicketForm.subject.trim(),
+          description: editTicketForm.description.trim(),
+          category: editTicketForm.category,
+          priority: editTicketForm.priority,
+          requester_name: editTicketForm.requester_name.trim(),
+          requester_email: editTicketForm.requester_email.trim(),
+        });
+      }
+    } catch (err: any) {
+      notify(err.message || 'Failed to update ticket details', 'error', err.reference);
     }
   };
 
@@ -1382,13 +1506,22 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                     Triage incoming client requests, assign engineering leads, track statuses, and maintain confidential internal notes.
                   </p>
                 </div>
-                <button
-                  onClick={loadTickets}
-                  className="px-3.5 py-2 rounded-xl bg-surface-raised hover:bg-surface border border-border text-ink text-xs font-semibold transition-colors flex items-center gap-1.5 self-start"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${ticketLoading ? 'animate-spin' : ''}`} />
-                  <span>Refresh Queue</span>
-                </button>
+                <div className="flex items-center gap-2 self-start">
+                  <button
+                    onClick={() => setCreateTicketModalOpen(true)}
+                    className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-light text-ink text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-lg shadow-primary/20"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Create Ticket</span>
+                  </button>
+                  <button
+                    onClick={loadTickets}
+                    className="px-3.5 py-2 rounded-xl bg-surface-raised hover:bg-surface border border-border text-ink text-xs font-semibold transition-colors flex items-center gap-1.5"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${ticketLoading ? 'animate-spin' : ''}`} />
+                    <span>Refresh Queue</span>
+                  </button>
+                </div>
               </div>
 
               {/* Filters & Search Bar */}
@@ -1554,13 +1687,18 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                           <td className="p-3.5 text-right whitespace-nowrap">
                             <div className="flex items-center justify-end gap-1.5">
                               <button
-                                onClick={() => {
-                                  setSelectedTicket(t);
-                                  setTicketModalOpen(true);
-                                }}
-                                className="px-2.5 py-1 rounded-lg bg-surface border border-border hover:bg-surface-raised text-primary font-semibold text-xs transition-colors"
+                                onClick={() => openTicketDetails(t, false)}
+                                className="px-2.5 py-1 rounded-lg bg-surface border border-border hover:bg-surface-raised text-primary font-semibold text-xs transition-colors flex items-center gap-1"
                               >
-                                Inspect / Manage
+                                <Eye className="w-3 h-3" />
+                                <span>Inspect</span>
+                              </button>
+                              <button
+                                onClick={() => openTicketDetails(t, true)}
+                                className="px-2.5 py-1 rounded-lg bg-surface border border-border hover:bg-surface-raised text-ink font-semibold text-xs transition-colors flex items-center gap-1"
+                              >
+                                <Edit2 className="w-3 h-3" />
+                                <span>Edit</span>
                               </button>
                             </div>
                           </td>
@@ -1582,39 +1720,146 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                       className="bg-[#0e1015] border border-border/90 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto"
                     >
                       <div className="flex items-center justify-between border-b border-border pb-3">
-                        <div>
+                        <div className="flex-1 pr-4">
                           <div className="flex items-center gap-2">
                             <span className="font-mono font-bold text-primary text-sm">{selectedTicket.public_id}</span>
                             <span className="text-xs px-2 py-0.5 rounded-full bg-surface-raised border border-border text-ink font-semibold">
                               {selectedTicket.status}
                             </span>
+                            <span className="text-[10px] uppercase px-1.5 py-0.5 rounded font-mono font-bold bg-primary/10 text-primary">
+                              {selectedTicket.priority}
+                            </span>
                           </div>
-                          <h3 className="font-heading font-bold text-base text-ink mt-0.5">{selectedTicket.subject}</h3>
+                          {!isEditingDetails && (
+                            <h3 className="font-heading font-bold text-base text-ink mt-0.5">{selectedTicket.subject}</h3>
+                          )}
                         </div>
-                        <button
-                          onClick={() => {
-                            setTicketModalOpen(false);
-                            setSelectedTicket(null);
-                          }}
-                          className="p-1 rounded-lg text-text-secondary hover:text-ink hover:bg-surface-raised"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setIsEditingDetails(!isEditingDetails)}
+                            className="px-2.5 py-1.5 rounded-lg bg-surface-raised hover:bg-surface border border-border text-xs font-semibold text-ink flex items-center gap-1.5"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 text-primary" />
+                            <span>{isEditingDetails ? 'Cancel Edit' : 'Edit Details'}</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setTicketModalOpen(false);
+                              setSelectedTicket(null);
+                              setIsEditingDetails(false);
+                            }}
+                            className="p-1 rounded-lg text-text-secondary hover:text-ink hover:bg-surface-raised"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
                       </div>
 
-                      {/* Customer info & description */}
-                      <div className="p-3.5 rounded-xl bg-surface/80 border border-border space-y-2 text-xs">
-                        <div className="grid grid-cols-2 gap-2 text-[11px] text-text-secondary">
-                          <div><b>Requester:</b> {selectedTicket.requester_name} ({selectedTicket.requester_email})</div>
-                          <div><b>Category:</b> <span className="capitalize">{selectedTicket.category.replace(/_/g, ' ')}</span> &bull; <b>Priority:</b> {selectedTicket.priority}</div>
+                      {/* Customer info & description (Editable vs Display View) */}
+                      {isEditingDetails ? (
+                        <div className="p-4 rounded-xl bg-surface/90 border border-primary/30 space-y-3 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-primary uppercase tracking-wide">Edit Ticket Information</span>
+                            <span className="text-[10px] text-text-secondary">Changes persist to database</span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[11px] font-semibold text-text-secondary block mb-1">Subject</label>
+                              <input
+                                type="text"
+                                value={editTicketForm.subject}
+                                onChange={(e) => setEditTicketForm({ ...editTicketForm, subject: e.target.value })}
+                                className="w-full px-3 py-1.5 bg-surface-raised border border-border rounded-lg text-ink text-xs focus:outline-none focus:border-primary"
+                                placeholder="Issue summary"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-semibold text-text-secondary block mb-1">Category</label>
+                              <select
+                                value={editTicketForm.category}
+                                onChange={(e) => setEditTicketForm({ ...editTicketForm, category: e.target.value })}
+                                className="w-full p-1.5 bg-surface-raised border border-border rounded-lg text-ink text-xs focus:outline-none focus:border-primary"
+                              >
+                                <option value="technical_support">Technical Support</option>
+                                <option value="project_enquiry">Project Enquiry</option>
+                                <option value="billing">Billing</option>
+                                <option value="consultation">Consultation</option>
+                                <option value="bug_report">Bug Report</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-semibold text-text-secondary block mb-1">Priority</label>
+                              <select
+                                value={editTicketForm.priority}
+                                onChange={(e) => setEditTicketForm({ ...editTicketForm, priority: e.target.value })}
+                                className="w-full p-1.5 bg-surface-raised border border-border rounded-lg text-ink text-xs focus:outline-none focus:border-primary"
+                              >
+                                <option value="urgent">Urgent</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-semibold text-text-secondary block mb-1">Requester Name</label>
+                              <input
+                                type="text"
+                                value={editTicketForm.requester_name}
+                                onChange={(e) => setEditTicketForm({ ...editTicketForm, requester_name: e.target.value })}
+                                className="w-full px-3 py-1.5 bg-surface-raised border border-border rounded-lg text-ink text-xs focus:outline-none focus:border-primary"
+                              />
+                            </div>
+                            <div className="sm:col-span-2">
+                              <label className="text-[11px] font-semibold text-text-secondary block mb-1">Requester Email</label>
+                              <input
+                                type="email"
+                                value={editTicketForm.requester_email}
+                                onChange={(e) => setEditTicketForm({ ...editTicketForm, requester_email: e.target.value })}
+                                className="w-full px-3 py-1.5 bg-surface-raised border border-border rounded-lg text-ink text-xs focus:outline-none focus:border-primary"
+                              />
+                            </div>
+                            <div className="sm:col-span-2">
+                              <label className="text-[11px] font-semibold text-text-secondary block mb-1">Description / Ticket Scope</label>
+                              <textarea
+                                rows={4}
+                                value={editTicketForm.description}
+                                onChange={(e) => setEditTicketForm({ ...editTicketForm, description: e.target.value })}
+                                className="w-full px-3 py-2 bg-surface-raised border border-border rounded-lg text-ink text-xs focus:outline-none focus:border-primary"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                            <button
+                              type="button"
+                              onClick={() => setIsEditingDetails(false)}
+                              className="px-3 py-1.5 bg-surface border border-border hover:bg-surface-raised text-text-secondary rounded-lg text-xs"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSaveTicketDetails(selectedTicket.id)}
+                              className="px-3.5 py-1.5 bg-primary hover:bg-primary-light text-ink font-semibold rounded-lg text-xs flex items-center gap-1.5"
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              <span>Save Changes</span>
+                            </button>
+                          </div>
                         </div>
-                        <div className="pt-2 border-t border-border/50">
-                          <span className="text-[10px] uppercase font-semibold text-text-secondary block mb-1">Issue Description</span>
-                          <p className="text-ink whitespace-pre-line leading-relaxed bg-surface-raised p-2.5 rounded-lg border border-border">
-                            {selectedTicket.description}
-                          </p>
+                      ) : (
+                        <div className="p-3.5 rounded-xl bg-surface/80 border border-border space-y-2 text-xs">
+                          <div className="grid grid-cols-2 gap-2 text-[11px] text-text-secondary">
+                            <div><b>Requester:</b> {selectedTicket.requester_name} ({selectedTicket.requester_email})</div>
+                            <div><b>Category:</b> <span className="capitalize">{selectedTicket.category.replace(/_/g, ' ')}</span> &bull; <b>Priority:</b> {selectedTicket.priority}</div>
+                          </div>
+                          <div className="pt-2 border-t border-border/50">
+                            <span className="text-[10px] uppercase font-semibold text-text-secondary block mb-1">Issue Description</span>
+                            <p className="text-ink whitespace-pre-line leading-relaxed bg-surface-raised p-2.5 rounded-lg border border-border">
+                              {selectedTicket.description}
+                            </p>
+                          </div>
                         </div>
-                      </div>
+                      )}
 
                       {/* Staff Controls (Status & Assignment) */}
                       <div className="grid grid-cols-2 gap-3 text-xs">
@@ -1766,6 +2011,185 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                           <span className="text-[10px] text-text-secondary">Audit trail generated automatically</span>
                         </div>
                       )}
+                    </motion.div>
+                  </div>
+                )}
+              </AnimatePresence>
+
+              {/* Create Ticket Modal */}
+              <AnimatePresence>
+                {createTicketModalOpen && (
+                  <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="bg-[#0e1015] border border-border/90 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto"
+                    >
+                      <div className="flex items-center justify-between border-b border-border pb-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
+                            <Ticket className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h3 className="font-heading font-bold text-base text-ink">Create New Ticket</h3>
+                            <p className="text-[11px] text-text-secondary">Add and dispatch a new service desk or client ticket</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setCreateTicketModalOpen(false)}
+                          className="p-1 rounded-lg text-text-secondary hover:text-ink hover:bg-surface-raised"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-3 text-xs">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[11px] font-semibold text-text-secondary block mb-1">Requester Name</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. John Doe"
+                              value={ticketForm.name}
+                              onChange={(e) => setTicketForm({ ...ticketForm, name: e.target.value })}
+                              className="w-full px-3 py-2 bg-surface-raised border border-border rounded-xl text-ink text-xs focus:outline-none focus:border-primary"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold text-text-secondary block mb-1">Requester Email</label>
+                            <input
+                              type="email"
+                              placeholder="e.g. john@example.com"
+                              value={ticketForm.email}
+                              onChange={(e) => setTicketForm({ ...ticketForm, email: e.target.value })}
+                              className="w-full px-3 py-2 bg-surface-raised border border-border rounded-xl text-ink text-xs focus:outline-none focus:border-primary"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <label className="text-[11px] font-semibold text-text-secondary block mb-1">Category</label>
+                            <select
+                              value={ticketForm.category}
+                              onChange={(e) => setTicketForm({ ...ticketForm, category: e.target.value })}
+                              className="w-full p-2 bg-surface-raised border border-border rounded-xl text-ink text-xs focus:outline-none focus:border-primary"
+                            >
+                              <option value="technical_support">Technical Support</option>
+                              <option value="project_enquiry">Project Enquiry</option>
+                              <option value="billing">Billing</option>
+                              <option value="consultation">Consultation</option>
+                              <option value="bug_report">Bug Report</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold text-text-secondary block mb-1">Priority</label>
+                            <select
+                              value={ticketForm.priority}
+                              onChange={(e) => setTicketForm({ ...ticketForm, priority: e.target.value })}
+                              className="w-full p-2 bg-surface-raised border border-border rounded-xl text-ink text-xs focus:outline-none focus:border-primary"
+                            >
+                              <option value="urgent">Urgent</option>
+                              <option value="high">High</option>
+                              <option value="medium">Medium</option>
+                              <option value="low">Low</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold text-text-secondary block mb-1">Initial Status</label>
+                            <select
+                              value={ticketForm.status}
+                              onChange={(e) => setTicketForm({ ...ticketForm, status: e.target.value })}
+                              className="w-full p-2 bg-surface-raised border border-border rounded-xl text-ink text-xs focus:outline-none focus:border-primary"
+                            >
+                              <option value="NEW">NEW</option>
+                              <option value="TRIAGED">TRIAGED</option>
+                              <option value="ASSIGNED">ASSIGNED</option>
+                              <option value="IN_PROGRESS">IN_PROGRESS</option>
+                              <option value="WAITING_FOR_CUSTOMER">WAITING_FOR_CUSTOMER</option>
+                              <option value="RESOLVED">RESOLVED</option>
+                              <option value="CLOSED">CLOSED</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-semibold text-text-secondary block mb-1">Assign Lead (Optional)</label>
+                          <select
+                            value={ticketForm.assignedTo}
+                            onChange={(e) => setTicketForm({ ...ticketForm, assignedTo: e.target.value })}
+                            className="w-full p-2 bg-surface-raised border border-border rounded-xl text-ink text-xs focus:outline-none focus:border-primary"
+                          >
+                            <option value="">-- Unassigned --</option>
+                            <option value="usr_superadmin_01">Chief Security Officer (SuperAdmin)</option>
+                            <option value="usr_admin_01">Platform Operations Admin</option>
+                            <option value="usr_marketing_01">Growth & Content Specialist</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-semibold text-text-secondary block mb-1">
+                            Subject / Issue Title <span className="text-red-400">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Brief summary of the issue or project requirement"
+                            value={ticketForm.subject}
+                            onChange={(e) => setTicketForm({ ...ticketForm, subject: e.target.value })}
+                            className="w-full px-3 py-2 bg-surface-raised border border-border rounded-xl text-ink text-xs focus:outline-none focus:border-primary"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-semibold text-text-secondary block mb-1">
+                            Description / Full Details <span className="text-red-400">*</span>
+                          </label>
+                          <textarea
+                            rows={4}
+                            placeholder="Detailed description, client context, or steps to reproduce..."
+                            value={ticketForm.description}
+                            onChange={(e) => setTicketForm({ ...ticketForm, description: e.target.value })}
+                            className="w-full px-3 py-2 bg-surface-raised border border-border rounded-xl text-ink text-xs focus:outline-none focus:border-primary"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-semibold text-text-secondary block mb-1">
+                            Initial Internal Staff Note (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Confidential notes for internal staff triage..."
+                            value={ticketForm.initialNote}
+                            onChange={(e) => setTicketForm({ ...ticketForm, initialNote: e.target.value })}
+                            className="w-full px-3 py-2 bg-surface-raised border border-border rounded-xl text-ink text-xs focus:outline-none focus:border-primary"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+                        <button
+                          type="button"
+                          onClick={() => setCreateTicketModalOpen(false)}
+                          className="px-3.5 py-2 bg-surface border border-border hover:bg-surface-raised text-text-secondary rounded-xl text-xs font-semibold"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          disabled={ticketSubmitting}
+                          onClick={handleCreateTicket}
+                          className="px-4 py-2 bg-primary hover:bg-primary-light text-ink rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-primary/20 disabled:opacity-50"
+                        >
+                          {ticketSubmitting ? (
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Plus className="w-3.5 h-3.5" />
+                          )}
+                          <span>{ticketSubmitting ? 'Creating...' : 'Create & Dispatch Ticket'}</span>
+                        </button>
+                      </div>
                     </motion.div>
                   </div>
                 )}

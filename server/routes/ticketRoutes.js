@@ -4,6 +4,8 @@ import {
   ROLES,
   getCmsTickets,
   getCmsTicketById,
+  createCmsTicket,
+  updateCmsTicket,
   updateTicketStatus,
   assignTicket,
   addTicketInternalNote,
@@ -19,6 +21,51 @@ const router = express.Router();
 
 // All ticket management endpoints require valid authenticated session
 router.use(authenticateMiddleware);
+
+/**
+ * POST /api/tickets
+ * Creates a new ticket directly from CMS by staff
+ */
+router.post('/', requirePermission(PERMISSIONS.TICKETS_CREATE), (req, res) => {
+  const { name, email, category, priority, subject, description, status, assignedTo, initialNote } = req.body || {};
+
+  if (!subject || typeof subject !== 'string' || !subject.trim()) {
+    return res.status(400).json({
+      error: 'Ticket subject is required.',
+      reference: req.id,
+    });
+  }
+
+  try {
+    const newTicket = createCmsTicket(
+      {
+        name,
+        email,
+        category,
+        priority,
+        subject,
+        description,
+        status,
+        assignedTo,
+        initialNote,
+      },
+      req.user,
+      req.id
+    );
+
+    res.status(201).json({
+      success: true,
+      message: `Ticket ${newTicket.public_id} created successfully.`,
+      ticket: newTicket,
+      reference: req.id,
+    });
+  } catch (err) {
+    res.status(400).json({
+      error: err.message,
+      reference: req.id,
+    });
+  }
+});
 
 /**
  * GET /api/tickets
@@ -79,6 +126,37 @@ router.get('/:id', requirePermission(PERMISSIONS.TICKETS_READ), (req, res) => {
     reference: req.id,
   });
 });
+
+/**
+ * PATCH /api/tickets/:id  &  PUT /api/tickets/:id
+ * Updates ticket details (subject, description, category, priority, status, assignedTo)
+ */
+const handleUpdateTicket = (req, res) => {
+  try {
+    const updated = updateCmsTicket(req.params.id, req.body || {}, req.user, req.id);
+    if (!updated) {
+      return res.status(404).json({
+        error: 'Ticket not found.',
+        reference: req.id,
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Ticket details updated successfully.',
+      ticket: updated,
+      reference: req.id,
+    });
+  } catch (err) {
+    res.status(400).json({
+      error: err.message,
+      reference: req.id,
+    });
+  }
+};
+
+router.patch('/:id', requirePermission(PERMISSIONS.TICKETS_UPDATE), handleUpdateTicket);
+router.put('/:id', requirePermission(PERMISSIONS.TICKETS_UPDATE), handleUpdateTicket);
 
 /**
  * PATCH /api/tickets/:id/status
