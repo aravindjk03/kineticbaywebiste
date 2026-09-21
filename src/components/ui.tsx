@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import Btn from './Btn';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import Reveal from './Reveal';
 import FlowField from './fx/FlowField';
 import { faqs, finalCta } from '../data/site';
@@ -89,7 +89,7 @@ export function FaqSection() {
           <SectionHead eyebrow="FAQ" title="Questions? We have answers." className="mb-0" />
           <Reveal>
             <p className="text-text-secondary mt-4 mb-6">Can't find what you're looking for?</p>
-            <Link to="/contact" className="btn-ghost">Ask us directly <ArrowRight className="w-4 h-4" /></Link>
+            <Btn to="/contact" variant="line">Ask us directly</Btn>
           </Reveal>
         </div>
         <Reveal>
@@ -116,8 +116,8 @@ export function FinalCta() {
           </h2>
           <p className="text-text-secondary text-base md:text-lg leading-relaxed max-w-2xl mx-auto mb-10">{finalCta.body}</p>
           <div className="flex flex-wrap gap-3 justify-center mb-8">
-            <Link to="/contact" className="btn-accent">{finalCta.primary} <ArrowRight className="w-4 h-4" /></Link>
-            <Link to="/contact?topic=Our%20Products" className="btn-ghost">{finalCta.secondary}</Link>
+            <Btn to="/contact">{finalCta.primary}</Btn>
+            <Btn to="/contact?topic=Our%20Products" variant="line">{finalCta.secondary}</Btn>
           </div>
           <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-[13px] text-text-secondary">
             {finalCta.reassurance.map((r) => (

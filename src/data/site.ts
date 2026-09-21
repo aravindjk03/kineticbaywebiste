@@ -397,12 +397,19 @@ export const comparison = {
 export const story = {
   eyebrow: 'Our Story',
   title: 'Born by the Bay. Built for the world.',
+  lead: 'A Chennai-born technology company that turns everyday friction into systems that simply work.',
   paragraphs: [
-    'Kinetic Bay began with a simple frustration. Everywhere we looked, in factories, offices, hospitals and schools, talented people were buried under paperwork, spreadsheets and systems that made their work harder instead of easier. Hours were lost to manual attendance registers. Visitors were signed in on paper. Sales leads disappeared into forgotten notebooks. Brilliant minds spent their days doing work a machine could do in seconds.',
-    'We knew technology could change that. But we also saw that most software was built for the machine, not the person using it. So we set out to do things differently.',
-    'On the shores of the Bay of Bengal in Chennai, Kinetic Bay was founded on one belief: the best technology doesn\'t replace people — it frees them. "Kinetic" is energy in motion: the force that moves businesses forward. "Bay" is our home, and a harbour where ideas are shaped before they set sail to the world.',
-    'Today, that belief drives everything we build: custom software, AI, cloud and IoT systems that make work easier and impact greater. And it drives who we are, a company that measures success not just in projects delivered, but in lives made better along the way.',
+    "Kinetic Bay was founded on the shores of the Bay of Bengal with one conviction: the best technology doesn't replace people — it frees them.",
+    '"Kinetic" is energy in motion — the force that moves organisations forward. "Bay" is our home: a harbour where ideas are shaped before they set sail to the world.',
+    'Today we partner with growing businesses, enterprises and institutions across India and beyond. We measure success not only in systems delivered, but in hours returned, decisions sharpened and people whose work has become more meaningful.',
   ],
+  chapters: [
+    { label: 'Friction', title: 'Every organisation carries hidden friction.', body: "Manual steps, disconnected tools, data typed twice and decisions made on yesterday's numbers. None of it looks dramatic on its own — together it quietly drains time, money and morale." },
+    { label: 'Listen', title: 'We start where the work actually happens.', body: 'Before we design anything, we sit with the people doing the job. We map every hand-off, every workaround and every delay until the real problem is impossible to miss.' },
+    { label: 'Engineer', title: 'Then we engineer the fix.', body: 'Software, AI, cloud and connected systems — shaped around your process, not a template. Each piece is built to fit, proven with your team and ready to scale.' },
+    { label: 'Release', title: 'And the work gets lighter.', body: 'Repetitive effort disappears. Information flows on its own. People get their time back for the work that needs judgement, creativity and care.' },
+  ],
+  belief: "The best technology doesn't replace people — it frees them.",
   mission: 'To build intelligent, human-centred technology that simplifies work for industries, empowers the people behind them and contributes meaningfully to the UN Sustainable Development Goals.',
   vision: 'A world where every organisation, from the smallest workshop to the largest enterprise, has access to technology that makes work effortless, fair and purposeful.',
   values: [
@@ -440,6 +447,28 @@ export const teamIntro = {
     "We are engineers, designers, strategists and problem-solvers. But above all, we are people who take your success personally. When you partner with Kinetic Bay, you don't get a vendor. You get a team that shows up for you.",
   ],
   closer: 'One team. One promise. Your success.',
+};
+
+export const teamStory = {
+  heroTitle: 'A collective',
+  heroHighlight: 'with a cause.',
+  heroBody: 'We are engineers, designers, strategists and problem-solvers who came together around one idea — that technology should leave the world better than it found it.',
+  origin: 'Kinetic Bay began as a group of people with a shared vision: a sustainable future, a safer environment, and a digital world that people can put their hands on — not just read about.',
+  commitments: [
+    { title: 'A sustainable future', body: 'We choose work that cuts waste, saves energy and helps organisations grow responsibly — aligned with the UN Sustainable Development Goals.' },
+    { title: 'A safer environment', body: 'From secure systems to safer workplaces and campuses, we build technology that protects the people who rely on it.' },
+    { title: 'Digital, hands-on', body: 'We bring the digital world out of slide decks and into real hands — working prototypes, live pilots and tools teams use from day one.' },
+  ],
+  crossTitle: 'Cross-functional by design.',
+  crossBody: 'Every project is staffed by a single, cross-functional team — specialists in engineering, design, AI, cloud security and strategy working as one unit. No hand-offs between silos, no lost context. Just one team that owns the outcome with you.',
+  disciplines: ['Engineering', 'Product Design', 'AI & Data', 'Cloud & Security', 'IoT', 'Strategy'],
+  mentorTitle: 'Mentored by expertise.',
+  mentorBody: 'Energy moves fast; experience keeps it on course. Every team is guided by seasoned mentors who have built, shipped and scaled systems before — so bold ideas arrive with the discipline to match.',
+  mentorPrinciples: [
+    { title: 'Guided', body: 'Architecture and approach are shaped with senior mentors from the first workshop.' },
+    { title: 'Reviewed', body: 'Designs, code and security choices are reviewed before they ever reach you.' },
+    { title: 'Accountable', body: 'Mentors stay close to delivery, so quality is owned — not assumed.' },
+  ],
 };
 
 /* ─── FAQ ──────────────────────────────────────────────── */

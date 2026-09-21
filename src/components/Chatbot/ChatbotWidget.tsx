@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageSquare,
@@ -18,12 +18,15 @@ import {
   Check,
 } from 'lucide-react';
 import { processChatQuery, ActionButton } from '../../lib/chatbotEngine';
-import { getChatbotConfig } from '../../lib/cmsStore';
 import { ChatMessage } from '../../types/cms';
 import LeadCaptureCard from './LeadCaptureCard';
 import TicketCreationCard from './TicketCreationCard';
 import TicketTrackingCard from './TicketTrackingCard';
 import ServicesCard from './ServicesCard';
+import type { MascotMood } from './ChatMascot';
+
+const ChatMascot = lazy(() => import('./ChatMascot'));
+const GREETING = 'I am your deterministic service guide. How can I assist you today?';
 
 function FormattedChatMessage({ content, isBot }: { content: string; isBot: boolean }) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -136,11 +139,19 @@ function FormattedChatMessage({ content, isBot }: { content: string; isBot: bool
 
 export default function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
-  const [config, setConfig] = useState(getChatbotConfig());
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [hasUnread, setHasUnread] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const mood = useRef<MascotMood>({ hover: false, thinking: false });
+  mood.current.thinking = isTyping;
+  const [showHello, setShowHello] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setShowHello(true), 3500);
+    const h = setTimeout(() => setShowHello(false), 11000);
+    return () => { clearTimeout(t); clearTimeout(h); };
+  }, []);
 
   const [activeTicket, setActiveTicket] = useState<{ public_id: string; subject: string; status: string } | null>(() => {
     try {
@@ -187,7 +198,7 @@ export default function ChatbotWidget() {
               {
                 id: 'msg-init',
                 sender: 'bot',
-                content: `${config.greetingMessage}\n\n👋 **Welcome back!**\n\n📌 **Active Ticket on File:** \`${latest.public_id}\` (${latest.subject})\n• **Status:** \`${latest.status || 'NEW'}\` (Queued in Dispatch Queue)\n• **SLA:** First engineering response within 24 hours\n\nHow can I assist you with your project or support ticket today?`,
+                content: GREETING,
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 actionButtons: [
                   { label: `🔍 Track Ticket ${latest.public_id}`, action: 'track', payload: latest.public_id },
@@ -206,7 +217,7 @@ export default function ChatbotWidget() {
       {
         id: 'msg-init',
         sender: 'bot',
-        content: `${config.greetingMessage}\n\nI am your deterministic service guide. How can I assist you today?`,
+        content: GREETING,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         actionButtons: [
           { label: '🚀 Explore Services', action: 'services' },
@@ -349,7 +360,7 @@ export default function ChatbotWidget() {
       }
     } catch {}
 
-    let initialGreeting = `${config.greetingMessage}\n\nI am your deterministic service guide. How can I assist you today?`;
+    const initialGreeting = GREETING;
     let initialButtons: ActionButton[] = [
       { label: '🚀 Explore Services', action: 'services' },
       { label: '📋 Request Proposal', action: 'proposal' },
@@ -358,7 +369,6 @@ export default function ChatbotWidget() {
     ];
 
     if (activeTicket) {
-      initialGreeting = `${config.greetingMessage}\n\n👋 **Welcome back!**\n\n📌 **Active Ticket on File:** \`${activeTicket.public_id}\` (${activeTicket.subject})\n• **Status:** \`${activeTicket.status || 'NEW'}\` (Queued in Dispatch Queue)\n\nHow can I assist you today?`;
       initialButtons = [
         { label: `🔍 Track Ticket ${activeTicket.public_id}`, action: 'track', payload: activeTicket.public_id },
         { label: '🎫 Support Ticket', action: 'ticket' },
@@ -387,27 +397,28 @@ export default function ChatbotWidget() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ duration: 0.2 }}
+            data-lenis-prevent
             className="w-[92vw] sm:w-[440px] h-[610px] max-h-[85vh] bg-[#0c0d10]/95 backdrop-blur-2xl border border-border/90 rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-4 border-primary/20"
           >
             {/* ── HEADER ── */}
             <div className="px-4 py-3 bg-surface/80 border-b border-border/80 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary shadow-ember-sm">
-                    <Bot className="w-5 h-5" />
-                  </div>
-                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-surface" />
+                <div className="relative w-12 h-12 -my-1">
+                  <Suspense fallback={<Bot className="w-6 h-6 text-primary m-3" />}>
+                    <ChatMascot mood={mood} className="absolute inset-[-6px]" />
+                  </Suspense>
+                  <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-surface" />
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <h3 className="font-heading font-semibold text-sm text-ink">{config.botName || 'Kinetic Assistant'}</h3>
+                    <h3 className="font-heading font-bold text-sm text-ink">KAI</h3>
                     <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30 font-medium">
                       Deterministic
                     </span>
                   </div>
                   <p className="text-[10px] text-text-secondary flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                    <span>Confidentiality Protected • Zero-AI</span>
+                    <span>Kinetic Bay service guide</span>
                   </p>
                 </div>
               </div>
@@ -722,31 +733,45 @@ export default function ChatbotWidget() {
         )}
       </AnimatePresence>
 
-      {/* ── FLOATING LAUNCHER BUTTON ── */}
-      <motion.button
-        whileHover={{ scale: 1.06 }}
-        whileTap={{ scale: 0.94 }}
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative group p-4 rounded-full bg-primary text-ink shadow-ember flex items-center justify-center transition-transform"
-        aria-label="Toggle Kinetic Bay Service Assistant"
-      >
-        {isOpen ? (
-          <X className="w-6 h-6" />
-        ) : (
-          <>
-            <MessageSquare className="w-6 h-6" />
-            {hasUnread && (
-              <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
-                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-accent border-2 border-bg" />
-              </span>
-            )}
-          </>
-        )}
-
-        {/* Ambient pulse ring */}
-        <span className="absolute -inset-1 rounded-full bg-primary/20 -z-10 animate-pulse-slow" />
-      </motion.button>
+      {/* ── FLOATING LAUNCHER: KAI ── */}
+      <div className="relative flex justify-end">
+        <AnimatePresence>
+          {showHello && !isOpen && (
+            <motion.button
+              initial={{ opacity: 0, y: 8, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.9 }}
+              onClick={() => { setShowHello(false); setIsOpen(true); }}
+              className="absolute right-[84px] bottom-5 whitespace-nowrap px-4 py-2.5 bg-[#111214] text-[13px] text-ink shadow-[0_0_0_1px_rgba(249,115,22,0.45),0_14px_40px_-10px_rgba(0,0,0,0.9)] [clip-path:polygon(0_0,100%_0,100%_calc(100%_-_10px),calc(100%_-_10px)_100%,0_100%)]"
+            >
+              Hi, I'm <span className="text-primary font-semibold">KAI</span>. Need a hand?
+            </motion.button>
+          )}
+        </AnimatePresence>
+        <motion.button
+          whileTap={{ scale: 0.92 }}
+          onMouseEnter={() => { mood.current.hover = true; }}
+          onMouseLeave={() => { mood.current.hover = false; }}
+          onClick={() => { setIsOpen(!isOpen); setShowHello(false); }}
+          className="relative w-[72px] h-[72px] bg-[#0e0f12] shadow-[0_0_0_1px_rgba(249,115,22,0.55),0_18px_40px_-8px_rgba(249,115,22,0.45)] [clip-path:polygon(0_0,calc(100%_-_14px)_0,100%_14px,100%_100%,14px_100%,0_calc(100%_-_14px))]"
+          aria-label={isOpen ? 'Close KAI, the Kinetic Bay assistant' : 'Chat with KAI, the Kinetic Bay assistant'}
+        >
+          <Suspense fallback={<MessageSquare className="w-6 h-6 text-primary m-auto" />}>
+            <ChatMascot mood={mood} className="absolute inset-0" />
+          </Suspense>
+          {isOpen && (
+            <span className="absolute top-1.5 right-1.5 w-5 h-5 grid place-items-center bg-primary text-bg">
+              <X className="w-3.5 h-3.5" />
+            </span>
+          )}
+          {!isOpen && hasUnread && (
+            <span className="absolute top-2 right-2 flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent" />
+            </span>
+          )}
+        </motion.button>
+      </div>
     </div>
   );
 }

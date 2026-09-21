@@ -1,7 +1,7 @@
 import { lazy, Suspense, useRef, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import Btn from '../Btn';
 import { motion, useScroll, useTransform, useMotionValueEvent, type MotionValue } from 'framer-motion';
-import { ArrowRight, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import type { StoryState } from '../fx/MorphParticles';
 import { hero, philosophy, sdgIntro } from '../../data/site';
 import { useIsMobile, useNearViewport, prefersReducedMotion } from '../../lib/motion';
@@ -105,7 +105,7 @@ export default function HeroStory() {
             <motion.p className="eyebrow mb-6" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
               {hero.eyebrow}
             </motion.p>
-            <h1 className="font-heading font-bold text-ink leading-[0.98] tracking-[-0.035em] mb-6 max-w-[800px]" style={{ fontSize: 'clamp(44px, 5.6vw, 82px)' }}>
+            <h1 className="font-heading font-bold text-ink leading-[0.98] tracking-[-0.035em] mb-6 max-w-[800px]" style={{ fontSize: 'clamp(38px, 5.6vw, 82px)' }}>
               {hero.headline.map((line, i) => (
                 <span key={line} className="block overflow-hidden pb-1">
                   <motion.span
@@ -120,17 +120,17 @@ export default function HeroStory() {
               ))}
             </h1>
             <motion.p
-              className="text-text-secondary text-base md:text-xl leading-relaxed max-w-[560px] mb-9"
+              className="text-text-secondary text-[15px] md:text-xl leading-relaxed max-w-[560px] mb-7 md:mb-9"
               initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
             >
               {hero.sub}
             </motion.p>
             <motion.div className="flex flex-wrap gap-3 mb-8" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.72 }}>
-              <Link to="/contact" className="btn-accent">{hero.primary} <ArrowRight className="w-4 h-4" /></Link>
-              <Link to="/products" className="btn-ghost">{hero.secondary}</Link>
+              <Btn to="/contact">{hero.primary}</Btn>
+              <Btn to="/products" variant="line">{hero.secondary}</Btn>
             </motion.div>
             <motion.ul
-              className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-text-secondary/80"
+              className="hidden sm:flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-text-secondary/80"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}
             >
               {hero.trust.map((t) => (

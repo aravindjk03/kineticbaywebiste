@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Linkedin, MapPin, Send, CheckCircle2, Clock, ShieldCheck, MessageSquare } from 'lucide-react';
-import { ParallaxHero } from '../components/fx/ParallaxLayers';
+import { ContactHero } from '../components/fx/HeroScenes';
+import Btn from '../components/Btn';
 import Reveal from '../components/Reveal';
 import { addLead } from '../lib/cmsStore';
 import { brand, contactCopy, finalCta } from '../data/site';
@@ -73,14 +74,7 @@ export default function Contact() {
 
   return (
     <div className="bg-bg">
-      <ParallaxHero
-        word="HELLO"
-        eyebrow={finalCta.eyebrow}
-        title="Let's start"
-        highlight="a conversation."
-        body={finalCta.body}
-        icons={[MessageSquare, Mail, Send, ShieldCheck, Clock]}
-      />
+      <ContactHero eyebrow={finalCta.eyebrow} title="Let's start" highlight="a conversation." body={finalCta.body} />
 
       <section className="section-py">
         <div className="max-w-[1200px] mx-auto px-6 grid lg:grid-cols-[1.35fr_0.65fr] gap-8">
@@ -93,7 +87,7 @@ export default function Contact() {
                     <CheckCircle2 className="w-14 h-14 text-primary mx-auto mb-6" />
                     <h2 className="font-heading font-bold text-ink text-2xl md:text-3xl mb-4">Message sent.</h2>
                     <p className="text-text-secondary max-w-md mx-auto mb-8">{contactCopy.success}</p>
-                    <button onClick={() => setStatus('idle')} className="btn-ghost">Send another message</button>
+                    <Btn variant="line" onClick={() => setStatus('idle')}>Send another message</Btn>
                   </motion.div>
                 ) : (
                   <motion.form key="form" onSubmit={submit} noValidate className="relative space-y-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -123,9 +117,7 @@ export default function Contact() {
                     </Field>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
                       <p className="text-[12px] text-text-secondary/70">We use your details only to reply to this enquiry.</p>
-                      <button type="submit" disabled={status === 'submitting'} className="btn-accent justify-center disabled:opacity-60">
-                        {status === 'submitting' ? 'Sending…' : <>Send Message <Send className="w-4 h-4" /></>}
-                      </button>
+                      <Btn type="submit" disabled={status === 'submitting'} icon={<Send className="w-4 h-4" />}>{status === 'submitting' ? 'Sending…' : 'Send Message'}</Btn>
                     </div>
                     {status === 'error' && <p className="text-[14px] text-red-400">Something went wrong. Please try again or email us at {brand.email}.</p>}
                   </motion.form>

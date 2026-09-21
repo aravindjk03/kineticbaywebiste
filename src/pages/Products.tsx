@@ -1,11 +1,11 @@
-import { Link } from 'react-router-dom';
-import { ArrowRight, Blocks, Cloud, Palette, Server } from 'lucide-react';
-import { ParallaxHero } from '../components/fx/ParallaxLayers';
+import { Blocks, Cloud, Palette, Server } from 'lucide-react';
+import { ProductsHero } from '../components/fx/HeroScenes';
+import Btn from '../components/Btn';
 import DeviceShowcase from '../components/fx/DeviceShowcase';
 import Reveal from '../components/Reveal';
 import TiltCard from '../components/TiltCard';
 import { FinalCta } from '../components/ui';
-import { products, productsIntro } from '../data/site';
+import { productsIntro } from '../data/site';
 import { useSeo } from '../lib/seo';
 
 const deploy = [
@@ -23,20 +23,13 @@ export default function Products() {
 
   return (
     <div className="bg-bg">
-      <ParallaxHero
-        word="PRODUCTS"
-        eyebrow={productsIntro.eyebrow}
-        title="Proven platforms."
-        highlight="Customised for you."
-        body={productsIntro.body}
-        icons={products.map((p) => p.icon)}
-      >
-        <div className="flex flex-wrap gap-2 mt-8">
-          {products.map((p) => (
-            <Link key={p.slug} to={`/products/${p.slug}`} className="skill-chip hover:bg-primary/20 transition-colors">{p.name}</Link>
-          ))}
+      <ProductsHero eyebrow={productsIntro.eyebrow} title="Proven platforms." highlight="Customised for you." body={productsIntro.body}>
+        <div className="flex flex-wrap gap-3">
+          <Btn to="/contact?topic=Our%20Products">Request a Demo</Btn>
+          <Btn href="#tour" variant="line">Take the tour</Btn>
         </div>
-      </ParallaxHero>
+      </ProductsHero>
+      <div id="tour" />
 
       <DeviceShowcase />
 
@@ -58,7 +51,7 @@ export default function Products() {
             ))}
           </div>
           <Reveal className="text-center">
-            <Link to="/contact?topic=Our%20Products" className="btn-accent">{productsIntro.cta} <ArrowRight className="w-4 h-4" /></Link>
+            <Btn to="/contact?topic=Our%20Products">{productsIntro.cta}</Btn>
           </Reveal>
         </div>
       </section>

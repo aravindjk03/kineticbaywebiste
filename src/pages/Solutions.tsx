@@ -1,8 +1,8 @@
 import { useRef } from 'react';
-import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, type MotionValue } from 'framer-motion';
-import { ArrowRight, Check, X, Compass, PenTool, Hammer, Rocket, RefreshCw } from 'lucide-react';
-import { ParallaxHero } from '../components/fx/ParallaxLayers';
+import { Check, X } from 'lucide-react';
+import { SolutionsHero } from '../components/fx/HeroScenes';
+import Btn from '../components/Btn';
 import HorizontalJourney from '../components/fx/HorizontalJourney';
 import Reveal from '../components/Reveal';
 import TiltCard from '../components/TiltCard';
@@ -48,7 +48,7 @@ function Comparison() {
         </div>
         <Reveal className="text-center mt-16">
           <p className="font-heading font-bold text-ink text-2xl md:text-4xl tracking-[-0.02em] mb-8">{comparison.closer}</p>
-          <Link to="/contact" className="btn-accent">{comparison.cta} <ArrowRight className="w-4 h-4" /></Link>
+          <Btn to="/contact">{comparison.cta}</Btn>
         </Reveal>
       </div>
     </section>
@@ -63,14 +63,9 @@ export default function Solutions() {
 
   return (
     <div className="bg-bg">
-      <ParallaxHero
-        word="PROCESS"
-        eyebrow={solutionsIntro.eyebrow}
-        title="From first conversation"
-        highlight="to lasting impact."
-        body={solutionsIntro.body}
-        icons={[Compass, PenTool, Hammer, Rocket, RefreshCw]}
-      />
+      <SolutionsHero eyebrow={solutionsIntro.eyebrow} title="From first conversation" highlight="to lasting impact." body={solutionsIntro.body}>
+        <Btn to="/contact">Start with a discovery call</Btn>
+      </SolutionsHero>
 
       <HorizontalJourney />
 

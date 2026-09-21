@@ -30,6 +30,12 @@ export function useSmoothScroll(enabled: boolean) {
   }, [enabled]);
 }
 
+/** Freeze page scrolling (menus, overlays) without fighting the smooth scroller. */
+export function setScrollLocked(locked: boolean) {
+  if (locked) lenis?.stop(); else lenis?.start();
+  document.documentElement.style.overflow = locked ? 'hidden' : '';
+}
+
 export function scrollToTop() {
   if (lenis) lenis.scrollTo(0, { immediate: true });
   else window.scrollTo(0, 0);

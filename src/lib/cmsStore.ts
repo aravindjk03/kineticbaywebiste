@@ -14,7 +14,7 @@ const CMS_AUTH_KEY = 'kb_cms_session';
 const PASSCODE_KEY = 'kb_cms_passcode_hash';
 const TEAM_KEY = 'kb_cms_team_v1';
 const CONTENT_KEY = 'kb_cms_content_v2';
-const CHATBOT_CONFIG_KEY = 'kb_cms_chatbot_v2';
+const CHATBOT_CONFIG_KEY = 'kb_cms_chatbot_v3';
 const LEADS_KEY = 'kb_crm_leads_v1';
 
 // Internal local storage keys
@@ -187,8 +187,8 @@ const DEFAULT_GUARDRAILS: GuardrailRule[] = [
 ];
 
 const DEFAULT_CHATBOT_CONFIG: ChatbotConfig = {
-  botName: 'Kinetic Bay AI',
-  greetingMessage: 'Hello! I am Kinetic Bay’s assistant. Ask me about our AI, software, cloud and IoT services, our HRMS, VMS, PMS, CRM and Attendance products, or how we work. How can I help you today?',
+  botName: 'KAI',
+  greetingMessage: 'I am your deterministic service guide. How can I assist you today?',
   tone: 'professional',
   companyBio: DEFAULT_CONTENT.companyOverview,
   integrationCapabilities: 'Five-step delivery: Discover, Design, Build, Deploy, Evolve. Engagement models: Fixed-Scope Project, Dedicated Team, Product + Customisation, Support & Maintenance Retainer, and Proof of Concept / MVP.',

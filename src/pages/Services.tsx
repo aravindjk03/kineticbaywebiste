@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, ArrowUpRight, Cpu, Cloud, Lock, Radio, Sparkles } from 'lucide-react';
-import { ParallaxHero } from '../components/fx/ParallaxLayers';
+import { ArrowUpRight } from 'lucide-react';
+import { ServicesHero } from '../components/fx/HeroScenes';
+import Btn from '../components/Btn';
 import Reveal from '../components/Reveal';
 import TiltCard from '../components/TiltCard';
 import { FinalCta } from '../components/ui';
@@ -15,14 +16,9 @@ export default function Services() {
 
   return (
     <div className="bg-bg">
-      <ParallaxHero
-        word="PILLARS"
-        eyebrow={pillarsIntro.eyebrow}
-        title="Four pillars."
-        highlight="One goal: your success."
-        body={pillarsIntro.body}
-        icons={[Sparkles, Cpu, Lock, Cloud, Radio]}
-      />
+      <ServicesHero eyebrow={pillarsIntro.eyebrow} title="Four pillars." highlight="One goal: your success." body={pillarsIntro.body}>
+        <Btn to="/contact">Talk to an engineer</Btn>
+      </ServicesHero>
 
       <section className="section-py">
         <div className="max-w-[1200px] mx-auto px-6 space-y-6">
@@ -39,7 +35,7 @@ export default function Services() {
                     <p className="text-primary font-medium text-lg mb-5">{p.tagline}</p>
                     <p className="text-text-secondary leading-relaxed mb-8">{p.intro}</p>
                     <div className="flex flex-wrap gap-3">
-                      <Link to={`/services/${p.slug}`} className="btn-accent">Explore {p.name} <ArrowRight className="w-4 h-4" /></Link>
+                      <Btn to={`/services/${p.slug}`}>{`Explore ${p.name}`}</Btn>
                     </div>
                   </div>
                   <div className="p-8 md:p-12">
