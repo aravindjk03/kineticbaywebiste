@@ -146,13 +146,20 @@ export default function Header() {
   const [hovered, setHovered] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const closeTimer = useRef<number>();
+  const openTimer = useRef<number>();
+  const travel = useRef(0); // scroll distance accumulated in the current direction
 
   const { scrollY, scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, { stiffness: 200, damping: 40 });
   useMotionValueEvent(scrollY, 'change', (y) => {
     const prev = scrollY.getPrevious() ?? 0;
+    const delta = y - prev;
     setScrolled(y > 24);
-    setHidden(y > 160 && y > prev && !menu && !mobileOpen);
+    // hysteresis: small wobbles in either direction are ignored
+    travel.current = Math.sign(delta) === Math.sign(travel.current) ? travel.current + delta : delta;
+    if (y < 160 || menu || mobileOpen) setHidden(false);
+    else if (travel.current > 80) setHidden(true);
+    else if (travel.current < -140) setHidden(false);
   });
 
   useEffect(() => { setMenu(null); setMobileOpen(false); }, [location.pathname]);
@@ -163,8 +170,17 @@ export default function Header() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const open = (m: MenuKey) => { window.clearTimeout(closeTimer.current); setMenu(m); };
-  const scheduleClose = () => { closeTimer.current = window.setTimeout(() => setMenu(null), 160); };
+  // hover intent: a menu opens only when the pointer rests on its link, not when it merely passes over
+  const open = (m: MenuKey, immediate = false) => {
+    window.clearTimeout(closeTimer.current);
+    window.clearTimeout(openTimer.current);
+    if (immediate || menu) setMenu(m);
+    else openTimer.current = window.setTimeout(() => setMenu(m), 180);
+  };
+  const scheduleClose = () => {
+    window.clearTimeout(openTimer.current);
+    closeTimer.current = window.setTimeout(() => setMenu(null), 220);
+  };
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
   const bracketTarget = hovered ?? links.find((l) => isActive(l.path))?.path ?? null;
 
@@ -193,7 +209,7 @@ export default function Header() {
                 >
                   <NavLink
                     to={l.path}
-                    onFocus={() => { setHovered(l.path); if (l.menu) open(l.menu); }}
+                    onFocus={() => { setHovered(l.path); if (l.menu) open(l.menu, true); }}
                     aria-haspopup={l.menu ? 'true' : undefined}
                     aria-expanded={l.menu ? menu === l.menu : undefined}
                     className={`relative flex items-start gap-1 px-4 py-2 text-[14px] font-medium transition-colors ${isActive(l.path) ? 'text-ink' : 'text-text-secondary hover:text-ink'}`}
@@ -210,7 +226,7 @@ export default function Header() {
             </div>
             <AnimatePresence>
               {menu && (
-                <div onMouseEnter={() => open(menu)} onMouseLeave={scheduleClose}>
+                <div onMouseEnter={() => open(menu, true)} onMouseLeave={scheduleClose}>
                   <MegaPanel key={menu} menu={menu} onClose={() => setMenu(null)} />
                 </div>
               )}

@@ -526,12 +526,16 @@ html.lenis, html.lenis body { height: auto; }
 .kai-launcher::before {
   content: '';
   position: absolute; inset: -6px;
-  border-radius: 30px;
+  border-radius: 22px;
   border: 2px solid rgba(240,138,75,0.45);
   animation: kai-halo 2.8s ease-out infinite;
   pointer-events: none;
 }
 @keyframes kai-halo { 0% { transform: scale(0.94); opacity: 0.9; } 100% { transform: scale(1.18); opacity: 0; } }
+
+/* flat KAI avatar blink */
+.kai-blink { transform-box: fill-box; transform-origin: center; animation: kai-blink 4.2s infinite; }
+@keyframes kai-blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
 
 /* Reduce motion */
 @media (prefers-reduced-motion: reduce) {
