@@ -9,10 +9,10 @@ import { setScrollLocked } from '../lib/motion';
 type MenuKey = 'services' | 'products' | null;
 
 const links: { name: string; path: string; menu?: MenuKey }[] = [
+  { name: 'About', path: '/about' },
   { name: 'Services', path: '/services', menu: 'services' },
   { name: 'Products', path: '/products', menu: 'products' },
   { name: 'Solutions', path: '/solutions' },
-  { name: 'About', path: '/about' },
   { name: 'Team', path: '/team' },
   { name: 'Contact', path: '/contact' },
 ];
