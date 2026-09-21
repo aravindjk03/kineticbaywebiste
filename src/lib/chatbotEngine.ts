@@ -32,7 +32,6 @@ export async function processChatQuery(
     'salary',
     'salaries',
     'compensation',
-    'payroll',
     'password',
     'secret',
     'credential',
@@ -44,7 +43,6 @@ export async function processChatQuery(
     'internal route',
     'admin path',
     'admin link',
-    'nda',
     'confidential contract',
     'source code leak',
     'root password',
@@ -223,12 +221,12 @@ export async function processChatQuery(
 
   if (leadIntents.some((intent) => q.includes(intent))) {
     return {
-      text: '📋 **Complimentary 24-Hour Scoped Proposal:**\nWe would love to engineer your next digital product! Our software architects will formulate a tailored Architecture Roadmap, Tech Stack Analysis, and Milestone Budget within 24 hours — 100% free of charge.\n\nPlease share your project specifications below:',
+      text: "📋 **Let's build the machine that fixes it.**\nTell us about your challenge. In one free, no-obligation conversation we will help you see what's possible, and exactly how to get there.\n\nFree discovery call · NDA on request · Response within 24 hours. Share a few details below:",
       triggerCard: 'lead',
       suggestedPrompts: [
-        'Tell me about SaaS Platforms',
-        'What is your delivery timeline?',
-        'How do you integrate with our team?',
+        'Tell me about your products',
+        'How long does a project take?',
+        'How do you work?',
       ],
       actionButtons: [
         { label: '🚀 Explore Services', action: 'services' },
@@ -237,67 +235,82 @@ export async function processChatQuery(
     };
   }
 
-  /* ─── 5. TECHNOLOGY SERVICES EXPLORATION ─────────────────────── */
+  /* ─── 5. FOUR PILLARS OF CAPABILITY ──────────────────────────── */
   if (
     q.includes('tech service') ||
     q.includes('it service') ||
     q.includes('software') ||
     q.includes('saas') ||
-    q.includes('custom code') ||
-    q.includes('agent')
+    q.includes(' ai') ||
+    q.startsWith('ai') ||
+    q.includes('agent') ||
+    q.includes('chatbot') ||
+    q.includes('cloud') ||
+    q.includes('security') ||
+    q.includes('iot') ||
+    q.includes('app development')
   ) {
     return {
-      text: `💻 **Kinetic Bay — Technology & Engineering Solutions:**
+      text: `💻 **Kinetic Bay — Four Pillars of Capability:**
 
-1. **SaaS Platforms (from $12K):** Multi-tenant architectures, subscription billing (Stripe), RBAC, real-time telemetry, and modern cloud deployment in 4–8 weeks.
-2. **Custom Enterprise Software:** Tailored ERP, CRM, and internal workflows engineered to replace fragmented legacy tools.
-3. **Brand Making & Visual Systems (from $5K):** High-conversion digital identities, design tokens, and pitch decks.
-4. **SEO & AI Citation Optimization (AIO, from $2K/mo):** Dual optimization for Google organic ranking and modern AI citation engines (ChatGPT, Gemini, Perplexity).
-5. **PaaS & Operations Management Software:** Scalable operations platforms, telemetry dashboards, and fleet scheduling.
-6. **Autonomous AI Agents (Azure AI Foundry, from $8K):** Autonomous agent workflows with human-in-the-loop oversight and zero data leaks.`,
+1. **AI & Automation** — Intelligence that works while you sleep. Chatbots, autonomous AI agents, LLM fine-tuning, RAG knowledge assistants, RPA, document intelligence, predictive analytics, computer vision and voice AI.
+2. **Digital Engineering** — Software built for the way you work. Custom software, web apps & SPAs, mobile apps, SaaS products, UI/UX, brand identity, integrations, legacy modernisation and QA.
+3. **Cybersecurity & Cloud** — Secure foundations. Limitless scale. Cloud-native builds on Azure, AWS and Google Cloud, migration, DevSecOps, VAPT, IAM, DPDP-aligned data protection, managed cloud and disaster recovery.
+4. **IoT Projects** — Connecting the physical world to intelligent decisions. Smart factory, predictive maintenance, asset & fleet tracking, energy monitoring, smart campuses and IoT dashboards.
+
+Every quotation is fixed-scope, agreed after a free discovery session.`,
       triggerCard: 'services_tech',
       suggestedPrompts: [
-        'How do you integrate with our project?',
-        'What about Human & Training Services?',
-        'Request a 24-hour proposal',
+        'Tell me about your products',
+        'How do you work?',
+        'Book a free consultation',
       ],
       actionButtons: [
-        { label: '📋 Request 24h Proposal', action: 'proposal' },
-        { label: '⚡ Training Programs', action: 'services_training' },
+        { label: '📋 Book Free Consultation', action: 'proposal' },
+        { label: '📦 Our Products', action: 'services_training' },
         { label: '🎫 Open Support Ticket', action: 'ticket' },
       ],
     };
   }
 
-  /* ─── 6. TRAINING SERVICES EXPLORATION ───────────────────────── */
+  /* ─── 6. READY-TO-DEPLOY PRODUCTS ───────────────────────────── */
   if (
-    q.includes('training') ||
-    q.includes('coaching') ||
-    q.includes('productivity') ||
-    q.includes('leadership') ||
-    q.includes('mindset') ||
-    q.includes('human')
+    q.includes('product') ||
+    q.includes('hrms') ||
+    q.includes('hr ') ||
+    q.includes('vms') ||
+    q.includes('visitor') ||
+    q.includes('pms') ||
+    q.includes('project management') ||
+    q.includes('crm') ||
+    q.includes('attendance') ||
+    q.includes('biometric') ||
+    q.includes('demo')
   ) {
     return {
-      text: `⚡ **Kinetic Bay — Human & Organizational Training:**
+      text: `📦 **Kinetic Bay Products — proven platforms, customised for you:**
 
-1. **Productivity Systems & Deep Work (from $1.5K/squad):** Async-first operating models, tool mastery, and focus architecture that eliminate meeting drag and reclaim 15+ hours/week per engineer.
-2. **IT Startup Mindset & MVP Execution (from $2K/workshop):** Founder frameworks, rapid prototyping, Lean discovery, and metrics-first iteration loops.
-3. **Engineering Leadership Coaching (from $3K/track):** Hands-on mentorship turning senior technical contributors into confident, empathetic engineering managers.`,
+• **Kinetic HRMS** — Your people, managed with care and clarity. Records, payroll with PF/ESI/TDS compliance, leave, performance and self-service.
+• **Kinetic VMS** — Know who's in. Every time. QR pre-registration, host alerts, ID checks, badges and evacuation lists.
+• **Kinetic PMS** — Every project. Every task. Total clarity. Task boards, Gantt charts, timesheets and client portals.
+• **Kinetic CRM** — Turn every lead into a lasting relationship. WhatsApp lead capture, pipelines, follow-ups and forecasting.
+• **Kinetic Attendance** — Accurate attendance. Zero disputes. Face, biometric, RFID and GPS check-in that flows into payroll.
+
+Every product can be white-labelled, integrated with your existing systems and hosted on the cloud or on your own servers.`,
       triggerCard: 'services_training',
       suggestedPrompts: [
-        'What technology services do you offer?',
-        'How do you integrate with our team?',
-        'Request a training proposal',
+        'Request a product demo',
+        'Can products be customised?',
+        'What services do you offer?',
       ],
       actionButtons: [
-        { label: '📋 Request Proposal', action: 'proposal' },
-        { label: '💻 Technology Services', action: 'services_tech' },
+        { label: '📋 Request a Demo', action: 'proposal' },
+        { label: '💻 Our Services', action: 'services_tech' },
       ],
     };
   }
 
-  /* ─── 7. GENERAL SERVICE CATALOGUE OVERVIEW ──────────────────── */
+  /* ─── 7. GENERAL OVERVIEW ───────────────────────────────────── */
   if (
     q.includes('service') ||
     q.includes('what do you do') ||
@@ -306,41 +319,30 @@ export async function processChatQuery(
     q.includes('offer')
   ) {
     return {
-      text: `Kinetic Bay is a premier product engineering and organizational design studio. Our expertise spans two high-impact pillars:
+      text: `**Kinetic Bay — Building Machines. Shaping Humans.**
+We engineer custom software, AI, cloud and IoT systems that take the heavy lifting off your business, so your people can focus on the work that truly moves you forward.
 
-💻 **1. IT & Engineering Solutions:**
-• SaaS Platforms & Cloud Architecture
-• Custom Software & Enterprise ERP/CRM
-• Brand Making & Design Systems
-• SEO & AI Citation Optimization (AIO)
-• PaaS & Operations Management Software
-• Autonomous AI Agents (Azure AI Foundry)
+💻 **Four pillars:** AI & Automation · Digital Engineering · Cybersecurity & Cloud · IoT Projects
+📦 **Five products:** Kinetic HRMS · VMS · PMS · CRM · Attendance
 
-⚡ **2. Human & Organizational Training:**
-• Team Productivity Systems & Deep Work
-• IT Startup Mindset & Rapid MVP Prototyping
-• Engineering Leadership Mentorship
-
-Which area would you like to explore for your team?`,
+Which would you like to explore?`,
       suggestedPrompts: [
-        'Explore Technology Services',
-        'Explore Training Programs',
-        'Request a 24-hour proposal',
+        'Explore our services',
+        'Tell me about your products',
+        'Book a free consultation',
         'Raise a Support Ticket',
       ],
       actionButtons: [
-        { label: '💻 Tech Solutions', action: 'services_tech' },
-        { label: '⚡ Training Programs', action: 'services_training' },
-        { label: '📋 Request Proposal', action: 'proposal' },
+        { label: '💻 Services', action: 'services_tech' },
+        { label: '📦 Products', action: 'services_training' },
+        { label: '📋 Free Consultation', action: 'proposal' },
       ],
     };
   }
 
-  /* ─── 8. INTEGRATION PLAYBOOK & WORKOUT MODELS ──────────────── */
+  /* ─── 8. HOW WE WORK ────────────────────────────────────────── */
   if (
     q.includes('integrate') ||
-    q.includes('work out') ||
-    q.includes('workout') ||
     q.includes('how do you work') ||
     q.includes('process') ||
     q.includes('collaboration') ||
@@ -349,23 +351,25 @@ Which area would you like to explore for your team?`,
     q.includes('workflow')
   ) {
     return {
-      text: `🚀 **How Kinetic Bay Integrates With Your Project:**
+      text: `🚀 **How we work — five steps from first conversation to lasting impact:**
 
-• **1. Turnkey Product Squads:** We own the complete product lifecycle from UX and systems design to automated CI/CD deployment and launch.
-• **2. Embedded Engineering Pods:** Senior Kinetic Bay engineers plug directly into your GitHub repository, Jira/Linear backlog, and sprint cycles as high-velocity contributors.
-• **3. Legacy Modernization:** We decouple monolithic applications into maintainable microservices without taking down production systems.
-• **4. Rapid 4–8 Week Shipping:** Battle-tested architectures shipped rapidly with full automated test coverage.
-• **5. Cloud Stack Alignment:** Seamless deployment into Microsoft Azure, AWS, GCP, Cloudflare Workers, or Supabase.
+1. **Discover** — workshops uncover goals, pain points, users and constraints.
+2. **Design** — workflows, architecture and clickable prototypes before any code is written.
+3. **Build** — agile sprints with a demo every week.
+4. **Deploy** — secure launch, data migration and hands-on training.
+5. **Evolve** — monitoring, support and new features as you grow.
 
-Would you like us to review your technical architecture?`,
+**Ways to work with us:** Fixed-Scope Project · Dedicated Team · Product + Customisation · Support & Maintenance Retainer · Proof of Concept / MVP.
+
+We also integrate with the ERPs, accounting tools, payment gateways, biometric devices and APIs you already use.`,
       suggestedPrompts: [
-        'Request a 24-hour proposal',
-        'What is your tech stack?',
-        'What are your pricing terms?',
+        'Book a free consultation',
+        'How long does a project take?',
+        'Will I own the source code?',
       ],
       actionButtons: [
-        { label: '📋 Request Scoped Proposal', action: 'proposal' },
-        { label: '💻 Tech Services', action: 'services_tech' },
+        { label: '📋 Book Free Consultation', action: 'proposal' },
+        { label: '💻 Services', action: 'services_tech' },
       ],
     };
   }
@@ -381,79 +385,76 @@ Would you like us to review your technical architecture?`,
     q.includes('azure')
   ) {
     return {
-      text: `🛠️ **Kinetic Bay Production Technology Stack:**
+      text: `🛠️ **Technology we build with:**
 
-• **Frontend:** React 18, Next.js, TypeScript, Tailwind CSS, Three.js / WebGL, Framer Motion.
-• **Backend & APIs:** Node.js (Express), Python (FastAPI), REST, GraphQL, WebSocket event streaming.
-• **Cloud & Infrastructure:** Microsoft Azure, Azure AI Foundry, Docker, Kubernetes, Cloudflare, Supabase (PostgreSQL), Redis.
-• **Security & Testing:** End-to-end type safety, scrypt password hashing, TOTP MFA, automated penetration test suites.`,
+• **Frontend & mobile:** React, TypeScript, modern web frameworks, Android, iOS and cross-platform apps.
+• **Backend & APIs:** Node.js, Python, REST and GraphQL integrations.
+• **Cloud:** Microsoft Azure, AWS and Google Cloud, with DevOps and DevSecOps pipelines.
+• **AI & IoT:** LLMs, RAG, computer vision, sensors, edge computing and real-time dashboards.
+
+We choose the stack that fits your business, not the other way round.`,
       suggestedPrompts: [
-        'How do you integrate with our project?',
+        'How do you work?',
         'What services do you offer?',
-        'Request a 24-hour proposal',
+        'Book a free consultation',
       ],
       actionButtons: [
-        { label: '📋 Request Proposal', action: 'proposal' },
-        { label: '🚀 Explore Services', action: 'services' },
+        { label: '📋 Book Free Consultation', action: 'proposal' },
+        { label: '💻 Services', action: 'services_tech' },
       ],
     };
   }
 
-  /* ─── 10. PRICING & TIMELINE TRANSPARENCY ──────────────────── */
+  /* ─── 10. PRICING & TIMELINES ───────────────────────────────── */
   if (
     q.includes('price') ||
     q.includes('pricing') ||
     q.includes('cost') ||
     q.includes('budget') ||
-    q.includes('rate') ||
     q.includes('timeline') ||
     q.includes('how long')
   ) {
     return {
-      text: `💎 **Transparent, Milestone-Driven Pricing:**
+      text: `💎 **Clear, fixed-scope pricing:**
+Every project is different, so we give you a clear, fixed-scope quotation after a free discovery session. You will know the full cost upfront, with no hidden charges.
 
-• **SaaS Products & Full Platforms:** Starting from $12K (typical delivery 4–8 weeks).
-• **Brand Making & Visual Identity:** Starting from $5K (typical delivery 2–3 weeks).
-• **SEO & AI Citation Engine (AIO):** Starting from $2K/month retainer.
-• **Custom Software & ERP/CRM:** Scoped per roadmap milestones.
-• **Productivity & Leadership Training:** Starting from $1.5K per squad program.
-
-Every engagement begins with a **Free 24-Hour Scoped Proposal** with exact milestones and timelines before any commitment is made.`,
+⏱️ **Typical timelines:** a proof of concept in 2–4 weeks, most custom applications in 2–6 months depending on scope, and our ready-made products deployed and customised in a matter of weeks.`,
       triggerCard: 'lead',
       suggestedPrompts: [
-        'Request a 24-hour proposal',
-        'Tell me about SaaS Platforms',
+        'Book a free consultation',
+        'Tell me about your products',
         'Raise a Support Ticket',
       ],
       actionButtons: [
-        { label: '📋 Request 24h Proposal', action: 'proposal' },
+        { label: '📋 Book Free Consultation', action: 'proposal' },
         { label: '🎫 Support Ticket', action: 'ticket' },
       ],
     };
   }
 
-  /* ─── 11. COMPANY BACKGROUND & LEADERSHIP ──────────────────── */
+  /* ─── 11. COMPANY BACKGROUND ────────────────────────────────── */
   if (
     q.includes('who are you') ||
     q.includes('company') ||
     q.includes('kinetic bay') ||
     q.includes('team') ||
     q.includes('founder') ||
-    q.includes('about')
+    q.includes('about') ||
+    q.includes('sdg')
   ) {
     return {
-      text: `🏢 **About Kinetic Bay:**
-Founded by ex-Google engineering leadership, Kinetic Bay combines veteran software architects, design thinkers, and organizational psychologists who have delivered 180+ successful digital products globally.
+      text: `🏢 **About Kinetic Bay — Born by the Bay. Built for the world.**
+Headquartered in Chennai, Kinetic Bay builds custom software, AI, cloud and IoT systems for clients across India and around the world. We have delivered 40+ projects with a 99% success rate.
 
-We are committed to building resilient software and organizational systems that align with modern engineering excellence and the United Nations Sustainable Development Goals (SDGs).`,
+Our belief: the best technology doesn't replace people — it frees them. Every project is aligned with the UN Sustainable Development Goals, and through our Kinetic Catalysts programme we mentor the next generation of engineers.`,
       suggestedPrompts: [
         'What services do you offer?',
-        'How do you integrate with our project?',
-        'Request a 24-hour proposal',
+        'How do you work?',
+        'Book a free consultation',
       ],
       actionButtons: [
-        { label: '🚀 Explore Services', action: 'services' },
-        { label: '📋 Request Proposal', action: 'proposal' },
+        { label: '💻 Services', action: 'services_tech' },
+        { label: '📋 Free Consultation', action: 'proposal' },
       ],
     };
   }
@@ -483,8 +484,8 @@ We are committed to building resilient software and organizational systems that 
   return {
     text: `I'm here to assist you with Kinetic Bay's services and technical dispatch. Here are the most common things I can help you with immediately:`,
     suggestedPrompts: [
-      'Explore Technology Services',
-      'Request 24h Proposal',
+      'Explore our services',
+      'Book a free consultation',
       'Raise a Support Ticket',
       'Track Existing Ticket',
     ],

@@ -278,6 +278,118 @@ body {
   color: inherit;
 }
 
+
+/* ════════════════════════════════════════════
+   DEPTH & MOTION SYSTEM
+════════════════════════════════════════════ */
+
+/* Glass card used over the particle story */
+.story-card {
+  padding: 20px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, rgba(17,18,20,0.72), rgba(8,9,10,0.55));
+  border: 1px solid rgba(249,115,22,0.18);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 30px 80px -30px rgba(0,0,0,0.8);
+}
+@media (min-width: 768px) {
+  .story-card { padding: 36px 40px; }
+}
+
+/* Giant outlined words used as far parallax planes */
+.outline-word {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(249,115,22,0.22);
+  letter-spacing: -0.04em;
+}
+.outline-word-sm {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(249,115,22,0.18);
+}
+
+/* Perspective floor that streams toward the viewer */
+.grid-floor {
+  transform: rotateX(72deg);
+  background-image:
+    linear-gradient(rgba(249,115,22,0.35) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(249,115,22,0.35) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(to top, black 10%, transparent 85%);
+  -webkit-mask-image: linear-gradient(to top, black 10%, transparent 85%);
+  animation: floor-stream 3.5s linear infinite;
+}
+@keyframes floor-stream {
+  from { background-position: 0 0; }
+  to { background-position: 0 64px; }
+}
+
+/* Floating glass glyph tiles */
+.glyph-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(26,28,32,0.9), rgba(17,18,20,0.6));
+  border: 1px solid rgba(249,115,22,0.28);
+  box-shadow: 0 20px 50px -15px rgba(249,115,22,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+  animation: glyph-float 7s ease-in-out infinite;
+}
+@keyframes glyph-float {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-18px) rotate(4deg); }
+}
+
+/* Cursor-follow glare on tilt cards */
+.glare { position: relative; }
+.glare::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(420px circle at var(--gx, 50%) var(--gy, 0%), rgba(249,115,22,0.12), transparent 45%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.glare:hover::after { opacity: 1; }
+
+/* Bay scene */
+.wave-a { animation: wave-drift 9s ease-in-out infinite alternate; }
+.wave-b { animation: wave-drift 6s ease-in-out infinite alternate-reverse; }
+@keyframes wave-drift {
+  from { transform: translateX(-30px); }
+  to { transform: translateX(30px); }
+}
+.boat-bob { animation: boat-bob 4s ease-in-out infinite; transform-origin: 50% 90%; }
+@keyframes boat-bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-6px) rotate(2deg); }
+}
+
+/* Presence radar */
+.animate-radar { animation: radar 3.3s ease-out infinite; }
+@keyframes radar {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(1.12); opacity: 0; }
+}
+.arc-dash { animation: arc-dash 2.4s linear infinite; }
+@keyframes arc-dash { to { stroke-dashoffset: -12; } }
+
+/* Product screen details */
+.scan-line { top: 20%; animation: scan 2.4s ease-in-out infinite alternate; }
+@keyframes scan { to { top: 80%; } }
+.animate-ping-slow { animation: ping-slow 2.2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+@keyframes ping-slow {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+/* Lenis */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: hidden; }
+
 /* Reduce motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

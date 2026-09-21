@@ -1,286 +1,71 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import DecryptedText from '../components/DecryptedText';
-import ScrollFloat from '../components/ScrollFloat';
-import { motion } from 'framer-motion';
-import { ArrowRight, Bot, MessageSquare, Globe, Server, Lock, Cloud, ChevronDown, Code2, Layers, Megaphone } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Cpu, Cloud, Lock, Radio, Sparkles } from 'lucide-react';
+import { ParallaxHero } from '../components/fx/ParallaxLayers';
 import Reveal from '../components/Reveal';
-import PageHero3D from '../components/PageHero3D';
 import TiltCard from '../components/TiltCard';
-import LeadGenForm from '../components/LeadGenForm';
-
-
-const services = [
-  {
-    icon: Bot,
-    title: 'AI & Agent-Based Solutions',
-    hook: 'Autonomous workflows that think, decide, and act — not just automate.',
-    stack: ['Azure AI Foundry', 'Python', 'Azure Functions', 'Durable Functions'],
-    body: "We design and build AI-driven features — from single-purpose intelligent automations to coordinated multi-agent systems that handle classification, extraction, decision-making, and validation as part of a larger workflow.",
-    bullets: [
-      'Custom AI agents for document, data, or task automation',
-      'Multi-agent orchestration using fan-out/fan-in and durable workflow patterns',
-      'Integration of AI reasoning into existing business processes',
-    ],
-  },
-  {
-    icon: MessageSquare,
-    title: 'Chatbot & Conversational AI Integration',
-    hook: "A conversational layer grounded in your own data — not generic answers.",
-    stack: ['Azure AI Foundry', 'Node.js/Python', 'MongoDB Vector Search', 'Angular'],
-    body: "We build and integrate chatbots — from simple FAQ/support bots to retrieval-augmented (RAG) assistants that answer questions grounded in your company's documents and data.",
-    bullets: [
-      'RAG-based assistants grounded in client documents/knowledge base',
-      'Embeddable chat widgets for websites or internal tools',
-      'Integration with existing backend systems and databases',
-    ],
-  },
-  {
-    icon: Globe,
-    title: 'Single Page Applications & Web Apps',
-    hook: 'Interfaces that feel instant, everywhere.',
-    stack: ['Angular', 'HTML5', 'Tailwind CSS', 'Node.js'],
-    body: 'We design and develop single-page applications and full front-end experiences — dashboards, admin panels, customer portals — with clean, responsive UI and solid backend integration.',
-    bullets: [
-      'Custom SPA development with Angular and Tailwind CSS',
-      'Responsive, accessible UI across devices',
-      'API integration with Node.js, Python, Java, or .NET backends',
-    ],
-  },
-  {
-    icon: Code2,
-    title: 'Custom Development & Projects',
-    hook: 'Your idea, engineered from scratch — tailored to fit exactly.',
-    stack: ['React', 'Node.js', 'Python', 'TypeScript', 'MongoDB', 'PostgreSQL'],
-    body: "We take on bespoke software projects from idea to launch — whether it's an internal tool, a client-facing product, or a complex integration. No templates, no shortcuts — just clean, well-architected code built around your exact requirements.",
-    bullets: [
-      'End-to-end project development from discovery to deployment',
-      'Custom integrations with third-party APIs and enterprise systems',
-      'Ongoing maintenance, iteration, and feature expansion post-launch',
-    ],
-  },
-  {
-    icon: Layers,
-    title: 'Website Design & Development',
-    hook: 'Websites that convert visitors into believers.',
-    stack: ['React', 'Vite', 'Tailwind CSS', 'Framer Motion', 'TypeScript'],
-    body: 'We design and build high-performance, visually stunning websites — from marketing landing pages to multi-page corporate sites. Every site is responsive, SEO-optimised, and built with modern tooling for speed and maintainability.',
-    bullets: [
-      'Custom design systems and component libraries',
-      'Responsive, accessible websites optimised for all devices and screen sizes',
-      'SEO best practices, performance optimisation, and Core Web Vitals compliance',
-    ],
-  },
-  {
-    icon: Megaphone,
-    title: 'Brand Building & Identity',
-    hook: 'A brand that people remember — and trust.',
-    stack: ['Figma', 'Adobe Suite', 'Brand Strategy', 'UI/UX Design'],
-    body: 'We help businesses define and express their identity with clarity and confidence — from logo design and visual language to full brand guidelines and go-to-market messaging. We bridge the gap between how you want to be perceived and how you actually show up.',
-    bullets: [
-      'Logo design, typography, and visual identity systems',
-      'Brand guidelines covering colour, tone, voice, and usage rules',
-      'Go-to-market messaging, pitch decks, and marketing collateral',
-    ],
-  },
-  {
-    icon: Server,
-    title: 'Backend & API Development',
-    hook: "The infrastructure your product doesn't have to think about.",
-    stack: ['Node.js', 'Python', 'Java', '.NET', 'MongoDB', 'SQL'],
-    body: 'We build backend services and APIs across multiple language ecosystems, tailored to your existing stack or a fresh architecture, with clean data modeling in SQL and/or MongoDB.',
-    bullets: [
-      'REST API design and development in Node.js, Python, Java, or .NET',
-      'Database design across SQL and MongoDB, including polyglot setups',
-      'Secure, scalable backend architecture',
-    ],
-  },
-  {
-    icon: Lock,
-    title: 'Access Control & Permission Systems',
-    hook: 'Know exactly who can do what — and prove it.',
-    stack: ['Node.js', 'MongoDB', 'Angular'],
-    body: 'We implement resource-action based (ABAC) permission systems in place of rigid role flags, including an admin UI for managing roles and a migration path from legacy access models.',
-    bullets: [
-      'Centralized permission registry and enforcement middleware',
-      'Migration tooling for adopting fine-grained access control in existing systems',
-      'Admin UI for managing roles, resources, and permissions',
-    ],
-  },
-  {
-    icon: Cloud,
-    title: 'Cloud Infrastructure & DevOps on Azure',
-    hook: 'Deployments that just work, every time.',
-    stack: ['Azure App Service', 'Function Apps', 'YAML', 'GitHub Actions / Azure DevOps'],
-    body: 'We set up and troubleshoot Azure App Service and Function App environments, manage environment variables and configuration, and build CI/CD pipelines for automated deployment.',
-    bullets: [
-      'App Service & Function App configuration and environment variable management',
-      'CI/CD pipeline setup with YAML for automated build-test-deploy',
-      'Deployment troubleshooting and reliability improvements',
-    ],
-  },
-];
-
-const faqs = [
-  { q: 'Do you work with startups or only larger organizations?', a: 'Both. Engagement scope adjusts to your stage — from a single AI feature to a full platform build.' },
-  { q: 'What does a typical engagement look like?', a: 'Discover → Design → Build → Deploy & Measure. Most engagements start with a scoped discovery call.' },
-  { q: 'Can you work within your existing tech stack?', a: 'Yes — our backend work spans Node.js, Python, Java, and .NET specifically so we can slot into what you already run.' },
-];
-
-function FaqItem({ q, a }: { q: string; a: string }) {
-  const [open, setOpen] = useState(false);
-  const id = q.replace(/\s+/g, '-').slice(0, 30);
-  return (
-    <div className="faq-item">
-      <button
-        className="w-full flex items-start justify-between gap-4 text-left group"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        aria-controls={id}
-      >
-        <span className="font-body font-semibold text-ink text-[16px] sm:text-[17px] leading-snug group-hover:text-primary transition-colors">{q}</span>
-        <ChevronDown className={`w-5 h-5 text-primary shrink-0 mt-0.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
-      </button>
-      {open && (
-        <motion.p
-          id={id}
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          className="mt-3 text-text-secondary text-[15px] leading-relaxed"
-        >
-          {a}
-        </motion.p>
-      )}
-    </div>
-  );
-}
+import { FinalCta } from '../components/ui';
+import { pillars, pillarsIntro } from '../data/site';
+import { useSeo } from '../lib/seo';
 
 export default function Services() {
+  useSeo(
+    'Services: AI, Software, Cloud & IoT | Kinetic Bay',
+    'AI & automation, digital engineering, cybersecurity & cloud, and IoT projects — four pillars combined into solutions that work end to end.',
+  );
+
   return (
-    <div className="overflow-hidden bg-bg">
+    <div className="bg-bg">
+      <ParallaxHero
+        word="PILLARS"
+        eyebrow={pillarsIntro.eyebrow}
+        title="Four pillars."
+        highlight="One goal: your success."
+        body={pillarsIntro.body}
+        icons={[Sparkles, Cpu, Lock, Cloud, Radio]}
+      />
 
-      {/* ── HERO ─────────────────────────────────── */}
-      <section className="relative min-h-[50vh] flex items-end pb-16 pt-32 border-b border-border overflow-hidden">
-        <div className="glow-orb w-[500px] h-[300px] bg-primary/10 top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2" />
-        <PageHero3D shape="torus" />
-        <div className="max-w-[1200px] mx-auto px-6 relative z-10 w-full">
-          <Reveal>
-            <p className="eyebrow mb-4">Services</p>
-            <h1
-              className="font-heading font-bold text-ink leading-[1.05] tracking-[-0.02em] mb-5 max-w-2xl"
-              style={{ fontSize: 'clamp(34px, 5vw, 64px)' }}
-            >
-              <DecryptedText
-                text="Technology, engineered "
-                animateOn="view"
-                sequential
-                revealDirection="start"
-                speed={35}
-                encryptedClassName="decrypt-encrypted"
-              />
-              <span className="text-gradient-primary">
-                <DecryptedText
-                  text="with intent."
-                  animateOn="view"
-                  sequential
-                  revealDirection="start"
-                  speed={35}
-                  encryptedClassName="decrypt-encrypted"
-                />
-              </span>
-            </h1>
-            <p className="text-text-secondary leading-relaxed max-w-xl text-base sm:text-lg md:text-xl">
-              We design and build custom management software, SDG-based applications, and high-performance digital tools for large corporations and organizations of all sizes.
-            </p>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ── SERVICE BLOCKS ───────────────────────── */}
       <section className="section-py">
-        <div className="max-w-[1200px] mx-auto px-6 space-y-5">
-          {services.map(({ icon: Icon, title, hook, stack, body, bullets }, i) => (
-            <Reveal key={title} delay={i * 50}>
-              <TiltCard className="kb-card p-6 sm:p-8" maxTilt={5}>
-                <div className="flex flex-col sm:flex-row items-start gap-5">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                    <Icon className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="font-heading font-semibold text-ink text-xl sm:text-2xl leading-[1.25] mb-1">
-                      <DecryptedText
-                        text={title}
-                        animateOn="view"
-                        sequential
-                        revealDirection="start"
-                        speed={28}
-                        encryptedClassName="decrypt-encrypted"
-                      />
-                    </h2>
-                    <p className="text-primary font-medium text-[14px] sm:text-[15px] mb-3 italic">"{hook}"</p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {stack.map((s) => <span key={s} className="stack-tag">{s}</span>)}
+        <div className="max-w-[1200px] mx-auto px-6 space-y-6">
+          {pillars.map((p, i) => (
+            <Reveal key={p.slug}>
+              <TiltCard className="kb-card glare relative overflow-hidden" maxTilt={3}>
+                <div className="grid lg:grid-cols-[1fr_1.1fr]">
+                  <div className="p-8 md:p-12 border-b lg:border-b-0 lg:border-r border-border relative">
+                    <span className="absolute right-6 top-2 outline-word-sm font-heading font-bold text-[120px] leading-none" aria-hidden="true">0{i + 1}</span>
+                    <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center mb-8">
+                      <p.icon className="w-7 h-7 text-primary" />
                     </div>
-                    <p className="text-text-secondary text-[14px] sm:text-[15px] leading-relaxed mb-4">{body}</p>
-                    <ul className="space-y-2">
-                      {bullets.map((b) => (
-                        <li key={b} className="flex items-start gap-2.5 text-[14px] sm:text-[15px] text-text-secondary">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />
-                          {b}
+                    <h2 className="font-heading font-bold text-ink text-3xl md:text-4xl tracking-[-0.02em] mb-2">{p.name}</h2>
+                    <p className="text-primary font-medium text-lg mb-5">{p.tagline}</p>
+                    <p className="text-text-secondary leading-relaxed mb-8">{p.intro}</p>
+                    <div className="flex flex-wrap gap-3">
+                      <Link to={`/services/${p.slug}`} className="btn-accent">Explore {p.name} <ArrowRight className="w-4 h-4" /></Link>
+                    </div>
+                  </div>
+                  <div className="p-8 md:p-12">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-text-secondary mb-5">What's inside</p>
+                    <ul className="grid sm:grid-cols-2 gap-x-6">
+                      {p.services.map((s) => (
+                        <li key={s.name} className="py-3 border-b border-border/70 text-[14px] text-ink flex items-start gap-2.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />{s.name}
                         </li>
                       ))}
                     </ul>
+                    <p className="mt-6 text-[14px] text-text-secondary"><span className="text-ink font-semibold">Outcome:</span> {p.outcome}</p>
                   </div>
                 </div>
               </TiltCard>
             </Reveal>
           ))}
-        </div>
-      </section>
-
-      <div className="max-w-[1200px] mx-auto px-6"><div className="current-mark" /></div>
-
-      {/* ── FAQ ──────────────────────────────────── */}
-      <section className="section-py">
-        <div className="max-w-[1200px] mx-auto px-6">
           <Reveal>
-            <p className="eyebrow mb-3">FAQ</p>
-            <h2 className="font-heading font-semibold text-ink leading-[1.15] tracking-[-0.01em] mb-10 text-2xl sm:text-3xl md:text-4xl">
-              <ScrollFloat animationDuration={1} ease="back.inOut(2)" scrollStart="center bottom+=50%" scrollEnd="bottom bottom-=40%" stagger={0.04}>Before you reach out</ScrollFloat>
-            </h2>
-          </Reveal>
-          <Reveal>
-            <div className="max-w-2xl">
-              {faqs.map((f) => <FaqItem key={f.q} q={f.q} a={f.a} />)}
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ── LEAD GENERATION FORM ─────────────────────── */}
-      <section className="section-py border-t border-border bg-surface/20">
-        <div className="max-w-[1200px] mx-auto px-6">
-          <LeadGenForm />
-        </div>
-      </section>
-
-      {/* ── CTA BAND ─────────────────────────────── */}
-      <section className="relative overflow-hidden bg-[#050607] border-t border-border">
-        <div className="glow-orb w-[500px] h-[300px] bg-primary/10 bottom-0 left-1/2 -translate-x-1/2" />
-        <div className="max-w-[1200px] mx-auto px-6 py-20 sm:py-24 text-center relative z-10">
-          <Reveal>
-            <h2 className="font-heading font-semibold text-ink leading-[1.15] tracking-[-0.01em] mb-5 text-2xl sm:text-3xl md:text-4xl">
-              <ScrollFloat animationDuration={1} ease="back.inOut(2)" scrollStart="center bottom+=50%" scrollEnd="bottom bottom-=40%" stagger={0.03}>Ready to scope your project?</ScrollFloat>
-            </h2>
-            <p className="text-text-secondary text-base sm:text-lg leading-relaxed max-w-xl mx-auto mb-8">
-              Book a scoped discovery call — no commitment, just clarity.
+            <p className="text-center text-text-secondary text-[14px] pt-4">
+              Already know what you need? <Link to="/contact" className="text-primary hover:underline inline-flex items-center gap-1">Talk to an engineer <ArrowUpRight className="w-3.5 h-3.5" /></Link>
             </p>
-            <Link to="/contact" className="btn-accent inline-flex items-center gap-2 rounded-lg">
-              Start a Project <ArrowRight className="w-4 h-4" />
-            </Link>
           </Reveal>
         </div>
       </section>
+
+      <FinalCta />
     </div>
   );
 }

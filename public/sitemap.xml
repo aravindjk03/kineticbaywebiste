@@ -1,33 +1,99 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://kineticbay.com/</loc>
-    <lastmod>2026-07-14</lastmod>
+    <loc>https://kineticbay.kineticbay.workers.dev/</loc>
+    <lastmod>2026-09-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://kineticbay.com/services</loc>
-    <lastmod>2026-07-14</lastmod>
-    <changefreq>weekly</changefreq>
+    <loc>https://kineticbay.kineticbay.workers.dev/services</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://kineticbay.kineticbay.workers.dev/services/ai-automation</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://kineticbay.com/solutions</loc>
-    <lastmod>2026-07-14</lastmod>
-    <changefreq>weekly</changefreq>
+    <loc>https://kineticbay.kineticbay.workers.dev/services/digital-engineering</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://kineticbay.com/team</loc>
-    <lastmod>2026-07-14</lastmod>
+    <loc>https://kineticbay.kineticbay.workers.dev/services/cybersecurity-cloud</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://kineticbay.kineticbay.workers.dev/services/iot</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://kineticbay.kineticbay.workers.dev/products</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://kineticbay.kineticbay.workers.dev/products/hrms</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://kineticbay.kineticbay.workers.dev/products/vms</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://kineticbay.kineticbay.workers.dev/products/pms</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://kineticbay.kineticbay.workers.dev/products/crm</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://kineticbay.kineticbay.workers.dev/products/attendance</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://kineticbay.kineticbay.workers.dev/solutions</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://kineticbay.kineticbay.workers.dev/about</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://kineticbay.kineticbay.workers.dev/team</loc>
+    <lastmod>2026-09-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://kineticbay.com/contact</loc>
-    <lastmod>2026-07-14</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://kineticbay.kineticbay.workers.dev/contact</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>yearly</changefreq>
     <priority>0.7</priority>
   </url>
 </urlset>

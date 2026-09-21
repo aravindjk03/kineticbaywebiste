@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { contactCopy } from '../../data/site';
 import { Send, CheckCircle2, Sparkles, Building, Mail, User, Phone } from 'lucide-react';
 import { addLead } from '../../lib/cmsStore';
 import { api } from '../../lib/api';
@@ -9,16 +10,7 @@ interface LeadCaptureCardProps {
   defaultService?: string;
 }
 
-const serviceOptions = [
-  'SaaS Platforms',
-  'Custom Enterprise Software',
-  'AI Agents & Automation',
-  'Brand Making & Design',
-  'SEO & AI Optimization (AIO)',
-  'Management Software (PaaS)',
-  'Team & Leadership Training',
-  'Other / Scoped Roadmap',
-];
+const serviceOptions = contactCopy.helpOptions;
 
 export default function LeadCaptureCard({ onSubmitted, conversationSnippet, defaultService }: LeadCaptureCardProps) {
   const [form, setForm] = useState({
@@ -26,7 +18,7 @@ export default function LeadCaptureCard({ onSubmitted, conversationSnippet, defa
     email: '',
     phone: '',
     company: '',
-    service: defaultService || 'SaaS Platforms',
+    service: defaultService || serviceOptions[0],
     message: '',
   });
   const [submitting, setSubmitting] = useState(false);

@@ -18,8 +18,13 @@ export default function TiltCard({ children, className = '', maxTilt = 8 }: Tilt
   const handleMove = (e: React.MouseEvent) => {
     if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
-    x.set((e.clientX - rect.left) / rect.width - 0.5);
-    y.set((e.clientY - rect.top) / rect.height - 0.5);
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
+    x.set(px - 0.5);
+    y.set(py - 0.5);
+    // feeds the .glare highlight
+    ref.current.style.setProperty('--gx', `${px * 100}%`);
+    ref.current.style.setProperty('--gy', `${py * 100}%`);
   };
 
   const handleLeave = () => {

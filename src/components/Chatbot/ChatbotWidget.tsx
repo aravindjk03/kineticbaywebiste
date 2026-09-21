@@ -314,10 +314,10 @@ export default function ChatbotWidget() {
         handleSend('What services do you offer?');
         break;
       case 'services_tech':
-        handleSend('Tell me about Technology & Engineering Services');
+        handleSend('Tell me about your IT services');
         break;
       case 'services_training':
-        handleSend('Tell me about Human & Organizational Training');
+        handleSend('Tell me about your products');
         break;
       case 'proposal':
         handleSend('I would like to request a 24-hour project proposal');

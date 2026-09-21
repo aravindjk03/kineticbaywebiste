@@ -1,454 +1,293 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { ArrowRight, Bot, MessageSquare, Globe, Cloud, Target, Users, Zap, TrendingUp, Shield, Code2, Layers, Megaphone } from 'lucide-react';
+import { motion, useScroll, useTransform, type MotionValue } from 'framer-motion';
+import { ArrowRight, ArrowUpRight } from 'lucide-react';
+import HeroStory from '../components/home/HeroStory';
+import TypeStage from '../components/home/TypeStage';
 import Reveal from '../components/Reveal';
-import GradientBlinds from '../components/GradientBlinds';
-import Shuffle from '../components/Shuffle';
-
-import ScrollFloat from '../components/ScrollFloat';
 import TiltCard from '../components/TiltCard';
-import LeadGenForm from '../components/LeadGenForm';
+import { SectionHead, Counter, FaqSection, FinalCta, faqJsonLd } from '../components/ui';
+import {
+  sdgs, impact, pillars, pillarsIntro, products, productsIntro,
+  industries, industriesIntro, promises, whyIntro,
+} from '../data/site';
+import { useSeo } from '../lib/seo';
 
+/* ─── SDG: three columns drifting at different depths ─── */
 
-/* ─── ANIMATED COUNTER ─────────────────────────────────── */
-
-function AnimatedCounter({ value, suffix = '' }: { value: number; suffix?: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const [displayed, setDisplayed] = useState(0);
-  const [started, setStarted] = useState(false);
-  useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !started) {
-        setStarted(true);
-        const duration = 2000;
-        const start = Date.now();
-        const tick = () => {
-          const elapsed = Date.now() - start;
-          const progress = Math.min(elapsed / duration, 1);
-          const eased = 1 - Math.pow(1 - progress, 3);
-          setDisplayed(Math.floor(eased * value));
-          if (progress < 1) requestAnimationFrame(tick);
-          else setDisplayed(value);
-        };
-        tick();
-      }
-    }, { threshold: 0.5 });
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [value, started]);
-  return <span ref={ref}>{displayed.toLocaleString()}{suffix}</span>;
-}
-
-/* ─── SCROLL PARALLAX SECTION ──────────────────────────── */
-
-function ParallaxSection({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
-  const y = useTransform(scrollYProgress, [0, 1], [60, -60]);
+function SdgCard({ sdg }: { sdg: typeof sdgs[number] }) {
   return (
-    <div ref={ref} className={`overflow-hidden ${className}`}>
-      <motion.div style={{ y }}>{children}</motion.div>
-    </div>
+    <TiltCard className="kb-card p-6 md:p-7 relative overflow-hidden group" maxTilt={6}>
+      <div className="absolute inset-x-0 top-0 h-1" style={{ background: sdg.color }} />
+      <div className="flex items-center gap-4 mb-5">
+        <span className="w-14 h-14 rounded-xl flex flex-col items-center justify-center text-white font-heading font-bold leading-none shrink-0" style={{ background: sdg.color }}>
+          <span className="text-[9px] tracking-widest opacity-80">SDG</span>
+          <span className="text-2xl">{sdg.num}</span>
+        </span>
+        <h3 className="font-heading font-semibold text-ink text-[17px] leading-tight">{sdg.title}</h3>
+      </div>
+      <p className="text-text-secondary text-[14px] leading-relaxed">{sdg.body}</p>
+    </TiltCard>
   );
 }
 
-/* ─── DATA ─────────────────────────────────────────────── */
+function DepthColumn({ items, p, speed }: { items: typeof sdgs; p: MotionValue<number>; speed: number }) {
+  const y = useTransform(p, [0, 1], [speed, -speed]);
+  return (
+    <motion.div style={{ y }} className="flex flex-col gap-5">
+      {items.map((s) => <SdgCard key={s.num} sdg={s} />)}
+    </motion.div>
+  );
+}
 
-const services = [
-  { icon: Bot, title: 'AI Agents & Automation', desc: 'Intelligent agents that reason, plan, and act — built on Azure AI Foundry.' },
-  { icon: MessageSquare, title: 'Conversational AI', desc: 'Chatbots and voice agents that understand context and close the loop.' },
-  { icon: Globe, title: 'Web Applications', desc: 'High-performance SPAs and full-stack apps that scale under pressure.' },
-  { icon: Code2, title: 'Custom Development & Projects', desc: 'Bespoke software projects built from the ground up to fit your exact business needs.' },
-  { icon: Layers, title: 'Website Design & Development', desc: 'Visually stunning, high-performance, and responsive websites optimized for growth.' },
-  { icon: Megaphone, title: 'Brand Building & Identity', desc: 'Cohesive brand strategy, logo design, visual identity, and go-to-market messaging.' },
-  { icon: Cloud, title: 'Cloud & DevOps', desc: 'Azure-native infrastructure with CI/CD pipelines that ship fast and stay stable.' },
+function SdgSection() {
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
+  return (
+    <section ref={ref} className="section-py relative overflow-hidden">
+      <div className="max-w-[1200px] mx-auto px-6">
+        <div className="hidden md:grid grid-cols-3 gap-5 md:py-16">
+          <DepthColumn items={[sdgs[0], sdgs[3]]} p={scrollYProgress} speed={40} />
+          <DepthColumn items={[sdgs[1], sdgs[4]]} p={scrollYProgress} speed={110} />
+          <DepthColumn items={[sdgs[2], sdgs[5]]} p={scrollYProgress} speed={20} />
+        </div>
+        <div className="md:hidden grid gap-4">
+          {sdgs.map((s) => <SdgCard key={s.num} sdg={s} />)}
+        </div>
+        <Reveal className="mt-14 text-center">
+          <p className="font-heading text-2xl md:text-4xl text-ink tracking-[-0.02em] max-w-3xl mx-auto leading-tight">
+            We don't just build technology that works. <span className="text-gradient-primary">We build technology that matters.</span>
+          </p>
+          <p className="text-[12px] text-text-secondary/60 mt-5">Kinetic Bay's work is aligned with and contributes to the UN SDGs. It does not imply UN endorsement.</p>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Impact board ─── */
+
+function ImpactBoard() {
+  return (
+    <section className="section-py relative border-y border-border bg-surface/40 overflow-hidden">
+      <div className="absolute inset-0 hero-grid opacity-40" />
+      <div className="relative max-w-[1200px] mx-auto px-6">
+        <SectionHead eyebrow={impact.eyebrow} title={impact.title} center />
+        <div className="grid grid-cols-2 lg:grid-cols-4 border border-border rounded-3xl overflow-hidden bg-bg/60 backdrop-blur">
+          {impact.stats.map((s, i) => (
+            <Reveal key={s.label} delay={i * 90} className={`p-7 md:p-10 ${i % 2 ? 'border-l' : ''} ${i > 1 ? 'border-t lg:border-t-0' : ''} lg:border-l first:lg:border-l-0 border-border`}>
+              <div className="font-heading font-bold text-gradient-primary leading-none mb-4" style={{ fontSize: 'clamp(36px, 5vw, 68px)' }}>
+                {s.value !== undefined ? <Counter value={s.value} suffix={s.suffix} /> : s.word}
+              </div>
+              <p className="font-heading font-semibold text-ink text-[17px] mb-1">{s.label}</p>
+              <p className="text-text-secondary text-[13px]">{s.sub}</p>
+            </Reveal>
+          ))}
+        </div>
+        <Reveal><p className="text-center text-text-secondary text-base md:text-lg max-w-2xl mx-auto mt-10">{impact.closer}</p></Reveal>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Four pillars ─── */
+
+function Pillars() {
+  return (
+    <section className="section-py">
+      <div className="max-w-[1200px] mx-auto px-6">
+        <SectionHead eyebrow={pillarsIntro.eyebrow} title={pillarsIntro.title} body={pillarsIntro.body} />
+        <div className="grid md:grid-cols-2 gap-5">
+          {pillars.map((p, i) => (
+            <Reveal key={p.slug} delay={i * 90}>
+              <Link to={`/services/${p.slug}`} className="block group h-full">
+                <TiltCard className="kb-card glare p-8 md:p-10 h-full relative overflow-hidden" maxTilt={7}>
+                  <span className="absolute right-6 top-4 outline-word-sm font-heading font-bold text-[96px] leading-none" aria-hidden="true">0{i + 1}</span>
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center mb-8 [transform:translateZ(40px)]">
+                    <p.icon className="w-7 h-7 text-primary" />
+                  </div>
+                  <h3 className="font-heading font-bold text-ink text-2xl md:text-3xl tracking-[-0.02em] mb-2">{p.name}</h3>
+                  <p className="text-primary font-medium mb-4">{p.tagline}</p>
+                  <p className="text-text-secondary text-[14px] leading-relaxed mb-7 line-clamp-3">{p.intro}</p>
+                  <span className="inline-flex items-center gap-2 text-ink font-semibold text-[14px] group-hover:text-primary transition-colors">
+                    Explore <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </span>
+                </TiltCard>
+              </Link>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Products teaser ─── */
+
+function ProductsTeaser() {
+  return (
+    <section className="section-py bg-surface/40 border-y border-border">
+      <div className="max-w-[1200px] mx-auto px-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <SectionHead eyebrow={productsIntro.eyebrow} title={productsIntro.title} body={productsIntro.body} className="mb-0" />
+          <Reveal className="shrink-0"><Link to="/products" className="btn-accent">See them in action <ArrowRight className="w-4 h-4" /></Link></Reveal>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          {products.map((p, i) => (
+            <Reveal key={p.slug} delay={i * 70} className={i === 4 ? 'col-span-2 lg:col-span-1' : ''}>
+              <Link to={`/products/${p.slug}`} className="group block h-full">
+                <TiltCard className="kb-card p-6 h-full flex flex-col" maxTilt={9}>
+                  <p.icon className="w-7 h-7 text-primary mb-6" />
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-text-secondary mb-1">Kinetic</p>
+                  <h3 className="font-heading font-bold text-ink text-2xl mb-3">{p.short}</h3>
+                  <p className="text-text-secondary text-[13px] leading-relaxed flex-1">{p.tagline}</p>
+                  <ArrowUpRight className="w-4 h-4 text-primary mt-5 opacity-50 group-hover:opacity-100 transition-opacity" />
+                </TiltCard>
+              </Link>
+            </Reveal>
+          ))}
+        </div>
+        <Reveal><p className="text-text-secondary text-[14px] mt-8 text-center">{productsIntro.closer}</p></Reveal>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Industries ─── */
+
+function Industries() {
+  return (
+    <section className="section-py">
+      <div className="max-w-[1200px] mx-auto px-6">
+        <SectionHead eyebrow={industriesIntro.eyebrow} title={industriesIntro.title} body={industriesIntro.body} />
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 border-t border-l border-border">
+          {industries.map((ind, i) => (
+            <Reveal key={ind.name} delay={(i % 3) * 80} className="border-r border-b border-border">
+              <div className="group relative p-7 md:p-8 h-full overflow-hidden transition-colors hover:bg-surface">
+                <div className="absolute -right-10 -bottom-10 w-40 h-40 rounded-full bg-primary/0 group-hover:bg-primary/15 blur-2xl transition-colors duration-500" />
+                <ind.icon className="w-7 h-7 text-primary mb-5 transition-transform duration-500 group-hover:-translate-y-1 group-hover:scale-110" />
+                <h3 className="font-heading font-semibold text-ink text-lg mb-2">{ind.name}</h3>
+                <p className="text-text-secondary text-[14px] leading-relaxed">{ind.body}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Why Kinetic Bay: promises light up as they pass ─── */
+
+function Promise({ i, title, body, p }: { i: number; title: string; body: string; p: MotionValue<number> }) {
+  const at = (i + 0.5) / promises.length;
+  const opacity = useTransform(p, [at - 0.2, at - 0.06, at + 0.08, at + 0.22], [0.25, 1, 1, 0.35]);
+  const x = useTransform(p, [at - 0.2, at - 0.06], [24, 0]);
+  return (
+    <motion.li style={{ opacity, x }} className="flex gap-6 py-7 border-b border-border">
+      <span className="font-heading font-bold text-primary text-[15px] pt-1.5 tabular-nums">0{i + 1}</span>
+      <div>
+        <h3 className="font-heading font-bold text-ink text-xl md:text-2xl tracking-[-0.01em] mb-2">{title}</h3>
+        <p className="text-text-secondary text-[15px] leading-relaxed">{body}</p>
+      </div>
+    </motion.li>
+  );
+}
+
+function WhyUs() {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 0.75', 'end 0.35'] });
+  return (
+    <section className="section-py bg-surface/40 border-y border-border">
+      <div className="max-w-[1200px] mx-auto px-6 grid lg:grid-cols-[0.85fr_1.15fr] gap-10 lg:gap-20">
+        <div className="lg:sticky lg:top-32 self-start">
+          <SectionHead eyebrow={whyIntro.eyebrow} title={whyIntro.title} body={whyIntro.body} className="mb-8" />
+          <Reveal><Link to="/solutions" className="btn-ghost">See how we work <ArrowRight className="w-4 h-4" /></Link></Reveal>
+        </div>
+        <div ref={ref}>
+          <ol className="border-t border-border">
+            {promises.map((pr, i) => <Promise key={pr.title} i={i} title={pr.title} body={pr.body} p={scrollYProgress} />)}
+          </ol>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Explore further ─── */
+
+const explore = [
+  { to: '/solutions', eyebrow: 'Solutions', title: 'From first conversation to lasting impact.' },
+  { to: '/about', eyebrow: 'About Us', title: 'Born by the Bay. Built for the world.' },
+  { to: '/about#catalysts', eyebrow: 'Kinetic Catalysts', title: 'Fresh thinking. Sharp skills. Serious results.' },
+  { to: '/team', eyebrow: 'Meet the Team', title: 'Behind every system is someone who cares.' },
 ];
 
-const sdgCards = [
-  { num: '01', title: 'EduReach', desc: 'AI-adaptive learning tools for underserved communities.', tag: 'SDG 4' },
-  { num: '02', title: 'HealthBridge', desc: 'Remote diagnostics & telemedicine for low-resource settings.', tag: 'SDG 3' },
-  { num: '03', title: 'CarbonLens', desc: 'Real-time carbon tracking dashboards for SMEs.', tag: 'SDG 13' },
-  { num: '04', title: 'GreenChain', desc: 'Transparent ESG supply-chain verification platform.', tag: 'SDG 12' },
-  { num: '05', title: 'CityPulse', desc: 'Smart civic analytics platform for urban planners.', tag: 'SDG 11' },
-  { num: '06', title: 'GrowthLink', desc: 'Credit-scoring AI for underbanked micro-enterprises.', tag: 'SDG 8' },
-  { num: '07', title: 'InnoGrid', desc: 'Predictive grid management for renewable energy operators.', tag: 'SDG 7' },
-];
+function Explore() {
+  return (
+    <section className="section-py">
+      <div className="max-w-[1200px] mx-auto px-6 grid sm:grid-cols-2 gap-4">
+        {explore.map((e, i) => (
+          <Reveal key={e.to} delay={i * 70}>
+            <Link to={e.to} className="group kb-card p-8 flex items-end justify-between gap-6 min-h-[200px] relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/0 group-hover:from-primary/10 transition-colors duration-500" />
+              <div className="relative">
+                <p className="eyebrow mb-3">{e.eyebrow}</p>
+                <p className="font-heading font-bold text-ink text-2xl leading-tight max-w-xs">{e.title}</p>
+              </div>
+              <span className="relative w-12 h-12 rounded-full border border-primary/40 flex items-center justify-center shrink-0 transition-all group-hover:bg-primary group-hover:border-primary">
+                <ArrowUpRight className="w-5 h-5 text-primary group-hover:text-white transition-colors" />
+              </span>
+            </Link>
+          </Reveal>
+        ))}
+      </div>
+    </section>
+  );
+}
 
-const stats = [
-  { value: 7, suffix: '', label: 'SDG-aligned products' },
-  { value: 99, suffix: '%', label: 'Azure uptime SLA' },
-  { value: 5, suffix: '+', label: 'countries served' },
-  { value: 40, suffix: '%', label: 'faster time-to-deploy' },
-];
-
-const steps = [
-  { num: '01', title: 'Discovery', desc: 'Deep-dive into your stack, constraints, and goals.' },
-  { num: '02', title: 'Blueprint', desc: 'Architecture design with measurable milestones.' },
-  { num: '03', title: 'Build', desc: 'Iterative sprints with weekly demos, no surprises.' },
-  { num: '04', title: 'Launch & Scale', desc: 'Production deploy, monitoring, and iterative growth.' },
-];
-
-/* ─── HOME PAGE ────────────────────────────────────────── */
+const orgJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      name: 'Kinetic Bay',
+      slogan: 'Building Machines. Shaping Humans.',
+      url: 'https://kineticbay.kineticbay.workers.dev/',
+      logo: 'https://kineticbay.kineticbay.workers.dev/kineticbay.png',
+      email: 'Kineticbay@gmail.com',
+      sameAs: ['https://linkedin.com/company/kineticbay'],
+    },
+    {
+      '@type': 'LocalBusiness',
+      name: 'Kinetic Bay',
+      address: { '@type': 'PostalAddress', addressLocality: 'Chennai', addressRegion: 'Tamil Nadu', addressCountry: 'IN' },
+      areaServed: ['IN', 'Worldwide'],
+    },
+    faqJsonLd,
+  ],
+};
 
 export default function Home() {
-  const heroRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress: heroScroll } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
-  const heroTextY = useTransform(heroScroll, [0, 1], [0, -120]);
-  const heroOpacity = useTransform(heroScroll, [0, 0.6], [1, 0]);
-  const heroScale = useTransform(heroScroll, [0, 1], [1, 0.92]);
+  useSeo(
+    'Kinetic Bay | Custom Software & AI Solutions, Chennai',
+    'Custom software, AI, cloud & IoT solutions that make work easier and create impact. 40+ projects, 99% success. Chennai-based, serving India & the world.',
+    orgJsonLd,
+  );
 
   return (
-    <div className="overflow-hidden bg-bg">
-
-      {/* ── HERO ────────────────────────────────────── */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden">
-        {/* GradientBlinds — orange brand theme */}
-        <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0 }}>
-          <GradientBlinds
-            gradientColors={['#F97316', '#EA580C', '#1a0800', '#08090A']}
-            angle={0}
-            noise={0.18}
-            blindCount={12}
-            blindMinWidth={50}
-            spotlightRadius={0.55}
-            spotlightSoftness={1.2}
-            spotlightOpacity={0.9}
-            mouseDampening={0.18}
-            distortAmount={0}
-            shineDirection="left"
-            mixBlendMode="normal"
-          />
-        </div>
-
-
-
-
-        {/* Text */}
-        <motion.div
-          style={{ y: heroTextY, opacity: heroOpacity, scale: heroScale }}
-          className="relative z-10 max-w-[1200px] mx-auto px-6 pt-28 pb-20 w-full"
-        >
-          <motion.p
-            className="eyebrow mb-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            Full-Stack AI Studio
-          </motion.p>
-          <h1
-            className="font-heading font-bold text-ink leading-[1.03] tracking-[-0.03em] mb-6 max-w-2xl"
-            style={{ fontSize: 'clamp(42px, 6vw, 80px)' }}
-          ><Shuffle
-              text="Engineering "
-              tag="span"
-              textAlign="left"
-              shuffleDirection="right"
-              duration={0.35}
-              animationMode="evenodd"
-              shuffleTimes={1}
-              ease="power3.out"
-              stagger={0.03}
-              threshold={0.1}
-              triggerOnce={true}
-              triggerOnHover={true}
-              respectReducedMotion={true}
-              className="font-heading font-bold text-ink leading-[1.03] tracking-[-0.03em]"
-              style={{ fontSize: 'inherit' }}
-            /><span className="text-primary"><Shuffle
-                text="Momentum "
-                tag="span"
-                textAlign="left"
-                shuffleDirection="right"
-                duration={0.35}
-                animationMode="evenodd"
-                shuffleTimes={1}
-                ease="power3.out"
-                stagger={0.03}
-                threshold={0.1}
-                triggerOnce={true}
-                triggerOnHover={true}
-                respectReducedMotion={true}
-                className="font-heading font-bold leading-[1.03] tracking-[-0.03em]"
-                style={{ fontSize: 'inherit' }}
-              /></span><Shuffle
-              text="for a Sustainable World."
-              tag="span"
-              textAlign="left"
-              shuffleDirection="right"
-              duration={0.35}
-              animationMode="evenodd"
-              shuffleTimes={1}
-              ease="power3.out"
-              stagger={0.03}
-              threshold={0.1}
-              triggerOnce={true}
-              triggerOnHover={true}
-              respectReducedMotion={true}
-              className="font-heading font-bold text-ink leading-[1.03] tracking-[-0.03em]"
-              style={{ fontSize: 'inherit' }}
-            /></h1>
-          <motion.p
-            className="text-text-secondary text-xl leading-relaxed max-w-xl mb-10"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            Kinetic Bay builds AI agents, cloud-native apps, and SDG-aligned software products that actually ship — and prove their impact.
-          </motion.p>
-          <motion.div
-            className="flex flex-wrap gap-4"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.65 }}
-          >
-            <Link to="/contact" className="btn-accent rounded-lg inline-flex items-center gap-2">
-              Start a Project <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link to="/solutions" className="btn-ghost rounded-lg inline-flex items-center gap-2">
-              See Our Products
-            </Link>
-          </motion.div>
-        </motion.div>
-
-        {/* Scroll indicator */}
-        <motion.div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-40"
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          <div className="w-px h-12 bg-gradient-to-b from-transparent to-primary" />
-          <span className="text-[10px] text-text-secondary uppercase tracking-widest">Scroll</span>
-        </motion.div>
-      </section>
-
-      {/* ── CREDIBILITY TICKER ──────────────────────── */}
-      <section className="bg-surface border-y border-border py-5 overflow-hidden">
-        <div className="relative">
-          <div className="ticker-track flex gap-12 whitespace-nowrap" style={{ width: 'max-content' }}>
-            {[...Array(2)].map((_, i) =>
-              ['Azure AI Foundry', 'Angular', 'Node.js', 'Python', 'TypeScript', 'MongoDB', 'Docker', 'Kubernetes', 'CI/CD', 'SDG-Aligned', 'Zero-to-Launch', 'Full-Stack'].map((s) => (
-                <span key={`${i}-${s}`} className="text-[13px] font-medium text-text-secondary/70 flex items-center gap-3">
-                  <span className="w-1 h-1 rounded-full bg-primary inline-block" />
-                  {s}
-                </span>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ── WHY KINETIC BAY ─────────────────────────── */}
-      <section className="section-py">
-        <div className="max-w-[1200px] mx-auto px-6">
-          <Reveal>
-            <p className="eyebrow mb-3">Why us</p>
-            <h2 className="font-heading font-bold text-ink leading-[1.1] tracking-[-0.02em] mb-14 text-3xl md:text-5xl max-w-xl">
-              <ScrollFloat animationDuration={1} ease="back.inOut(2)" scrollStart="center bottom+=50%" scrollEnd="bottom bottom-=40%" stagger={0.03}>Built different. </ScrollFloat>
-              <span className="text-gradient-primary">
-                <ScrollFloat animationDuration={1} ease="back.inOut(2)" scrollStart="center bottom+=50%" scrollEnd="bottom bottom-=40%" stagger={0.03}>Proven different.</ScrollFloat>
-              </span>
-            </h2>
-          </Reveal>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { icon: Zap, title: 'AI-First Architecture', desc: 'Every product is designed around AI from day one — not bolted on at the end.' },
-              { icon: Target, title: 'SDG-Aligned by Design', desc: 'We only build software that creates measurable real-world impact.' },
-              { icon: Shield, title: 'Azure-Native Security', desc: 'Enterprise-grade security baked in at the infrastructure level, not as an afterthought.' },
-            ].map(({ icon: Icon, title, desc }, i) => (
-              <Reveal key={title} delay={i * 100}>
-              <TiltCard className="kb-card p-7 h-full">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-5">
-                  <Icon className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="font-heading font-semibold text-ink text-[19px] leading-[1.25] mb-3">{title}</h3>
-                <p className="text-text-secondary text-[15px] leading-relaxed">{desc}</p>
-              </TiltCard>
-            </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── SERVICES PREVIEW ────────────────────────── */}
-      <section className="section-py bg-surface">
-        <div className="max-w-[1200px] mx-auto px-6">
-          <Reveal>
-            <p className="eyebrow mb-3">Services</p>
-            <h2 className="font-heading font-bold text-ink leading-[1.1] tracking-[-0.02em] mb-4 text-3xl md:text-5xl">
-              <ScrollFloat animationDuration={1} ease="back.inOut(2)" scrollStart="center bottom+=50%" scrollEnd="bottom bottom-=40%" stagger={0.03}>What we build.</ScrollFloat>
-            </h2>
-            <p className="text-text-secondary text-base sm:text-lg leading-relaxed max-w-2xl mb-14">
-              We design and build custom management software, SDG-based applications, and high-performance digital tools for large corporations and organizations of all sizes.
-            </p>
-          </Reveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {services.map(({ icon: Icon, title, desc }, i) => (
-              <Reveal key={title} delay={i * 80}>
-              <TiltCard className="kb-card p-7 flex gap-5 items-start">
-                <div className="w-11 h-11 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
-                  <Icon className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-heading font-semibold text-ink text-[17px] leading-[1.3] mb-2">{title}</h3>
-                  <p className="text-text-secondary text-[14px] leading-relaxed">{desc}</p>
-                </div>
-              </TiltCard>
-            </Reveal>
-            ))}
-          </div>
-          <div className="mt-8 text-center">
-            <Link to="/services" className="btn-ghost inline-flex items-center gap-2 rounded-lg">
-              View all services <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── STATS ───────────────────────────────────── */}
-      <section className="section-py relative overflow-hidden">
-        <div className="glow-orb w-[500px] h-[300px] bg-primary/8 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-        <div className="max-w-[1200px] mx-auto px-6 relative z-10">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map(({ value, suffix, label }, i) => (
-              <Reveal key={label} delay={i * 80}>
-                <div className="text-center">
-                  <div className="font-heading font-bold text-gradient-primary mb-2" style={{ fontSize: 'clamp(40px, 5vw, 64px)', lineHeight: 1 }}>
-                    <AnimatedCounter value={value} suffix={suffix} />
-                  </div>
-                  <p className="text-text-secondary text-[14px]">{label}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── SDG MISSION STRIP ───────────────────────── */}
-      <ParallaxSection className="section-py bg-surface">
-        <div className="max-w-[1200px] mx-auto px-6">
-          <Reveal>
-            <p className="eyebrow mb-3">One studio, seven missions</p>
-            <h2 className="font-heading font-bold text-ink leading-[1.1] tracking-[-0.02em] mb-12 text-3xl md:text-5xl">
-              <ScrollFloat animationDuration={1} ease="back.inOut(2)" scrollStart="center bottom+=50%" scrollEnd="bottom bottom-=40%" stagger={0.03}>Products that move the needle.</ScrollFloat>
-            </h2>
-          </Reveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {sdgCards.map(({ num, title, desc, tag }, i) => (
-              <Reveal key={title} delay={i * 60}>
-              <TiltCard className="kb-card p-6 h-full">
-                <span className="font-heading font-bold text-primary/30 text-[13px] tracking-widest block mb-3">{num}</span>
-                <h3 className="font-heading font-bold text-ink text-[17px] leading-[1.25] mb-2">{title}</h3>
-                <p className="text-text-secondary text-[13px] leading-relaxed mb-4">{desc}</p>
-                <span className="phase-badge phase-1">{tag}</span>
-              </TiltCard>
-            </Reveal>
-            ))}
-          </div>
-          <div className="mt-8 text-center">
-            <Link to="/solutions" className="btn-ghost inline-flex items-center gap-2 rounded-lg">
-              Explore Solutions <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      </ParallaxSection>
-
-      {/* ── TEAM TEASER ─────────────────────────────── */}
-      <section className="section-py">
-        <div className="max-w-[1200px] mx-auto px-6">
-          <div className="kb-card p-10 md:p-16 text-center relative overflow-hidden">
-            <div className="glow-orb w-64 h-64 bg-primary/10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-            <div className="relative z-10">
-              <Reveal>
-                <div className="flex items-center justify-center gap-3 mb-6">
-                  {['Y', 'B', 'C'].map((letter) => (
-                    <div key={letter} className="w-14 h-14 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center text-xl font-bold text-primary orange-ring">
-                      {letter}
-                    </div>
-                  ))}
-                </div>
-                <p className="eyebrow mb-3">The team</p>
-                <h2 className="font-heading font-bold text-ink text-3xl md:text-4xl leading-[1.15] mb-4">
-                  <ScrollFloat animationDuration={1} ease="back.inOut(2)" scrollStart="center bottom+=50%" scrollEnd="bottom bottom-=40%" stagger={0.04}>Young. Driven. Mission-guided.</ScrollFloat>
-                </h2>
-                <p className="text-text-secondary text-lg leading-relaxed max-w-xl mx-auto mb-8">
-                  Built by a group of young chaps who want to change the world through sustainable technology — and shaped by mentors who have already benchmarked what that looks like.
-                </p>
-                <Link to="/team" className="btn-accent inline-flex items-center gap-2 rounded-lg">
-                  Meet the team <Users className="w-4 h-4" />
-                </Link>
-              </Reveal>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── HOW WE WORK ─────────────────────────────── */}
-      <section className="section-py bg-surface">
-        <div className="max-w-[1200px] mx-auto px-6">
-          <Reveal>
-            <p className="eyebrow mb-3">Process</p>
-            <h2 className="font-heading font-bold text-ink leading-[1.1] tracking-[-0.02em] mb-14 text-3xl md:text-5xl">
-              <ScrollFloat animationDuration={1} ease="back.inOut(2)" scrollStart="center bottom+=50%" scrollEnd="bottom bottom-=40%" stagger={0.04}>No surprises.</ScrollFloat>
-            </h2>
-          </Reveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {steps.map(({ num, title, desc }, i) => (
-              <Reveal key={num} delay={i * 80}>
-                <div className="relative">
-                  <div className="kb-card p-6 h-full">
-                   <span className="font-heading font-bold text-primary text-[32px] leading-none block mb-4">{num}</span>
-                   <h3 className="font-heading font-semibold text-ink text-[18px] leading-[1.25] mb-2">{title}</h3>
-                   <p className="text-text-secondary text-[14px] leading-relaxed">{desc}</p>
-                 </div>
-                  {i < steps.length - 1 && (
-                    <div className="hidden lg:block absolute top-8 -right-2.5 w-5 h-px bg-primary/30" />
-                  )}
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── LEAD GENERATION FORM ─────────────────────── */}
-      <section className="section-py border-t border-border bg-surface/20">
-        <div className="max-w-[1200px] mx-auto px-6">
-          <LeadGenForm />
-        </div>
-      </section>
-
-      {/* ── FINAL CTA ───────────────────────────────── */}
-      <section className="section-py relative overflow-hidden">
-        <div className="glow-orb w-[700px] h-[400px] bg-primary/12 bottom-0 left-1/2 -translate-x-1/2" />
-        <div className="max-w-[1200px] mx-auto px-6 text-center relative z-10">
-          <Reveal>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/25 mb-6">
-              <TrendingUp className="w-3.5 h-3.5 text-primary" />
-              <span className="text-[12px] font-semibold text-primary uppercase tracking-wider">Ready to ship?</span>
-            </div>
-            <h2 className="font-heading font-bold text-ink leading-[1.07] tracking-[-0.02em] mb-6 text-4xl md:text-6xl">
-              <ScrollFloat animationDuration={1} ease="back.inOut(2)" scrollStart="center bottom+=50%" scrollEnd="bottom bottom-=40%" stagger={0.03}>Let's build something </ScrollFloat>
-              <span className="text-gradient-primary">
-                <ScrollFloat animationDuration={1} ease="back.inOut(2)" scrollStart="center bottom+=50%" scrollEnd="bottom bottom-=40%" stagger={0.03}>that matters.</ScrollFloat>
-              </span>
-            </h2>
-            <p className="text-text-secondary text-lg leading-relaxed max-w-xl mx-auto mb-10">
-              Whether it's an AI agent, a cloud-native platform, or an SDG-aligned product — we scope it, price it, and ship it.
-            </p>
-            <div className="flex flex-wrap gap-4 justify-center">
-              <Link to="/contact" className="btn-accent rounded-lg inline-flex items-center gap-2">
-                Start a Project <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link to="/services" className="btn-ghost rounded-lg inline-flex items-center gap-2">
-                Explore Services
-              </Link>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
+    <div className="bg-bg">
+      <HeroStory />
+      <SdgSection />
+      <ImpactBoard />
+      <TypeStage />
+      <Pillars />
+      <ProductsTeaser />
+      <Industries />
+      <WhyUs />
+      <Explore />
+      <FaqSection />
+      <FinalCta />
     </div>
   );
 }

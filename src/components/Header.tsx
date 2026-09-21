@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
 import { Menu, X, Zap } from 'lucide-react';
 import GooeyNav from './GooeyNav';
 import Shuffle from './Shuffle';
 
 const navLinks = [
-  { name: 'Home', path: '/' },
   { name: 'Services', path: '/services' },
+  { name: 'Products', path: '/products' },
   { name: 'Solutions', path: '/solutions' },
+  { name: 'About', path: '/about' },
   { name: 'Team', path: '/team' },
   { name: 'Contact', path: '/contact' },
 ];
@@ -39,7 +40,9 @@ export default function Header() {
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
-  const activeIndex = navLinks.findIndex(l => l.path === location.pathname);
+  const activeIndex = navLinks.findIndex(l => location.pathname === l.path || location.pathname.startsWith(l.path + '/'));
+  const { scrollYProgress } = useScroll();
+  const progress = useSpring(scrollYProgress, { stiffness: 200, damping: 40 });
   const gooeyItems = navLinks.map(link => ({
     label: link.name,
     href: link.path,
@@ -103,10 +106,11 @@ export default function Header() {
             </div>
           </Link>
 
-          <div className="hidden md:flex items-center" aria-label="Main navigation">
+          <div className="hidden lg:flex items-center" aria-label="Main navigation">
             <GooeyNav
+              key={activeIndex === -1 ? 'none' : 'nav'}
               items={gooeyItems}
-              initialActiveIndex={activeIndex >= 0 ? activeIndex : 0}
+              initialActiveIndex={activeIndex}
               particleCount={12}
               particleDistances={[80, 8]}
               particleR={80}
@@ -116,14 +120,14 @@ export default function Header() {
             />
           </div>
 
-          <div className="hidden md:block">
+          <div className="hidden lg:block">
             <Link to="/contact" className="btn-accent text-sm py-2.5 px-5 rounded-lg inline-flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5" /> Start a Project
+              <Zap className="w-3.5 h-3.5" /> Start Your Project
             </Link>
           </div>
 
           <button
-            className="md:hidden p-2 rounded-lg text-text-secondary hover:text-ink hover:bg-surface transition-colors"
+            className="lg:hidden p-2 rounded-lg text-text-secondary hover:text-ink hover:bg-surface transition-colors"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle navigation menu"
             aria-expanded={mobileOpen}
@@ -132,6 +136,7 @@ export default function Header() {
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
+        <motion.div className="absolute left-0 right-0 bottom-0 h-[2px] origin-left bg-gradient-to-r from-primary-dark via-primary to-accent" style={{ scaleX: progress }} aria-hidden="true" />
       </header>
 
       <AnimatePresence>
@@ -149,7 +154,7 @@ export default function Header() {
                 key={link.path}
                 to={link.path}
                 className={`px-4 py-3 rounded-lg text-[15px] font-medium transition-colors ${
-                  location.pathname === link.path
+                  location.pathname === link.path || location.pathname.startsWith(link.path + '/')
                     ? 'text-primary bg-surface'
                     : 'text-text-secondary hover:text-ink hover:bg-surface'
                 }`}
@@ -159,7 +164,7 @@ export default function Header() {
             ))}
             <div className="pt-2 pb-1">
               <Link to="/contact" className="btn-accent w-full justify-center rounded-lg text-sm py-3">
-                Start a Project
+                Start Your Project
               </Link>
             </div>
           </motion.div>

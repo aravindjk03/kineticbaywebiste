@@ -13,8 +13,8 @@ import { api } from './api';
 const CMS_AUTH_KEY = 'kb_cms_session';
 const PASSCODE_KEY = 'kb_cms_passcode_hash';
 const TEAM_KEY = 'kb_cms_team_v1';
-const CONTENT_KEY = 'kb_cms_content_v1';
-const CHATBOT_CONFIG_KEY = 'kb_cms_chatbot_v1';
+const CONTENT_KEY = 'kb_cms_content_v2';
+const CHATBOT_CONFIG_KEY = 'kb_cms_chatbot_v2';
 const LEADS_KEY = 'kb_crm_leads_v1';
 
 // Internal local storage keys
@@ -81,49 +81,73 @@ const DEFAULT_TEAM: TeamMember[] = [
 
 const DEFAULT_CONTENT: SiteContent = {
   companyName: 'Kinetic Bay',
-  tagline: 'Engineering the Next Generation of Cloud & AI Solutions',
-  heroHeading: 'Architecting intelligent software for',
-  heroHighlight: 'bold modern enterprises.',
-  heroSubtext: 'From concept to enterprise scale, Kinetic Bay crafts cloud-native SaaS, bespoke digital workflows, and mission-critical AI systems with velocity and precision.',
-  companyOverview: 'Kinetic Bay is a premier technology studio that delivers full-spectrum engineering, digital product architecture, AI-driven automation, and high-impact human systems. We help companies launch faster, scale reliably, and outperform legacy competitors.',
+  tagline: 'Building Machines. Shaping Humans.',
+  heroHeading: 'Building Machines.',
+  heroHighlight: 'Shaping Humans.',
+  heroSubtext: 'We engineer custom software, AI, cloud and IoT systems that take the heavy lifting off your business — so your people can focus on the work that truly moves you forward.',
+  companyOverview: 'Kinetic Bay is a Chennai-headquartered technology company building custom software, AI, cloud and IoT systems that make work easier and impact greater, aligned with the UN Sustainable Development Goals.',
   contactEmail: 'Kineticbay@gmail.com',
-  contactPhone: '+1 (800) 546-3842',
-  location: 'Global Hubs & Distributed Studio',
-  yearsInBusiness: '6+',
-  projectsCompleted: '180+',
-  satisfactionRate: '98%',
+  contactPhone: '',
+  location: 'Chennai, Tamil Nadu, India',
+  yearsInBusiness: '',
+  projectsCompleted: '40+',
+  satisfactionRate: '99%',
 };
 
 const DEFAULT_FAQS: FAQItem[] = [
   {
     id: 'faq-1',
     category: 'services',
-    question: 'What types of software services does Kinetic Bay offer?',
-    answer: 'Kinetic Bay provides full-cycle engineering across: (1) Scalable SaaS Platforms, (2) Custom Enterprise Software & ERP/CRM systems, (3) AI Agents & Conversational Automation, (4) Brand Identity & Design Systems, (5) SEO & AI Search Engine Optimization (AIO), (6) Management Software (SaaS/PaaS), and (7) High-Performance Team & Leadership Training.',
+    question: 'What services does Kinetic Bay offer?',
+    answer: 'Four pillars: AI & Automation, Digital Engineering, Cybersecurity & Cloud, and IoT Projects — plus five ready-to-deploy products: Kinetic HRMS, VMS, PMS, CRM and Attendance.',
   },
   {
     id: 'faq-2',
-    category: 'integration',
-    question: 'How does Kinetic Bay integrate and work out with our existing project?',
-    answer: 'We offer flexible collaboration models: (1) Full Zero-to-Launch Squads: We handle end-to-end design, architecture, and deployment; (2) Embedded Engineering Pods: Our senior engineers seamlessly integrate into your existing Git workflows, CI/CD, and Jira/Linear sprints; (3) Scoped Modernization & API Integration: We modernize legacy components or build high-throughput microservices connecting with your existing database and cloud architecture. You receive a free, comprehensive Scoped Proposal & Architecture Roadmap within 24 hours of your initial inquiry.',
+    category: 'pricing',
+    question: 'How much does a custom software project cost?',
+    answer: 'Every project is different, so we give you a clear, fixed-scope quotation after a free discovery session. You will know the full cost upfront, with no hidden charges.',
   },
   {
     id: 'faq-3',
-    category: 'pricing',
-    question: 'How are projects scoped and priced?',
-    answer: 'We provide transparent, milestone-driven pricing. Fixed-scope projects feature clear deliverable phases with zero hidden fees. Dedicated pods are structured on monthly or sprint-based retainer agreements. We offer a free 24-hour architectural proposal detailing milestones, timeline, and exact investment.',
+    category: 'general',
+    question: 'How long does it take to build a solution?',
+    answer: 'A proof of concept can be ready in 2–4 weeks. Most custom applications launch in 2–6 months depending on scope. Our ready-made products can be deployed and customised in a matter of weeks.',
   },
   {
     id: 'faq-4',
     category: 'company',
-    question: 'What is Kinetic Bay’s technology stack?',
-    answer: 'Our core stack includes TypeScript, React 18, Next.js, Node.js, Python, Three.js, Tailwind CSS, Azure AI Foundry, OpenAI/Gemini models, Supabase, PostgreSQL, Docker, and Kubernetes.',
+    question: 'Will I own the source code?',
+    answer: 'Yes. On custom development projects, full ownership of the source code and intellectual property is transferred to you.',
   },
   {
     id: 'faq-5',
+    category: 'company',
+    question: 'How do you keep our data secure?',
+    answer: 'We sign an NDA before any engagement, follow secure coding standards, use role-based access controls and design systems in line with India\'s data protection law and global best practices.',
+  },
+  {
+    id: 'faq-6',
+    category: 'services',
+    question: 'Can your products be customised for our industry?',
+    answer: 'Absolutely. HRMS, VMS, PMS, CRM and Attendance are built to be tailored: workflows, fields, reports, branding and integrations can all be adapted to you.',
+  },
+  {
+    id: 'faq-7',
     category: 'general',
-    question: 'How quickly can you ship an MVP?',
-    answer: 'Our streamlined zero-to-launch framework allows us to deliver fully functional, production-ready MVPs in as little as 4 to 8 weeks, complete with authentication, billing, analytics, and responsive UI.',
+    question: 'Do you work with clients outside Chennai or India?',
+    answer: 'Yes. We serve clients across India and around the world, working remotely with regular video meetings and on-site visits when needed.',
+  },
+  {
+    id: 'faq-8',
+    category: 'general',
+    question: 'What happens after the project goes live?',
+    answer: 'We offer ongoing support, maintenance and enhancement plans with defined response times, so your system keeps improving as your business grows.',
+  },
+  {
+    id: 'faq-9',
+    category: 'integration',
+    question: 'Can you integrate with the software we already use?',
+    answer: 'Yes. We regularly integrate with ERPs, accounting tools, payment gateways, biometric devices and third-party APIs.',
   },
 ];
 
@@ -132,7 +156,7 @@ const DEFAULT_GUARDRAILS: GuardrailRule[] = [
     id: 'gr-1',
     topic: 'Confidential Internal Financials & Payroll',
     description: 'Never disclose employee salaries, executive compensation, internal payroll, private company margins, or financial statements.',
-    keywords: ['salary', 'salaries', 'compensation', 'payroll', 'earning', 'margin', 'financial statement', 'revenue numbers', 'profit margin', 'bank account'],
+    keywords: ['salary', 'salaries', 'compensation', 'internal payroll', 'employee payroll', 'earning', 'margin', 'financial statement', 'revenue numbers', 'profit margin', 'bank account'],
     refusalMessage: 'I am unable to disclose internal financial or compensation details, as this information is strictly confidential to Kinetic Bay operations. I would be glad to share information on our transparent project pricing models or prepare a custom scoped proposal for your project!',
     enabled: true,
   },
@@ -148,7 +172,7 @@ const DEFAULT_GUARDRAILS: GuardrailRule[] = [
     id: 'gr-3',
     topic: 'Client Proprietary Code & NDA Data',
     description: 'Never reveal private client repositories, non-public client source code, confidential client deliverables, or NDA-protected details.',
-    keywords: ['source code', 'client repo', 'nda', 'confidential client', 'unreleased feature', 'private repository', 'git credentials', 'internal code'],
+    keywords: ['client source code', 'client repo', 'nda document', 'confidential client', 'unreleased feature', 'private repository', 'git credentials', 'internal code'],
     refusalMessage: 'Kinetic Bay maintains strict confidentiality and non-disclosure agreements with all clients. We cannot share proprietary source code or private client architectural assets. However, you can review our verified public case studies and deliverable showcases on our website!',
     enabled: true,
   },
@@ -164,16 +188,16 @@ const DEFAULT_GUARDRAILS: GuardrailRule[] = [
 
 const DEFAULT_CHATBOT_CONFIG: ChatbotConfig = {
   botName: 'Kinetic Bay AI',
-  greetingMessage: 'Hello! I am Kinetic Bay’s AI Project Consultant. Whether you are looking to build a SaaS platform, modern cloud architecture, or scale your engineering team, I am here to explain our services and how we can work together. How can I help you today?',
+  greetingMessage: 'Hello! I am Kinetic Bay’s assistant. Ask me about our AI, software, cloud and IoT services, our HRMS, VMS, PMS, CRM and Attendance products, or how we work. How can I help you today?',
   tone: 'professional',
   companyBio: DEFAULT_CONTENT.companyOverview,
-  integrationCapabilities: 'Kinetic Bay integrates smoothly into any stage of your roadmap: from Greenfield MVP creation to augmenting existing engineering teams with dedicated sprints. We deliver a detailed Scoped Proposal and architectural roadmap within 24 hours.',
-  pricingPolicy: 'Transparent milestone-based estimates. SaaS builds from $12K, Brand Systems from $5K, AI/SEO optimization from $2K/mo. Custom enterprise quotes with no lock-in.',
+  integrationCapabilities: 'Five-step delivery: Discover, Design, Build, Deploy, Evolve. Engagement models: Fixed-Scope Project, Dedicated Team, Product + Customisation, Support & Maintenance Retainer, and Proof of Concept / MVP.',
+  pricingPolicy: 'Clear, fixed-scope quotations after a free discovery session. The full cost is known upfront, with no hidden charges.',
   quickSuggestions: [
     'What services do you offer?',
-    'How do you integrate with our project?',
-    'What is your tech stack?',
-    'Get a free 24h project proposal',
+    'How do you work?',
+    'Tell me about your products',
+    'Book a free consultation',
   ],
   faqs: DEFAULT_FAQS,
   guardrails: DEFAULT_GUARDRAILS,
