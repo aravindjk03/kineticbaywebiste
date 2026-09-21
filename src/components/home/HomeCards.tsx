@@ -108,7 +108,7 @@ function StackCard({ i, total, progress }: { i: number; total: number; progress:
             <div className="mt-auto"><Btn to={`/products/${p.slug}`} className="kbtn-sm">{`Explore ${p.short}`}</Btn></div>
           </div>
           <div className="relative hidden lg:block [perspective:1200px] overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_50%,rgba(249,115,22,0.22),transparent_60%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_50%,rgba(240,138,75,0.22),transparent_60%)]" />
             <div className="absolute left-[8%] top-[14%] w-[118%] aspect-[16/10] [transform:rotateY(-18deg)_rotateX(6deg)] origin-left shadow-[0_40px_100px_-20px_rgba(0,0,0,0.9)] ring-1 ring-white/10">
               <Screen />
             </div>
@@ -178,7 +178,7 @@ export function IndustryIndex() {
               animate={{ scale: 1, opacity: 1, rotate: -8 }}
               exit={{ scale: 0.4, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-              className="-translate-x-1/2 -translate-y-1/2 w-28 h-28 grid place-items-center bg-primary text-bg shadow-[0_20px_60px_-10px_rgba(249,115,22,0.7)] [clip-path:polygon(0_0,calc(100%_-_16px)_0,100%_16px,100%_100%,0_100%)]"
+              className="-translate-x-1/2 -translate-y-1/2 w-28 h-28 grid place-items-center bg-primary text-bg shadow-[0_20px_60px_-10px_rgba(240,138,75,0.7)] [clip-path:polygon(0_0,calc(100%_-_16px)_0,100%_16px,100%_100%,0_100%)]"
             >
               <Icon className="w-12 h-12" strokeWidth={1.6} />
             </motion.div>

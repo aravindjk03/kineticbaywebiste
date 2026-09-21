@@ -60,7 +60,7 @@ export default function HorizontalJourney() {
             <h2 className="font-heading font-bold text-ink text-3xl md:text-5xl tracking-[-0.02em]">Discover → Evolve.</h2>
           </div>
           <div className="hidden md:block w-60 h-[2px] bg-border relative">
-            <motion.div className="absolute inset-y-0 left-0 bg-primary shadow-[0_0_10px_#F97316]" style={{ width: line }} />
+            <motion.div className="absolute inset-y-0 left-0 bg-primary shadow-[0_0_10px_#F08A4B]" style={{ width: line }} />
           </div>
         </div>
         <div className="[perspective:1400px]">

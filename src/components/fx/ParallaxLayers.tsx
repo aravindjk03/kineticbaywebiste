@@ -131,7 +131,7 @@ export function BayScene({ children }: { children?: ReactNode }) {
     <div ref={ref} className="relative" style={{ height: '190vh' }}>
       <div className="sticky top-0 h-screen overflow-hidden">
         {/* sky */}
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, #050506 0%, #0d0806 38%, #2b1206 62%, #5a220a 74%, #1a0c05 80%)' }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, #050506 0%, #0d0806 38%, #261309 62%, #4f2512 74%, #1a0c05 80%)' }} />
 
         {/* stars */}
         <Layer sticky depth={0.04} scroll={scrollYProgress} sx={sx} sy={sy} range={60} mouse={20}>
@@ -145,7 +145,7 @@ export function BayScene({ children }: { children?: ReactNode }) {
         {/* sun, setting as you scroll */}
         <Layer sticky depth={0.1} scroll={scrollYProgress} sx={sx} sy={sy} range={80} mouse={30}>
           <motion.div style={{ y: sunY, opacity: sunGlow }} className="absolute left-1/2 top-[44%] -translate-x-1/2">
-            <div className="w-[260px] h-[260px] md:w-[360px] md:h-[360px] rounded-full" style={{ background: 'radial-gradient(circle, #FFD08A 0%, #FB923C 38%, #F97316 55%, rgba(249,115,22,0) 72%)' }} />
+            <div className="w-[260px] h-[260px] md:w-[360px] md:h-[360px] rounded-full" style={{ background: 'radial-gradient(circle, #FFD08A 0%, #F5A76E 38%, #F08A4B 55%, rgba(240,138,75,0) 72%)' }} />
             <div className="absolute inset-[-60%] rounded-full bg-primary/25 blur-[90px]" />
           </motion.div>
         </Layer>
@@ -169,10 +169,10 @@ export function BayScene({ children }: { children?: ReactNode }) {
               <rect x="1328" y="600" width="110" height="100" /><rect x="1450" y="560" width="60" height="140" />
               <rect x="0" y="690" width="1600" height="40" />
             </g>
-            <circle cx="1114" cy="440" r="7" fill="#FFAB00" />
-            <path d="M1114 440 L1600 380 L1600 500 Z" fill="#FFAB00" opacity="0.06" />
+            <circle cx="1114" cy="440" r="7" fill="#F6C36B" />
+            <path d="M1114 440 L1600 380 L1600 500 Z" fill="#F6C36B" opacity="0.06" />
             {[140, 214, 280, 372, 640, 770, 1200, 1290, 1360, 1470].map((x, i) => (
-              <rect key={x} x={x} y={600 + (i % 3) * 22} width="6" height="8" fill="#F97316" opacity="0.55" />
+              <rect key={x} x={x} y={600 + (i % 3) * 22} width="6" height="8" fill="#F08A4B" opacity="0.55" />
             ))}
           </svg>
         </Layer>
@@ -182,7 +182,7 @@ export function BayScene({ children }: { children?: ReactNode }) {
           <svg {...SVG} className="absolute inset-0 w-full h-full" aria-hidden="true">
             <path className="wave-a" d="M0 720 Q200 700 400 720 T800 720 T1200 720 T1600 720 V900 H0Z" fill="#1d0d05" />
             {Array.from({ length: 14 }, (_, i) => (
-              <rect key={i} x={760 - (i % 4) * 22 + ((i * 37) % 60)} y={728 + i * 9} width={80 - i * 4} height="2" fill="#FB923C" opacity={0.6 - i * 0.035} rx="1" />
+              <rect key={i} x={760 - (i % 4) * 22 + ((i * 37) % 60)} y={728 + i * 9} width={80 - i * 4} height="2" fill="#F5A76E" opacity={0.6 - i * 0.035} rx="1" />
             ))}
           </svg>
         </Layer>
@@ -193,9 +193,9 @@ export function BayScene({ children }: { children?: ReactNode }) {
             <svg viewBox="0 0 170 150" className="w-full boat-bob" aria-hidden="true">
               <path d="M84 8 L84 112 L22 112 Z" fill="#0b0604" />
               <path d="M90 22 L90 112 L146 112 Z" fill="#120905" />
-              <path d="M84 8 L84 112 L22 112 Z" fill="none" stroke="#F97316" strokeOpacity="0.5" strokeWidth="1.5" />
+              <path d="M84 8 L84 112 L22 112 Z" fill="none" stroke="#F08A4B" strokeOpacity="0.5" strokeWidth="1.5" />
               <path d="M8 116 L162 116 L144 140 L28 140 Z" fill="#0b0604" />
-              <path d="M84 4 L96 9 L84 14" fill="#F97316" />
+              <path d="M84 4 L96 9 L84 14" fill="#F08A4B" />
             </svg>
           </motion.div>
         </Layer>
@@ -203,7 +203,7 @@ export function BayScene({ children }: { children?: ReactNode }) {
         <Layer sticky depth={0.7} scroll={scrollYProgress} sx={sx} sy={sy} range={220} mouse={100}>
           <svg {...SVG} className="absolute inset-0 w-full h-full" aria-hidden="true">
             <path className="wave-b" d="M0 780 Q160 760 320 780 T640 780 T960 780 T1280 780 T1600 780 V900 H0Z" fill="#120804" />
-            <path d="M0 780 Q160 760 320 780 T640 780 T960 780 T1280 780 T1600 780" fill="none" stroke="#F97316" strokeOpacity="0.25" strokeWidth="1.5" />
+            <path d="M0 780 Q160 760 320 780 T640 780 T960 780 T1280 780 T1600 780" fill="none" stroke="#F08A4B" strokeOpacity="0.25" strokeWidth="1.5" />
           </svg>
         </Layer>
 

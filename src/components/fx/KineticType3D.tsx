@@ -9,9 +9,9 @@ interface Line { text: string; size: number; y: number; color: string; emissive:
 
 const LINES: Line[] = [
   { text: 'KINETIC', size: 1.05, y: 0.62, color: '#F1F5F9', emissive: '#000000' },
-  { text: 'BAY', size: 1.05, y: -0.78, color: '#F97316', emissive: '#6b2200' },
+  { text: 'BAY', size: 1.05, y: -0.78, color: '#F08A4B', emissive: '#5a2a10' },
   { text: 'BUILDING MACHINES.', size: 0.44, y: 0.34, color: '#F1F5F9', emissive: '#000000', back: true },
-  { text: 'SHAPING HUMANS.', size: 0.44, y: -0.42, color: '#F97316', emissive: '#6b2200', back: true },
+  { text: 'SHAPING HUMANS.', size: 0.44, y: -0.42, color: '#F08A4B', emissive: '#5a2a10', back: true },
 ];
 
 interface Letter {
@@ -174,8 +174,8 @@ function Scene({ state, reduced }: { state: MutableRefObject<TypeState>; reduced
         shadow-camera-left={-6} shadow-camera-right={6} shadow-camera-top={6} shadow-camera-bottom={-6}
         shadow-bias={-0.0005}
       />
-      <pointLight position={[-5, -1, 4]} intensity={40} color="#F97316" />
-      <pointLight position={[5, 2, -4]} intensity={30} color="#FFAB00" />
+      <pointLight position={[-5, -1, 4]} intensity={40} color="#F08A4B" />
+      <pointLight position={[5, 2, -4]} intensity={30} color="#F6C36B" />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.25, 0]} receiveShadow>
         <planeGeometry args={[40, 40]} />
         <shadowMaterial opacity={0.55} />

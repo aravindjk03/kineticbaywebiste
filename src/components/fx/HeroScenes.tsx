@@ -51,10 +51,10 @@ function Shell({ sectionRef, children, visual }: { sectionRef: React.RefObject<H
 ═══════════════════════════════════════════════════════════ */
 
 const PLATE_PATTERNS = [
-  'radial-gradient(rgba(249,115,22,0.55) 1.2px, transparent 1.6px) 0 0 / 18px 18px',
-  'repeating-linear-gradient(90deg, rgba(249,115,22,0.35) 0 1px, transparent 1px 22px), repeating-linear-gradient(0deg, rgba(249,115,22,0.18) 0 1px, transparent 1px 22px)',
-  'repeating-linear-gradient(45deg, rgba(249,115,22,0.35) 0 1px, transparent 1px 12px)',
-  'radial-gradient(circle at 30% 30%, rgba(249,115,22,0.6) 0 3px, transparent 4px) 0 0 / 44px 44px, linear-gradient(rgba(249,115,22,0.25) 1px, transparent 1px) 0 0 / 44px 22px',
+  'radial-gradient(rgba(240,138,75,0.55) 1.2px, transparent 1.6px) 0 0 / 18px 18px',
+  'repeating-linear-gradient(90deg, rgba(240,138,75,0.35) 0 1px, transparent 1px 22px), repeating-linear-gradient(0deg, rgba(240,138,75,0.18) 0 1px, transparent 1px 22px)',
+  'repeating-linear-gradient(45deg, rgba(240,138,75,0.35) 0 1px, transparent 1px 12px)',
+  'radial-gradient(circle at 30% 30%, rgba(240,138,75,0.6) 0 3px, transparent 4px) 0 0 / 44px 44px, linear-gradient(rgba(240,138,75,0.25) 1px, transparent 1px) 0 0 / 44px 22px',
 ];
 
 export function ServicesHero({ eyebrow, title, highlight, body, children }: { eyebrow: string; title: string; highlight: string; body: string; children?: ReactNode }) {
@@ -86,7 +86,7 @@ function Plate({ i, spread, name, Icon, pattern, top }: { i: number; spread: Mot
   return (
     <motion.div style={{ z }} className="absolute inset-0 [transform-style:preserve-3d]">
       <div
-        className={`absolute inset-0 ${top ? 'bg-[#1c1510]' : 'bg-[#121316]'} shadow-[inset_0_0_0_1px_rgba(249,115,22,0.55),0_0_60px_-10px_rgba(249,115,22,0.35)]`}
+        className={`absolute inset-0 ${top ? 'bg-[#1c1510]' : 'bg-[#121316]'} shadow-[inset_0_0_0_1px_rgba(240,138,75,0.55),0_0_60px_-10px_rgba(240,138,75,0.35)]`}
         style={{ backgroundImage: pattern }}
       >
         <div className="absolute left-4 bottom-4 right-4 flex items-end justify-between">
@@ -154,7 +154,7 @@ export function ProductsHero({ eyebrow, title, highlight, body, children }: { ey
                 className="absolute w-[150px] sm:w-[220px] -ml-[75px] sm:-ml-[110px] -mt-[60px] sm:-mt-[85px] [backface-visibility:hidden]"
                 style={{ transform: `rotateY(${i * (360 / RING.length)}deg) translateZ(${R})` }}
               >
-                <div className={`aspect-[16/10] ring-1 transition-shadow duration-500 ${front === i ? 'ring-primary shadow-[0_30px_80px_-10px_rgba(249,115,22,0.6)]' : 'ring-white/10'}`}>
+                <div className={`aspect-[16/10] ring-1 transition-shadow duration-500 ${front === i ? 'ring-primary shadow-[0_30px_80px_-10px_rgba(240,138,75,0.6)]' : 'ring-white/10'}`}>
                   <Screen />
                 </div>
                 <p className={`mt-3 text-center font-heading font-semibold text-sm transition-colors ${front === i ? 'text-primary' : 'text-text-secondary'}`}>{p.name}</p>
@@ -240,17 +240,17 @@ export function ContactHero({ eyebrow, title, highlight, body, children }: { eye
       <motion.svg style={{ x, y }} viewBox={`-2 -2 ${world.w + 4} ${world.h + 4}`} className="absolute inset-[-4%] w-[108%] h-[108%] opacity-80" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         {(world.p as [number, number, number][]).map(([px, py, ind], i) => {
           const d = Math.hypot(px - cx, py - cy);
-          return <circle key={i} cx={px} cy={py} r={0.28} fill={ind ? '#F97316' : `rgba(241,245,249,${Math.max(0.1, 0.4 - d / 200)})`} />;
+          return <circle key={i} cx={px} cy={py} r={0.28} fill={ind ? '#F08A4B' : `rgba(241,245,249,${Math.max(0.1, 0.4 - d / 200)})`} />;
         })}
         {targets.map(([tx, ty], i) => {
           const mx = (cx + tx) / 2, my = (cy + ty) / 2 - Math.hypot(tx - cx, ty - cy) * 0.3;
           return (
-            <motion.path key={i} d={`M${cx} ${cy} Q${mx} ${my} ${tx} ${ty}`} fill="none" stroke="#F97316" strokeWidth={0.22}
+            <motion.path key={i} d={`M${cx} ${cy} Q${mx} ${my} ${tx} ${ty}`} fill="none" stroke="#F08A4B" strokeWidth={0.22}
               initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 0.9 }} transition={{ delay: 0.6 + i * 0.18, duration: 1.4, ease: 'easeInOut' }} />
           );
         })}
-        <circle cx={cx} cy={cy} r={0.8} fill="#F97316" />
-        <circle cx={cx} cy={cy} r={0.8} fill="none" stroke="#F97316" strokeWidth={0.2} className="map-ping" />
+        <circle cx={cx} cy={cy} r={0.8} fill="#F08A4B" />
+        <circle cx={cx} cy={cy} r={0.8} fill="none" stroke="#F08A4B" strokeWidth={0.2} className="map-ping" />
       </motion.svg>
       <div className="absolute inset-0 bg-[linear-gradient(to_top,#08090A_12%,rgba(8,9,10,0.6)_55%,rgba(8,9,10,0.2))]" />
       <div className="relative max-w-[1240px] mx-auto px-6 w-full pt-40 pb-16 md:pb-20">

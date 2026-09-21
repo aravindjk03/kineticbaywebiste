@@ -76,7 +76,7 @@ export default function DeviceShowcase() {
               <div className="relative w-[88%] max-w-[560px] aspect-[16/10] [transform-style:preserve-3d]">
                 {/* lid */}
                 <motion.div style={{ rotateX: lid }} className="absolute inset-0 origin-bottom [transform-style:preserve-3d]">
-                  <div className="absolute inset-0 rounded-[14px] bg-[#1b1c20] border border-white/10 p-[2.2%] shadow-[0_40px_120px_-20px_rgba(249,115,22,0.35)] [backface-visibility:hidden]">
+                  <div className="absolute inset-0 rounded-[14px] bg-[#1b1c20] border border-white/10 p-[2.2%] shadow-[0_40px_120px_-20px_rgba(240,138,75,0.35)] [backface-visibility:hidden]">
                     <div className="w-full h-full rounded-[8px] overflow-hidden relative bg-black">
                       <AnimatePresence mode="wait">
                         <motion.div
@@ -138,7 +138,7 @@ export default function DeviceShowcase() {
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-border/50">
-          <motion.div className="h-full bg-primary shadow-[0_0_10px_#F97316]" style={{ width: progress }} />
+          <motion.div className="h-full bg-primary shadow-[0_0_10px_#F08A4B]" style={{ width: progress }} />
         </div>
       </div>
     </section>

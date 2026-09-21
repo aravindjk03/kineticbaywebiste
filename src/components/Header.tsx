@@ -81,7 +81,7 @@ function MegaPanel({ menu, onClose }: { menu: Exclude<MenuKey, null>; onClose: (
             </Link>
           ))}
         </div>
-        <div className="p-6 flex flex-col justify-between bg-[linear-gradient(160deg,rgba(249,115,22,0.16),rgba(249,115,22,0.02))]">
+        <div className="p-6 flex flex-col justify-between bg-[linear-gradient(160deg,rgba(240,138,75,0.16),rgba(240,138,75,0.02))]">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary mb-3">{menu === 'services' ? 'Four pillars' : 'Ready to deploy'}</p>
             <p className="font-heading text-ink text-lg leading-snug">

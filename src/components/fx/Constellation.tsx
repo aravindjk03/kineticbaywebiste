@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react';
 import { prefersReducedMotion } from '../../lib/motion';
 
 const ROLES = [
-  { label: 'Engineering', color: '249,115,22' },
-  { label: 'Design', color: '255,171,0' },
-  { label: 'AI & Data', color: '251,146,60' },
+  { label: 'Engineering', color: '240,138,75' },
+  { label: 'Design', color: '246,195,107' },
+  { label: 'AI & Data', color: '245,167,110' },
   { label: 'Cloud & Security', color: '241,245,249' },
-  { label: 'Strategy', color: '234,88,12' },
+  { label: 'Strategy', color: '217,115,58' },
 ];
 
 /**
@@ -65,7 +65,7 @@ export default function Constellation({ className = '' }: { className?: string }
           const d = Math.hypot(a.x - b.x, a.y - b.y);
           if (d > link) continue;
           const o = (1 - d / link) * (a.mentor || b.mentor ? 0.5 : 0.22);
-          ctx.strokeStyle = `rgba(249,115,22,${o})`;
+          ctx.strokeStyle = `rgba(240,138,75,${o})`;
           ctx.lineWidth = a.mentor || b.mentor ? 1 : 0.6;
           ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
         }
@@ -76,14 +76,14 @@ export default function Constellation({ className = '' }: { className?: string }
         ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2); ctx.fill();
         if (a.mentor) {
           const pulse = 9 + Math.sin(t * 2 + a.phase) * 2.5;
-          ctx.strokeStyle = 'rgba(249,115,22,0.55)';
+          ctx.strokeStyle = 'rgba(240,138,75,0.55)';
           ctx.lineWidth = 1;
           ctx.beginPath(); ctx.arc(a.x, a.y, pulse, 0, Math.PI * 2); ctx.stroke();
         }
       }
       if (mouse.active) {
         const g = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 160);
-        g.addColorStop(0, 'rgba(249,115,22,0.12)'); g.addColorStop(1, 'rgba(249,115,22,0)');
+        g.addColorStop(0, 'rgba(240,138,75,0.12)'); g.addColorStop(1, 'rgba(240,138,75,0)');
         ctx.fillStyle = g; ctx.fillRect(mouse.x - 160, mouse.y - 160, 320, 320);
       }
       raf = requestAnimationFrame(draw);

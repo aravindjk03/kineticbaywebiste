@@ -134,7 +134,7 @@ export function AttendanceScreen() {
           <span className="w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 border-primary flex items-center justify-center">
             <span className="w-4 h-5 sm:w-5 sm:h-6 rounded-t-full rounded-b-lg bg-primary/40" />
           </span>
-          <span className="absolute left-0 right-0 h-px bg-primary shadow-[0_0_8px_#F97316] scan-line" />
+          <span className="absolute left-0 right-0 h-px bg-primary shadow-[0_0_8px_#F08A4B] scan-line" />
         </div>
         <div className="flex-1 flex flex-col gap-1">
           {['09:01 · Face · Chennai HQ', '09:03 · RFID · Plant 1', '09:05 · GPS · Field', '09:12 · Late · Shift B'].map((r, i) => (

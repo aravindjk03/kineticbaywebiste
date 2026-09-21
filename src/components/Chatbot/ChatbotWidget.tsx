@@ -403,9 +403,9 @@ export default function ChatbotWidget() {
             {/* ── HEADER ── */}
             <div className="px-4 py-3 bg-surface/80 border-b border-border/80 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="relative w-12 h-12 -my-1">
+                <div className="relative w-12 h-12 -my-1 rounded-2xl bg-[radial-gradient(circle_at_50%_35%,#fffaf4,#f5c9a5)] overflow-hidden">
                   <Suspense fallback={<Bot className="w-6 h-6 text-primary m-3" />}>
-                    <ChatMascot mood={mood} className="absolute inset-[-6px]" />
+                    <ChatMascot mood={mood} zoom={1.25} className="absolute inset-0" />
                   </Suspense>
                   <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-surface" />
                 </div>
@@ -742,7 +742,7 @@ export default function ChatbotWidget() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.9 }}
               onClick={() => { setShowHello(false); setIsOpen(true); }}
-              className="hidden sm:block absolute right-[84px] bottom-5 whitespace-nowrap px-4 py-2.5 bg-[#111214] text-[13px] text-ink shadow-[0_0_0_1px_rgba(249,115,22,0.45),0_14px_40px_-10px_rgba(0,0,0,0.9)] [clip-path:polygon(0_0,100%_0,100%_calc(100%_-_10px),calc(100%_-_10px)_100%,0_100%)]"
+              className="hidden sm:block absolute right-[96px] bottom-6 whitespace-nowrap px-4 py-2.5 bg-[#111214] text-[13px] text-ink shadow-[0_0_0_1px_rgba(240,138,75,0.45),0_14px_40px_-10px_rgba(0,0,0,0.9)] [clip-path:polygon(0_0,100%_0,100%_calc(100%_-_10px),calc(100%_-_10px)_100%,0_100%)]"
             >
               Hi, I'm <span className="text-primary font-semibold">KAI</span>. Need a hand?
             </motion.button>
@@ -753,14 +753,14 @@ export default function ChatbotWidget() {
           onMouseEnter={() => { mood.current.hover = true; }}
           onMouseLeave={() => { mood.current.hover = false; }}
           onClick={() => { setIsOpen(!isOpen); setShowHello(false); }}
-          className="relative w-[72px] h-[72px] bg-[#0e0f12] shadow-[0_0_0_1px_rgba(249,115,22,0.55),0_18px_40px_-8px_rgba(249,115,22,0.45)] [clip-path:polygon(0_0,calc(100%_-_14px)_0,100%_14px,100%_100%,14px_100%,0_calc(100%_-_14px))]"
+          className="kai-launcher relative w-[84px] h-[84px] rounded-[26px] bg-[radial-gradient(circle_at_50%_35%,#fffaf4_0%,#fbe3cc_55%,#f5b98f_100%)] shadow-[0_0_0_3px_rgba(240,138,75,0.35),0_20px_50px_-10px_rgba(240,138,75,0.65)]"
           aria-label={isOpen ? 'Close KAI, the Kinetic Bay assistant' : 'Chat with KAI, the Kinetic Bay assistant'}
         >
           <Suspense fallback={<MessageSquare className="w-6 h-6 text-primary m-auto" />}>
-            <ChatMascot mood={mood} className="absolute inset-0" />
+            <ChatMascot mood={mood} zoom={1.15} className="absolute inset-0" />
           </Suspense>
           {isOpen && (
-            <span className="absolute top-1.5 right-1.5 w-5 h-5 grid place-items-center bg-primary text-bg">
+            <span className="absolute -top-1.5 -right-1.5 w-6 h-6 grid place-items-center rounded-full bg-bg text-primary shadow-[0_0_0_2px_#F08A4B]">
               <X className="w-3.5 h-3.5" />
             </span>
           )}

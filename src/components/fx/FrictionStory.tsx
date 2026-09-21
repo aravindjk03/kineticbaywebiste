@@ -85,7 +85,7 @@ function Sheet({ i, p, T, W, H }: { i: number; p: MotionValue<number>; T: number
       </div>
       <motion.div
         style={{ opacity: lit }}
-        className="absolute inset-0 bg-[linear-gradient(135deg,#FB923C,#EA580C)] shadow-[inset_0_0_0_1px_rgba(255,220,180,0.6),0_0_30px_rgba(249,115,22,0.45)]"
+        className="absolute inset-0 bg-[linear-gradient(135deg,#F5A76E,#D9733A)] shadow-[inset_0_0_0_1px_rgba(255,220,180,0.6),0_0_30px_rgba(240,138,75,0.45)]"
       >
         <div className="absolute inset-[18%] border border-white/30" />
       </motion.div>

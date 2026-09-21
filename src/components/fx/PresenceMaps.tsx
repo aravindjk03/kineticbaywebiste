@@ -15,8 +15,8 @@ function Arc({ from, to, p, range, lift = 0.35, width }: { from: XY; to: XY; p: 
   const dot = useTransform(p, [range[1] - 0.02, range[1]], [0, 1]);
   return (
     <g>
-      <motion.path d={`M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}`} fill="none" stroke="#F97316" strokeWidth={width} strokeLinecap="round" style={{ pathLength }} />
-      <motion.circle cx={x2} cy={y2} r={width * 2.2} fill="#FFAB00" style={{ opacity: dot }} />
+      <motion.path d={`M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}`} fill="none" stroke="#F08A4B" strokeWidth={width} strokeLinecap="round" style={{ pathLength }} />
+      <motion.circle cx={x2} cy={y2} r={width * 2.2} fill="#F6C36B" style={{ opacity: dot }} />
     </g>
   );
 }
@@ -58,7 +58,7 @@ export default function PresenceMaps() {
   return (
     <section ref={ref} className="relative border-y border-border" style={{ height: '320vh' }} aria-label={story.presenceTitle}>
       <div className="sticky top-0 h-screen overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_65%_50%,rgba(249,115,22,0.10),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_65%_50%,rgba(240,138,75,0.10),transparent_60%)]" />
         <div className="relative h-full max-w-[1240px] mx-auto px-6 grid lg:grid-cols-[0.8fr_1.2fr] items-center gap-6">
           <div className="order-2 lg:order-1 relative h-[210px] lg:h-[260px]">
             <p className="font-mono text-[11px] tracking-[0.25em] uppercase text-primary mb-5 absolute -top-10">[ Where we are ]</p>
@@ -81,9 +81,9 @@ export default function PresenceMaps() {
               {cityEntries.filter(([name]) => !['Pune', 'Jaipur'].includes(name)).map(([name, [x, y]]) => (
                 <text key={name} x={x + 1} y={y - 0.8} fontSize="1.5" fill="rgba(241,245,249,0.6)" fontFamily="JetBrains Mono, monospace">{name}</text>
               ))}
-              <circle cx={india.chennai[0]} cy={india.chennai[1]} r={0.9} fill="#F97316" />
-              <circle cx={india.chennai[0]} cy={india.chennai[1]} r={0.9} fill="none" stroke="#F97316" strokeWidth={0.25} className="map-ping" />
-              <text x={india.chennai[0] + 1.6} y={india.chennai[1] + 0.6} fontSize="2.1" fontWeight="700" fill="#F97316" fontFamily="Space Grotesk, sans-serif">Chennai</text>
+              <circle cx={india.chennai[0]} cy={india.chennai[1]} r={0.9} fill="#F08A4B" />
+              <circle cx={india.chennai[0]} cy={india.chennai[1]} r={0.9} fill="none" stroke="#F08A4B" strokeWidth={0.25} className="map-ping" />
+              <text x={india.chennai[0] + 1.6} y={india.chennai[1] + 0.6} fontSize="2.1" fontWeight="700" fill="#F08A4B" fontFamily="Space Grotesk, sans-serif">Chennai</text>
             </motion.svg>
 
             {/* World */}
@@ -95,13 +95,13 @@ export default function PresenceMaps() {
               aria-label="World map showing Kinetic Bay's reach from Chennai"
             >
               {(world.p as [number, number, number][]).map(([x, y, isIndia], i) => (
-                <circle key={i} cx={x} cy={y} r={0.3} fill={isIndia ? '#F97316' : 'rgba(241,245,249,0.26)'} />
+                <circle key={i} cx={x} cy={y} r={0.3} fill={isIndia ? '#F08A4B' : 'rgba(241,245,249,0.26)'} />
               ))}
               {worldEntries.map(([name, to], i) => (
                 <Arc key={name} from={chennaiW} to={to} p={p} range={[0.62 + i * 0.035, 0.8 + i * 0.03]} width={0.24} lift={0.3} />
               ))}
-              <circle cx={chennaiW[0]} cy={chennaiW[1]} r={0.8} fill="#F97316" />
-              <circle cx={chennaiW[0]} cy={chennaiW[1]} r={0.8} fill="none" stroke="#F97316" strokeWidth={0.2} className="map-ping" />
+              <circle cx={chennaiW[0]} cy={chennaiW[1]} r={0.8} fill="#F08A4B" />
+              <circle cx={chennaiW[0]} cy={chennaiW[1]} r={0.8} fill="none" stroke="#F08A4B" strokeWidth={0.2} className="map-ping" />
             </motion.svg>
           </div>
         </div>

@@ -43,7 +43,7 @@ export default function FlowField({ density = 0.00018, className = '' }: { densi
         if (d2 < 22000) a = Math.atan2(dy, dx); // swirl away from the cursor
         const nx = p.x + Math.cos(a) * 1.3;
         const ny = p.y + Math.sin(a) * 1.3;
-        ctx.strokeStyle = p.hue > 0.85 ? 'rgba(255,171,0,0.55)' : p.hue > 0.4 ? 'rgba(249,115,22,0.45)' : 'rgba(234,88,12,0.35)';
+        ctx.strokeStyle = p.hue > 0.85 ? 'rgba(246,195,107,0.55)' : p.hue > 0.4 ? 'rgba(240,138,75,0.45)' : 'rgba(217,115,58,0.35)';
         ctx.lineWidth = p.hue > 0.9 ? 1.4 : 0.9;
         ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(nx, ny); ctx.stroke();
         p.x = nx; p.y = ny; p.life -= 1;

@@ -27,8 +27,8 @@ export default function TypeStage() {
         onPointerMove={(e) => { state.current.hover = e.pointerType === 'mouse'; }}
         onPointerLeave={() => { state.current.hover = false; }}
       >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_55%,rgba(249,115,22,0.14),transparent_70%)]" />
-        <div className="absolute inset-x-0 bottom-0 h-[38%] bg-[linear-gradient(to_bottom,transparent,rgba(249,115,22,0.05))] [mask-image:linear-gradient(to_bottom,transparent,black)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_55%,rgba(240,138,75,0.14),transparent_70%)]" />
+        <div className="absolute inset-x-0 bottom-0 h-[38%] bg-[linear-gradient(to_bottom,transparent,rgba(240,138,75,0.05))] [mask-image:linear-gradient(to_bottom,transparent,black)]" />
         <Suspense fallback={null}>
           {near && <KineticType3D state={state} active={near} reduced={reduced} />}
         </Suspense>

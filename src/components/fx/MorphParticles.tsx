@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useRef, type MutableRefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { gears, human, infinity, globe } from './particleShapes';
+import { logo, machines, face, infinity, globe } from './particleShapes';
+// served from /public, so it is referenced by path rather than imported
+const logoUrl = '/kineticbay.png';
 
 const vertex = /* glsl */ `
-  attribute vec3 aGear;
-  attribute vec3 aPivot;
+  attribute vec3 aLogo;
+  attribute vec3 aMach;
+  attribute vec3 aMachB;
+  attribute vec2 aFlow;
   attribute vec3 aHuman;
   attribute vec3 aInf;
   attribute vec3 aGlobe;
@@ -15,6 +19,7 @@ const vertex = /* glsl */ `
   uniform float uTime;
   uniform float uSize;
   uniform float uMotion;
+  uniform float uIntro;
   uniform vec2 uMouse;
 
   varying vec3 vColor;
@@ -28,9 +33,14 @@ const vertex = /* glsl */ `
   void main() {
     float s = clamp(uStage, 0.0, 4.0);
 
-    // gears spin on their own axles; spin accelerates with scroll
-    vec3 g = aGear;
-    g.xy = aPivot.xy + rot(g.xy - aPivot.xy, (uTime * 0.25 * uMotion + s * 1.6) * aPivot.z);
+    // intro: a loose cloud gathers into the Kinetic Bay mark
+    float intro = ease(clamp((uIntro - aRand * 0.4) / 0.6, 0.0, 1.0));
+    vec3 logo = mix(aGlobe * 2.1 + vec3(0.0, 0.0, -1.5), aLogo, intro);
+
+    // machines: static circuitry, plus packets that stream along the traces
+    float packet = step(0.001, aFlow.x);
+    float travel = fract(uTime * aFlow.x * uMotion + aFlow.y);
+    vec3 mach = mix(aMach, aMachB, travel * packet);
 
     vec3 gl = aGlobe;
     gl.xz = rot(gl.xz, uTime * 0.18 * uMotion);
@@ -38,47 +48,50 @@ const vertex = /* glsl */ `
     vec3 inf = aInf;
     inf.xy = rot(inf.xy, sin(uTime * 0.3) * 0.05 * uMotion);
 
-    // per-particle stagger so the morph ripples instead of snapping
     float seg = floor(min(s, 3.999));
     float f = s - seg;
     float t = ease(clamp((f - aRand * 0.35) / 0.65, 0.0, 1.0));
 
     vec3 from, to;
-    if (seg < 1.0)      { from = g;      to = g; }
-    else if (seg < 2.0) { from = g;      to = aHuman; }
+    if (seg < 1.0)      { from = logo;   to = mach; }
+    else if (seg < 2.0) { from = mach;   to = aHuman; }
     else if (seg < 3.0) { from = aHuman; to = inf; }
     else                { from = inf;    to = gl; }
     vec3 p = mix(from, to, t);
 
     // turbulence peaks mid-morph: particles scatter, then reassemble
-    float k = sin(t * PI) * (seg < 1.0 ? 0.0 : 1.0) * uMotion;
+    float k = sin(t * PI) * uMotion;
     p += vec3(
       sin(p.y * 2.1 + uTime * 1.3 + aRand * 6.28),
       cos(p.x * 1.9 + uTime * 1.1 + aRand * 3.1),
       sin((p.x + p.y) * 1.4 + uTime)
-    ) * k * 0.55;
+    ) * k * 0.5;
 
-    // idle breathing
-    p += 0.018 * vec3(sin(uTime * 1.7 + aRand * 40.0), cos(uTime * 1.3 + aRand * 30.0), 0.0) * uMotion;
+    p += 0.016 * vec3(sin(uTime * 1.7 + aRand * 40.0), cos(uTime * 1.3 + aRand * 30.0), 0.0) * uMotion;
 
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
-
-    // cursor repulsion in view space
     vec2 d = mv.xy - uMouse;
     float dist = length(d);
-    mv.xy += normalize(d + 1e-5) * smoothstep(1.3, 0.0, dist) * 0.55 * uMotion;
+    mv.xy += normalize(d + 1e-5) * smoothstep(1.3, 0.0, dist) * 0.5 * uMotion;
 
     gl_Position = projectionMatrix * mv;
-    gl_PointSize = uSize * (0.55 + aRand * 0.9) / -mv.z;
 
-    vec3 orange = vec3(0.976, 0.451, 0.086);
-    vec3 amber  = vec3(1.0, 0.671, 0.0);
-    vec3 ember  = vec3(0.918, 0.345, 0.047);
-    vec3 c = mix(ember, orange, smoothstep(0.0, 0.6, aRand));
-    c = mix(c, amber, smoothstep(0.75, 1.0, aRand));
-    if (aRand > 0.965) c = vec3(1.0, 0.93, 0.82);
+    // packets glow a little brighter while they are on the move in the machines scene
+    float onMach = (seg < 1.0 ? t : (seg < 2.0 ? 1.0 - t : 0.0));
+    float pulse = packet * onMach * sin(travel * PI);
+    gl_PointSize = uSize * (0.55 + aRand * 0.85 + pulse * 0.9) / -mv.z;
+
+    // soft apricot palette — warm, not hot
+    vec3 apricot = vec3(0.941, 0.541, 0.294);
+    vec3 honey   = vec3(0.965, 0.765, 0.420);
+    vec3 clay    = vec3(0.851, 0.451, 0.227);
+    vec3 cream   = vec3(1.0, 0.925, 0.84);
+    vec3 c = mix(clay, apricot, smoothstep(0.0, 0.6, aRand));
+    c = mix(c, honey, smoothstep(0.75, 1.0, aRand));
+    if (aRand > 0.955) c = cream;
+    c = mix(c, cream, pulse * 0.6);
     vColor = c;
-    vAlpha = 0.55 + 0.45 * smoothstep(-3.0, 1.5, mv.z + 7.0);
+    vAlpha = (0.5 + 0.4 * smoothstep(-3.0, 1.5, mv.z + 7.0)) * (0.85 + pulse * 0.3);
   }
 `;
 
@@ -100,9 +113,9 @@ export interface StoryState {
 
 // Where the shape sits for each stage (x, y) on desktop; mobile centres it above the copy.
 const DESKTOP_OFFSETS = [
-  [2.55, 0],
-  [2.55, 0],
-  [-2.4, -0.1],
+  [2.3, 0.15],
+  [2.45, 0],
+  [-2.3, -0.1],
   [0, -0.35],
   [2.2, 0],
 ];
@@ -122,14 +135,17 @@ function Points({ state, count, reduced }: { state: MutableRefObject<StoryState>
   const { size, viewport } = useThree();
 
   const { geometry, material } = useMemo(() => {
-    const { pos, pivot } = gears(count);
     const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pos.slice(), 3));
-    geo.setAttribute('aGear', new THREE.BufferAttribute(pos, 3));
-    geo.setAttribute('aPivot', new THREE.BufferAttribute(pivot, 3));
-    geo.setAttribute('aHuman', new THREE.BufferAttribute(human(count), 3));
+    const gl = globe(count);
+    const m = machines(count);
+    geo.setAttribute('position', new THREE.BufferAttribute(gl.slice(), 3));
+    geo.setAttribute('aLogo', new THREE.BufferAttribute(gl.slice(), 3));
+    geo.setAttribute('aMach', new THREE.BufferAttribute(m.a, 3));
+    geo.setAttribute('aMachB', new THREE.BufferAttribute(m.b, 3));
+    geo.setAttribute('aFlow', new THREE.BufferAttribute(m.flow, 2));
+    geo.setAttribute('aHuman', new THREE.BufferAttribute(face(count), 3));
     geo.setAttribute('aInf', new THREE.BufferAttribute(infinity(count), 3));
-    geo.setAttribute('aGlobe', new THREE.BufferAttribute(globe(count), 3));
+    geo.setAttribute('aGlobe', new THREE.BufferAttribute(gl, 3));
     const r = new Float32Array(count);
     for (let i = 0; i < count; i++) r[i] = Math.random();
     geo.setAttribute('aRand', new THREE.BufferAttribute(r, 1));
@@ -144,13 +160,27 @@ function Points({ state, count, reduced }: { state: MutableRefObject<StoryState>
       uniforms: {
         uStage: { value: 0 },
         uTime: { value: 0 },
-        uSize: { value: 26 },
+        uSize: { value: 24 },
         uMotion: { value: reduced ? 0 : 1 },
+        uIntro: { value: 0 },
         uMouse: { value: new THREE.Vector2(99, 99) },
       },
     });
     return { geometry: geo, material: mat };
   }, [count, reduced]);
+
+  // trace the real logo once the image is available, then let the cloud gather into it
+  const introStart = useRef<number | null>(null);
+  useEffect(() => {
+    const img = new Image();
+    img.src = logoUrl;
+    img.onload = () => {
+      const attr = geometry.getAttribute('aLogo') as THREE.BufferAttribute;
+      attr.copyArray(logo(count, img));
+      attr.needsUpdate = true;
+      introStart.current = performance.now();
+    };
+  }, [geometry, count]);
 
   useEffect(() => () => { geometry.dispose(); material.dispose(); }, [geometry, material]);
 
@@ -178,7 +208,8 @@ function Points({ state, count, reduced }: { state: MutableRefObject<StoryState>
     const u = material.uniforms;
     u.uStage.value = s;
     u.uTime.value += dt;
-    u.uSize.value = 26 * Math.min(window.devicePixelRatio, 1.75) * (size.width < 768 ? 0.85 : 1);
+    if (introStart.current !== null) u.uIntro.value = reduced ? 1 : Math.min(1, (performance.now() - introStart.current) / 1800);
+    u.uSize.value = 24 * Math.min(window.devicePixelRatio, 1.75) * (size.width < 768 ? 0.85 : 1);
     (u.uMouse.value as THREE.Vector2).lerp(mouse.current, 0.12);
 
     const mobile = state.current.mobile;

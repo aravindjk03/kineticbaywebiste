@@ -76,7 +76,7 @@ function CrossFunctional() {
           <SectionHead eyebrow="How we're built" title={teamStory.crossTitle} body={teamStory.crossBody} className="mb-8" />
           <Reveal>
             <ul className="flex flex-wrap gap-2">
-              {d.map((x) => <li key={x} className="px-3 py-1.5 text-[13px] text-ink bg-white/[0.04] shadow-[inset_0_0_0_1px_rgba(249,115,22,0.3)]">{x}</li>)}
+              {d.map((x) => <li key={x} className="px-3 py-1.5 text-[13px] text-ink bg-white/[0.04] shadow-[inset_0_0_0_1px_rgba(240,138,75,0.3)]">{x}</li>)}
             </ul>
           </Reveal>
         </div>
@@ -90,7 +90,7 @@ function CrossFunctional() {
                   <div key={x} className="absolute" style={{ left: `${50 + Math.cos(a) * 50}%`, top: `${50 + Math.sin(a) * 50}%` }}>
                     {/* counter-rotate so the chip always stands up and faces the viewer */}
                     <motion.div style={{ rotateZ: unspin }} className="[transform-style:preserve-3d]">
-                      <motion.div style={{ rotateX: untilt }} className="-translate-x-1/2 -translate-y-full px-3 py-2 bg-bg text-[12px] font-semibold text-ink whitespace-nowrap shadow-[0_0_0_1px_rgba(249,115,22,0.5),0_10px_30px_-5px_rgba(249,115,22,0.35)]">
+                      <motion.div style={{ rotateX: untilt }} className="-translate-x-1/2 -translate-y-full px-3 py-2 bg-bg text-[12px] font-semibold text-ink whitespace-nowrap shadow-[0_0_0_1px_rgba(240,138,75,0.5),0_10px_30px_-5px_rgba(240,138,75,0.35)]">
                         <span className="inline-block w-1.5 h-1.5 mr-2 align-middle" style={{ background: `rgb(${ROLES[i % ROLES.length].color})` }} />{x}
                       </motion.div>
                     </motion.div>
@@ -98,7 +98,7 @@ function CrossFunctional() {
                 );
               })}
             </motion.div>
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full bg-primary/15 border border-primary/60 grid place-items-center shadow-[0_0_80px_10px_rgba(249,115,22,0.35)]">
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full bg-primary/15 border border-primary/60 grid place-items-center shadow-[0_0_80px_10px_rgba(240,138,75,0.35)]">
               <span className="font-heading font-bold text-ink text-sm text-center leading-tight">Your<br />outcome</span>
             </div>
           </motion.div>

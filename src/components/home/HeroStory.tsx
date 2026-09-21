@@ -59,7 +59,7 @@ function StoryCard({ label, title, body, micro, align }: {
 
 function RailItem({ label, at, p }: { label: string; at: number; p: MotionValue<number> }) {
   const opacity = useTransform(p, [at - 0.13, at, at + 0.13], [0, 1, 0]);
-  const dot = useTransform(p, [at - 0.13, at, at + 0.13], ['rgba(8,9,10,1)', 'rgba(249,115,22,1)', 'rgba(8,9,10,1)']);
+  const dot = useTransform(p, [at - 0.13, at, at + 0.13], ['rgba(8,9,10,1)', 'rgba(240,138,75,1)', 'rgba(8,9,10,1)']);
   return (
     <div className="relative flex items-center gap-3 text-[10px] uppercase tracking-[0.22em] text-ink h-4">
       <motion.span style={{ opacity }}>{label}</motion.span>
@@ -180,7 +180,7 @@ export default function HeroStory() {
         {/* chapter rail */}
         <div className="hidden lg:flex absolute right-6 top-1/2 -translate-y-1/2 flex-col items-end gap-4 z-10" aria-hidden="true">
           <div className="absolute right-[3px] top-0 bottom-0 w-px bg-border" />
-          <motion.div className="absolute right-[3px] top-0 w-px bg-primary shadow-[0_0_8px_#F97316]" style={{ height: bar }} />
+          <motion.div className="absolute right-[3px] top-0 w-px bg-primary shadow-[0_0_8px_#F08A4B]" style={{ height: bar }} />
           {STAGES.map((s, i) => <RailItem key={s} label={s} at={i / 4} p={p} />)}
         </div>
 

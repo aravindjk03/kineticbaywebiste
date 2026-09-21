@@ -49,7 +49,7 @@ export default function ProductDetail() {
           <div className="[perspective:1400px]">
             <motion.div
               style={{ rotateX, scale }}
-              className="mx-auto max-w-[900px] aspect-[16/10] rounded-[18px] bg-[#1b1c20] border border-white/10 p-[1.6%] shadow-[0_60px_140px_-30px_rgba(249,115,22,0.45)] origin-bottom"
+              className="mx-auto max-w-[900px] aspect-[16/10] rounded-[18px] bg-[#1b1c20] border border-white/10 p-[1.6%] shadow-[0_60px_140px_-30px_rgba(240,138,75,0.45)] origin-bottom"
               role="img"
               aria-label={`${product.name} dashboard preview`}
             >

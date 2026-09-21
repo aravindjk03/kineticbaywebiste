@@ -5,8 +5,8 @@ export default {
     extend: {
       colors: {
         ink: '#F1F5F9',
-        primary: { DEFAULT: '#F97316', light: '#FB923C', dark: '#EA580C' },
-        accent: '#FFAB00',
+        primary: { DEFAULT: '#F08A4B', light: '#F5A76E', dark: '#D9733A' },
+        accent: '#F6C36B',
         bg: { DEFAULT: '#08090A', alt: '#111214' },
         surface: { DEFAULT: '#111214', raised: '#1A1C20' },
         'text-secondary': '#94A3B8',
@@ -45,18 +45,18 @@ export default {
         },
       },
       backgroundImage: {
-        'grid-pattern': "linear-gradient(rgba(249,115,22,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(249,115,22,0.06) 1px, transparent 1px)",
-        'radial-ember': 'radial-gradient(circle at 50% 50%, rgba(249,115,22,0.18), transparent 70%)',
-        'hero-glow': 'radial-gradient(ellipse 80% 60% at 50% -10%, rgba(249,115,22,0.25), transparent)',
+        'grid-pattern': "linear-gradient(rgba(240,138,75,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(240,138,75,0.06) 1px, transparent 1px)",
+        'radial-ember': 'radial-gradient(circle at 50% 50%, rgba(240,138,75,0.18), transparent 70%)',
+        'hero-glow': 'radial-gradient(ellipse 80% 60% at 50% -10%, rgba(240,138,75,0.25), transparent)',
       },
       backgroundSize: {
         'grid': '40px 40px',
       },
       boxShadow: {
-        'ember': '0 0 40px rgba(249,115,22,0.3), 0 0 80px rgba(249,115,22,0.1)',
-        'ember-sm': '0 0 20px rgba(249,115,22,0.2)',
+        'ember': '0 0 40px rgba(240,138,75,0.3), 0 0 80px rgba(240,138,75,0.1)',
+        'ember-sm': '0 0 20px rgba(240,138,75,0.2)',
         'card': '0 4px 24px rgba(0,0,0,0.4)',
-        'card-hover': '0 8px 48px rgba(249,115,22,0.15), 0 4px 24px rgba(0,0,0,0.4)',
+        'card-hover': '0 8px 48px rgba(240,138,75,0.15), 0 4px 24px rgba(0,0,0,0.4)',
       },
     },
   },
