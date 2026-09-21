@@ -742,7 +742,7 @@ export default function ChatbotWidget() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.9 }}
               onClick={() => { setShowHello(false); setIsOpen(true); }}
-              className="absolute right-[84px] bottom-5 whitespace-nowrap px-4 py-2.5 bg-[#111214] text-[13px] text-ink shadow-[0_0_0_1px_rgba(249,115,22,0.45),0_14px_40px_-10px_rgba(0,0,0,0.9)] [clip-path:polygon(0_0,100%_0,100%_calc(100%_-_10px),calc(100%_-_10px)_100%,0_100%)]"
+              className="hidden sm:block absolute right-[84px] bottom-5 whitespace-nowrap px-4 py-2.5 bg-[#111214] text-[13px] text-ink shadow-[0_0_0_1px_rgba(249,115,22,0.45),0_14px_40px_-10px_rgba(0,0,0,0.9)] [clip-path:polygon(0_0,100%_0,100%_calc(100%_-_10px),calc(100%_-_10px)_100%,0_100%)]"
             >
               Hi, I'm <span className="text-primary font-semibold">KAI</span>. Need a hand?
             </motion.button>
