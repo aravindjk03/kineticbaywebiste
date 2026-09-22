@@ -13,7 +13,7 @@
 
 import {
   hashPassword, verifyPassword, passwordProblem, signToken, verifyToken, hmac,
-  verifyTotp, newTotpSecret, otpauthUrl, sha256Hex, randomToken, safeEqual,
+  verifyTotp, newTotpSecret, otpauthUrl, sha256Hex, randomToken, safeEqual, fromB64url
 } from './edge/crypto.js';
 import {
   edgeTicketSubmissionBucket, edgeTicketTrackingBucket, edgeMessageSubmissionBucket, edgeLoginBucket,
@@ -24,6 +24,7 @@ import {
   notifyMajorIssue, notifyApprovalNeeded, notifyApprovalDecision,
 } from './edge/email.js';
 import { listDocs, getDoc, putDoc, deleteDoc, countDocs, pruneColl, getValue, setValue } from './edge/store.js';
+import { mailOauthConfigured, redirectUri, authUrl, exchangeCode, profileWithToken, seal, unseal, revoke, gmail, summarizeThread, parseThread, parseAddress, buildRaw } from './edge/gmail.js';
 import { withSla, leadClock, leadSource, activity, buildCustomers, customerProfile, notificationsFor, dashboard, SLA_TARGETS } from './edge/crm.js';
 import { assignTicket, assignLead, isMajorIssue, TICKET_RULES, LEAD_ROLE } from './edge/assign.js';
 import { APPROVAL_LIMIT, PLANS, PROJECT_STATUSES, PAYMENT_METHODS, WON_STATUSES, contractValue, requiredApprover, withFinance } from './edge/projects.js';
@@ -40,6 +41,7 @@ const ROLE_PERMISSIONS = {
     'enquiries:read', 'enquiries:update', 'enquiries:delete', 'analytics:read', 'audit:read', 'settings:update',
     'team:manage', 'chatbot:manage', 'cookies:read',
     'projects:read', 'projects:create', 'projects:approve', 'payments:record', 'projects:delete', 'clients:manage',
+    'mail:read', 'mail:send', 'mail:manage',
   ],
   admin: [
     'content:read', 'content:create', 'content:update', 'content:delete', 'content:publish', 'content:submit',
@@ -48,11 +50,13 @@ const ROLE_PERMISSIONS = {
     'analytics:read', 'audit:read', 'settings:update',
     'team:manage', 'chatbot:manage', 'cookies:read',
     'projects:read', 'projects:create', 'projects:approve', 'payments:record', 'clients:manage',
+    'mail:read', 'mail:send',
   ],
   marketing: [
     'content:read', 'content:create', 'content:update', 'content:submit',
     'tickets:read', 'tickets:create', 'tickets:update', 'enquiries:read', 'enquiries:update', 'analytics:read',
     'projects:read', 'projects:create', 'clients:manage',
+    'mail:read', 'mail:send',
   ],
 };
 const ROLES = Object.keys(ROLE_PERMISSIONS);
@@ -1074,6 +1078,194 @@ async function handleApi(c) {
     me.notificationsSeenAt = nowIso();
     await saveUser(env, me);
     return json({ success: true });
+  }
+
+  /* ─── Gmail inside the CMS ─────────────────────────── */
+  if (seg[0] === 'mail') {
+    const accounts = await getValue(env, 'mail_accounts', []);
+    const saveAccounts = (list) => setValue(env, 'mail_accounts', list);
+    const publicAccount = (a) => ({ email: a.email, roles: a.roles, connected_at: a.connected_at, connected_by_name: a.connected_by_name });
+    const visibleTo = (me) => accounts.filter((a) => me.role === 'super_admin' || (a.roles || []).includes(me.role));
+    const pickAccount = (me, email) => {
+      const list = visibleTo(me);
+      const acc = email ? list.find((a) => a.email === String(email).toLowerCase()) : list[0];
+      if (!acc) throw new HttpError(404, 'That mailbox is not connected or not shared with your role.');
+      return acc;
+    };
+    const gm = async (acc, p, init) => {
+      try { return await gmail(env, acc, p, init); } catch (e) {
+        if (/invalid_grant|revoked|expired/i.test(e.message)) throw new HttpError(409, `Google access for ${acc.email} has expired or was revoked. A Super Admin needs to reconnect it.`);
+        throw new HttpError(e.status === 404 ? 404 : 502, `Gmail: ${e.message}`);
+      }
+    };
+    const cmsHome = async (q) => `/${(await getSettings(env)).cmsRoute}?${new URLSearchParams(q)}`;
+
+    // Google redirects the browser here after consent. Cookies are SameSite=Strict so the
+    // session is not sent; the signed, short-lived state proves who started the flow.
+    if (path === '/api/mail/oauth/callback' && method === 'GET') {
+      const p = url.searchParams;
+      const back = async (q) => new Response(null, { status: 302, headers: { location: await cmsHome(q), 'cache-control': 'no-store' } });
+      const state = await verifyToken(requireSecret(env), 'gmo', p.get('state') || '');
+      if (!state) return back({ mail: 'error', reason: 'The sign-in link expired. Please try again.' });
+      if (p.get('error')) return back({ mail: 'error', reason: p.get('error') === 'access_denied' ? 'Google access was not granted.' : p.get('error') });
+      const starter = (await getUsers(env)).find((u) => u.id === state.u && u.status === 'active' && u.role === 'super_admin');
+      if (!starter) return back({ mail: 'error', reason: 'Only an active Super Admin can connect a mailbox.' });
+      try {
+        const tok = await exchangeCode(env, url.origin, p.get('code') || '');
+        if (!tok.refresh_token) return back({ mail: 'error', reason: 'Google did not return offline access. Remove the app from your Google account permissions and try again.' });
+        const prof = await profileWithToken(tok.access_token);
+        const email = String(prof.emailAddress || '').toLowerCase();
+        const list = accounts.filter((a) => a.email !== email);
+        list.push({ email, refresh: await seal(env, tok.refresh_token), roles: state.roles, connected_by: starter.id, connected_by_name: starter.name, connected_at: nowIso() });
+        await saveAccounts(list);
+        c.session = { user: starter, token: '' };
+        await c.audit('MAILBOX_CONNECTED', email);
+        return back({ mail: 'connected', account: email });
+      } catch (e) {
+        return back({ mail: 'error', reason: String(e.message || e).slice(0, 200) });
+      }
+    }
+
+    if (path === '/api/mail/status' && method === 'GET') {
+      const me = await c.auth('mail:read');
+      return json({
+        oauth_configured: mailOauthConfigured(env),
+        redirect_uri: redirectUri(env, url.origin),
+        accounts: visibleTo(me).map(publicAccount),
+        can_manage: (ROLE_PERMISSIONS[me.role] || []).includes('mail:manage'),
+      });
+    }
+    if (path === '/api/mail/oauth/start' && method === 'POST') {
+      const me = await c.auth('mail:manage');
+      if (!mailOauthConfigured(env)) throw new HttpError(400, 'Google sign-in is not set up yet (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET missing).');
+      const roles = (Array.isArray(body.roles) ? body.roles : ROLES).filter((r) => ROLES.includes(r));
+      const state = await signToken(requireSecret(env), 'gmo', { u: me.id, roles, n: randomToken(8), exp: Date.now() + 10 * 60 * 1000 });
+      return json({ url: authUrl(env, url.origin, state, str(body.login_hint, 190)) });
+    }
+    if (seg[1] === 'accounts' && seg[2]) {
+      const me = await c.auth('mail:manage');
+      const email = decodeURIComponent(seg[2]).toLowerCase();
+      const acc = accounts.find((a) => a.email === email);
+      if (!acc) throw new HttpError(404, 'Mailbox not found.');
+      if (method === 'PATCH') {
+        acc.roles = (Array.isArray(body.roles) ? body.roles : acc.roles).filter((r) => ROLES.includes(r));
+        await saveAccounts(accounts);
+        await c.audit('MAILBOX_SHARING_CHANGED', email, 'SUCCESS', { roles: acc.roles });
+        return json({ success: true, account: publicAccount(acc) });
+      }
+      if (method === 'DELETE') {
+        try { await revoke(await unseal(env, acc.refresh)); } catch { /* already invalid */ }
+        await saveAccounts(accounts.filter((a) => a.email !== email));
+        await c.audit('MAILBOX_DISCONNECTED', email, 'SUCCESS', { by: me.username });
+        return json({ success: true });
+      }
+    }
+
+    const VIEWS = {
+      inbox: 'in:inbox', unread: 'in:inbox is:unread', starred: 'is:starred', sent: 'in:sent', all: '',
+      proposals: '{subject:proposal subject:quotation subject:quote subject:rfp subject:rfq subject:tender subject:estimate subject:"purchase order" proposal quotation}',
+    };
+    if (path === '/api/mail/threads' && method === 'GET') {
+      const me = await c.auth('mail:read');
+      const p = url.searchParams;
+      const acc = pickAccount(me, p.get('account'));
+      const q = [VIEWS[p.get('view')] ?? VIEWS.inbox, str(p.get('q') || '', 200)].filter(Boolean).join(' ');
+      const qs = new URLSearchParams({ maxResults: '20', q });
+      if (p.get('pageToken')) qs.set('pageToken', p.get('pageToken'));
+      const list = await gm(acc, `/threads?${qs}`);
+      const meta = 'format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date';
+      const threads = await Promise.all((list.threads || []).map((t) => gm(acc, `/threads/${t.id}?${meta}`).then(summarizeThread).catch(() => null)));
+      return json({ account: acc.email, threads: threads.filter(Boolean), next_page: list.nextPageToken || null, estimate: list.resultSizeEstimate || 0 });
+    }
+    if (seg[1] === 'threads' && seg[2] && method === 'GET') {
+      const me = await c.auth('mail:read');
+      const acc = pickAccount(me, url.searchParams.get('account'));
+      const thread = parseThread(await gm(acc, `/threads/${encodeURIComponent(seg[2])}?format=full`));
+      if (thread.unread && url.searchParams.get('peek') !== '1') {
+        c.later(gm(acc, `/threads/${encodeURIComponent(seg[2])}/modify`, { method: 'POST', body: JSON.stringify({ removeLabelIds: ['UNREAD'] }) }).catch(() => undefined));
+      }
+      // link the conversation to what the CRM already knows about these people
+      const people = [...new Set(thread.messages.map((m) => m.from.email).filter((e) => e && e !== acc.email))];
+      const [enquiries, tickets, projects] = await Promise.all([getEnquiries(env), getTickets(env), listDocs(env, 'projects')]);
+      const crm = people.map((email) => ({
+        email,
+        leads: enquiries.filter((e) => !e.deleted_at && e.email === email).map((e) => ({ id: e.id, ref: e.reference_id, status: e.status })),
+        tickets: tickets.filter((t) => !t.deleted_at && t.requester_email === email).map((t) => ({ id: t.id, ref: t.public_id, status: t.status })),
+        projects: projects.filter((x) => !x.deleted_at && x.customer_email === email).map((x) => ({ id: x.id, ref: x.ref, status: x.status })),
+      }));
+      return json({ account: acc.email, thread, crm });
+    }
+    if (seg[1] === 'threads' && seg[3] === 'modify' && method === 'POST') {
+      const me = await c.auth('mail:read');
+      const acc = pickAccount(me, body.account);
+      const ACTIONS = {
+        read: { removeLabelIds: ['UNREAD'] }, unread: { addLabelIds: ['UNREAD'] },
+        star: { addLabelIds: ['STARRED'] }, unstar: { removeLabelIds: ['STARRED'] },
+        archive: { removeLabelIds: ['INBOX'] }, inbox: { addLabelIds: ['INBOX'] },
+      };
+      if (body.action === 'trash') {
+        await c.auth('mail:send');
+        await gm(acc, `/threads/${encodeURIComponent(seg[2])}/trash`, { method: 'POST' });
+      } else if (ACTIONS[body.action]) {
+        await gm(acc, `/threads/${encodeURIComponent(seg[2])}/modify`, { method: 'POST', body: JSON.stringify(ACTIONS[body.action]) });
+      } else throw new HttpError(400, 'Unknown mailbox action.');
+      return json({ success: true });
+    }
+    if (path === '/api/mail/send' && method === 'POST') {
+      const me = await c.auth('mail:send');
+      const acc = pickAccount(me, body.account);
+      const to = str(body.to, 1000), cc = str(body.cc, 1000), subject = str(body.subject, 250), text = str(body.body, 50000);
+      const addrs = [...to.split(','), ...cc.split(',')].map((x) => parseAddress(x).email).filter(Boolean);
+      if (!to || !addrs.length || !addrs.every(isEmail)) throw new HttpError(400, 'Please enter valid recipient email addresses (comma separated).');
+      if (!subject || !text) throw new HttpError(400, 'Subject and message are required.');
+      const raw = buildRaw({ from: acc.email, fromName: `${me.name} · Kinetic Bay`, to, cc, subject, body: text, inReplyTo: str(body.in_reply_to, 500), references: str(body.references, 2000) });
+      const sent = await gm(acc, '/messages/send', { method: 'POST', body: JSON.stringify({ raw, ...(body.thread_id ? { threadId: str(body.thread_id, 100) } : {}) }) });
+      await c.audit('MAIL_SENT', acc.email, 'SUCCESS', { to: addrs.join(', '), subject });
+      // replying to a lead counts as contacting them
+      const leads = (await getEnquiries(env)).filter((e) => !e.deleted_at && addrs.includes(e.email) && !['WON', 'LOST'].includes(e.status));
+      for (const lead of leads) {
+        const a = activity('email', text.slice(0, 3000), me, { subject, via: acc.email });
+        (lead.activities = lead.activities || []).push(a);
+        lead.last_contacted_at = a.at;
+        if (!lead.first_response_at) lead.first_response_at = a.at;
+        if (lead.status === 'NEW') lead.status = 'CONTACTED';
+        lead.updated_at = nowIso();
+        await saveEnquiry(env, lead);
+      }
+      return json({ success: true, id: sent.id, thread_id: sent.threadId, logged_on_leads: leads.map((l) => l.reference_id) });
+    }
+    if (path === '/api/mail/attachment' && method === 'GET') {
+      const me = await c.auth('mail:read');
+      const p = url.searchParams;
+      const acc = pickAccount(me, p.get('account'));
+      const data = await gm(acc, `/messages/${encodeURIComponent(p.get('message') || '')}/attachments/${encodeURIComponent(p.get('id') || '')}`);
+      const bytes = fromB64url(data.data || '');
+      const name = (p.get('name') || 'attachment').replace(/[^\w.\- ]+/g, '_').slice(0, 120);
+      return new Response(bytes, { headers: { 'content-type': 'application/octet-stream', 'content-disposition': `attachment; filename="${name}"`, 'x-content-type-options': 'nosniff', 'cache-control': 'private, no-store' } });
+    }
+    if (path === '/api/mail/to-lead' && method === 'POST') {
+      const me = await c.auth('enquiries:update');
+      const acc = pickAccount(me, body.account);
+      const thread = parseThread(await gm(acc, `/threads/${encodeURIComponent(str(body.thread_id, 100))}?format=full`));
+      const first = thread.messages.find((m) => m.from.email && m.from.email !== acc.email) || thread.messages[0];
+      if (!first || !isEmail(first.from.email)) throw new HttpError(400, 'Could not find the sender of this conversation.');
+      const now = nowIso();
+      const enq = {
+        id: newId('enq'), reference_id: 'ENQ-' + randomToken(6).replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase().padEnd(6, '7'),
+        name: first.from.name || first.from.email, email: first.from.email, company: str(body.company, 120),
+        service_slug: '', service_name: str(body.service, 80) || 'From email', budget_range: 'Not specified', timeline: 'Not specified',
+        message: `Subject: ${thread.subject}\nSource: email\n\n${(first.text || first.snippet || '').slice(0, 4000)}`,
+        status: 'NEW', notes: `Imported from ${acc.email}`, source: 'email', created_at: now, updated_at: now, deleted_at: null,
+        owner_id: null, follow_up_at: null, first_response_at: null, last_contacted_at: null, activities: [], mail_thread: { account: acc.email, id: thread.id },
+      };
+      const pick = assignLead(enq, await getUsers(env), await getEnquiries(env));
+      enq.owner_id = pick ? pick.user.id : me.id;
+      enq.activities.push(activity('owner', `Created from email by ${me.name}${pick ? `; owner ${pick.user.name}` : ''}`, me));
+      await saveEnquiry(env, enq);
+      await c.audit('LEAD_FROM_EMAIL', enq.reference_id, 'SUCCESS', { from: enq.email });
+      return json({ success: true, enquiry: enq }, 201);
+    }
+    throw new HttpError(404, 'Not found.');
   }
 
   if (path === '/api/assignment-rules' && method === 'GET') {

@@ -33,6 +33,7 @@ import {
   Briefcase,
   Siren,
   Award,
+  Inbox,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import DashboardPanel from './DashboardPanel';
@@ -40,6 +41,7 @@ import PipelineBoard from './PipelineBoard';
 import CustomersPanel from './CustomersPanel';
 import ProjectsPanel, { ProjectDraft } from './ProjectsPanel';
 import ClientsPanel from './ClientsPanel';
+import MailPanel from './MailPanel';
 import NotificationBell from './NotificationBell';
 import { SlaBadge, TicketSla } from './crmShared';
 import { canOpen, MyAccess, RoleMatrix } from './access';
@@ -193,7 +195,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
   const canSee = (tab: string) => canOpen(tab, currentUser.role, currentUser.permissions);
 
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'analytics' | 'content' | 'tickets' | 'enquiries' | 'crm' | 'customers' | 'projects' | 'clients' | 'team' | 'chatbot' | 'users' | 'audit' | 'security' | 'cookies'
+    'dashboard' | 'analytics' | 'content' | 'tickets' | 'enquiries' | 'crm' | 'customers' | 'projects' | 'clients' | 'mail' | 'team' | 'chatbot' | 'users' | 'audit' | 'security' | 'cookies'
   >('dashboard');
   const [crmFocus, setCrmFocus] = useState<string | null>(null);
   const [customerFocus, setCustomerFocus] = useState<string | null>(null);
@@ -298,6 +300,17 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
     { sender: 'bot', text: 'CMS Sandbox ready. Try asking about services, integration, or test confidential prompts.' },
   ]);
   const [testLoading, setTestLoading] = useState(false);
+
+  // coming back from Google after connecting a mailbox
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const m = p.get('mail');
+    if (!m) return;
+    if (m === 'connected') notify(`Mailbox ${p.get('account') || ''} connected`);
+    else notify(`Gmail was not connected: ${p.get('reason') || 'unknown error'}`, 'error');
+    setActiveTab('mail');
+    window.history.replaceState(null, '', window.location.pathname);
+  }, []);
 
   useEffect(() => {
     if (!canSee(activeTab)) setActiveTab('dashboard');
@@ -1066,6 +1079,21 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
               <div className="flex items-center gap-2.5">
                 <Contact className="w-4 h-4" />
                 <span>Customers</span>
+              </div>
+            </button>
+          )}
+          {canSee('mail') && (
+            <button
+              onClick={() => setActiveTab('mail')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                activeTab === 'mail'
+                  ? 'bg-primary text-ink shadow-ember-sm'
+                  : 'text-text-secondary hover:bg-surface hover:text-ink'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Inbox className="w-4 h-4" />
+                <span>Inbox</span>
               </div>
             </button>
           )}
@@ -2685,6 +2713,10 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
               onOpenTicket={(id) => navigateTo('tickets', id)}
               onOpenProject={(id) => navigateTo('projects', id)}
             />
+          )}
+
+          {activeTab === 'mail' && canSee('mail') && (
+            <MailPanel me={currentUser} notify={(type, message) => notify(message, type)} onNavigate={navigateTo} />
           )}
 
           {activeTab === 'clients' && canSee('clients') && (

@@ -340,6 +340,26 @@ section('Client logos');
   check(r.status === 401, 'managing logos needs sign-in');
 }
 
+section('Inbox (Gmail)');
+{
+  let r = await su.call('GET', '/api/mail/status');
+  check(r.status === 200 && Array.isArray(r.data.accounts) && /\/api\/mail\/oauth\/callback$/.test(r.data.redirect_uri) && r.data.can_manage === true, 'mail status for super admin', r.data);
+  r = await su.call('POST', '/api/mail/oauth/start', { roles: ['admin'] });
+  check(r.status === 400 || (r.status === 200 && /accounts\.google\.com/.test(r.data.url)), 'connect needs Google credentials (400 until configured)');
+  const mkm = new Client(ip()); await mkm.login('marketing', { useRecovery: true });
+  r = await mkm.call('GET', '/api/mail/status');
+  check(r.status === 200 && r.data.can_manage === false, 'marketing can open the inbox but not manage mailboxes');
+  r = await mkm.call('POST', '/api/mail/oauth/start', {});
+  check(r.status === 403, 'marketing cannot connect a mailbox');
+  r = await su.call('GET', '/api/mail/threads?view=inbox');
+  check(r.status === 404, 'no mailbox connected yet → 404');
+  const res = await fetch(`${BASE}/api/mail/oauth/callback?code=x&state=forged.token.sig`, { redirect: 'manual' });
+  const loc = res.headers.get('location') || '';
+  check(res.status === 302 && /mail=error/.test(loc) && /^\/cms_[a-f0-9]{32}\?/.test(loc), 'forged OAuth callback is refused and returns to the CMS', loc);
+  r = await new Client(ip()).call('GET', '/api/mail/status');
+  check(r.status === 401, 'inbox needs sign-in');
+}
+
 section('Content workflow');
 {
   let r = await su.call('POST', '/api/content', { title: 'Smoke banner', slug: `smoke-${Date.now()}`, category: 'homepage', content: 'Hello' });
@@ -456,7 +476,8 @@ section('Brute-force protection');
 {
   const attacker = new Client(ip());
   let last;
-  for (let i = 0; i < 8; i++) last = await attacker.call('POST', '/api/auth/login', { username: 'marketing', password: `guess${i}` });
+  const probe = `probe-${Date.now()}`;
+  for (let i = 0; i < 8; i++) last = await attacker.call('POST', '/api/auth/login', { username: probe, password: `guess${i}` });
   check(last.status === 429, 'repeated wrong passwords are rate-limited');
 }
 

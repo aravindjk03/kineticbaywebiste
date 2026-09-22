@@ -467,6 +467,50 @@ export const api = {
     return request(`/api/projects/${encodeURIComponent(id)}`, { method: 'DELETE' });
   },
 
+  // ── Gmail inside the CMS ──
+  async getMailStatus() {
+    return request('/api/mail/status');
+  },
+
+  async startMailConnect(roles: string[], loginHint?: string) {
+    return request('/api/mail/oauth/start', { method: 'POST', body: JSON.stringify({ roles, login_hint: loginHint }) });
+  },
+
+  async updateMailbox(email: string, roles: string[]) {
+    return request(`/api/mail/accounts/${encodeURIComponent(email)}`, { method: 'PATCH', body: JSON.stringify({ roles }) });
+  },
+
+  async disconnectMailbox(email: string) {
+    return request(`/api/mail/accounts/${encodeURIComponent(email)}`, { method: 'DELETE' });
+  },
+
+  async getMailThreads(account: string, view: string, q?: string, pageToken?: string) {
+    const qs = new URLSearchParams({ account, view });
+    if (q) qs.set('q', q);
+    if (pageToken) qs.set('pageToken', pageToken);
+    return request(`/api/mail/threads?${qs}`);
+  },
+
+  async getMailThread(account: string, id: string) {
+    return request(`/api/mail/threads/${encodeURIComponent(id)}?account=${encodeURIComponent(account)}`);
+  },
+
+  async mailAction(account: string, id: string, action: string) {
+    return request(`/api/mail/threads/${encodeURIComponent(id)}/modify`, { method: 'POST', body: JSON.stringify({ account, action }) });
+  },
+
+  async sendMail(data: { account: string; to: string; cc?: string; subject: string; body: string; thread_id?: string; in_reply_to?: string; references?: string }) {
+    return request('/api/mail/send', { method: 'POST', body: JSON.stringify(data) });
+  },
+
+  async mailToLead(account: string, threadId: string) {
+    return request('/api/mail/to-lead', { method: 'POST', body: JSON.stringify({ account, thread_id: threadId }) });
+  },
+
+  mailAttachmentUrl(account: string, messageId: string, id: string, name: string) {
+    return `/api/mail/attachment?${new URLSearchParams({ account, message: messageId, id, name })}`;
+  },
+
   // ── Client logos ──
   async getPublicClients() {
     return request('/api/public/clients');
