@@ -21,9 +21,12 @@ import {
 import {
   notifyStaffNewTicket, notifyCustomerTicketReceived, notifyCustomerTicketUpdate, notifyCustomerTicketStatus,
   notifyStaffNewEnquiry, sendTestEmail, mailConfigured, internalAddress, sendLeadReply, sendDigest,
+  notifyMajorIssue, notifyApprovalNeeded, notifyApprovalDecision,
 } from './edge/email.js';
 import { listDocs, getDoc, putDoc, deleteDoc, countDocs, pruneColl, getValue, setValue } from './edge/store.js';
 import { withSla, leadClock, leadSource, activity, buildCustomers, customerProfile, notificationsFor, dashboard, SLA_TARGETS } from './edge/crm.js';
+import { assignTicket, assignLead, isMajorIssue, TICKET_RULES, LEAD_ROLE } from './edge/assign.js';
+import { APPROVAL_LIMIT, PLANS, PROJECT_STATUSES, PAYMENT_METHODS, WON_STATUSES, contractValue, requiredApprover, withFinance } from './edge/projects.js';
 
 /* ═══════════════════════════════════════════════════════════
    Roles & permissions
@@ -36,6 +39,7 @@ const ROLE_PERMISSIONS = {
     'cms-route:update', 'tickets:read', 'tickets:create', 'tickets:update', 'tickets:assign', 'tickets:delete',
     'enquiries:read', 'enquiries:update', 'enquiries:delete', 'analytics:read', 'audit:read', 'settings:update',
     'team:manage', 'chatbot:manage', 'cookies:read',
+    'projects:read', 'projects:create', 'projects:approve', 'payments:record', 'projects:delete',
   ],
   admin: [
     'content:read', 'content:create', 'content:update', 'content:delete', 'content:publish', 'content:submit',
@@ -43,10 +47,12 @@ const ROLE_PERMISSIONS = {
     'tickets:update', 'tickets:assign', 'tickets:delete', 'enquiries:read', 'enquiries:update', 'enquiries:delete',
     'analytics:read', 'audit:read', 'settings:update',
     'team:manage', 'chatbot:manage', 'cookies:read',
+    'projects:read', 'projects:create', 'projects:approve', 'payments:record',
   ],
   marketing: [
     'content:read', 'content:create', 'content:update', 'content:submit',
     'tickets:read', 'tickets:create', 'tickets:update', 'enquiries:read', 'enquiries:update', 'analytics:read',
+    'projects:read', 'projects:create',
   ],
 };
 const ROLES = Object.keys(ROLE_PERMISSIONS);
@@ -234,6 +240,30 @@ function mail(c, label, target, sendPromiseFactory) {
     else console.error(`[email] ${label} ${target} FAILED status=${r.status} ${r.error || ''}`);
     await c.audit(r.ok ? 'EMAIL_SENT' : 'EMAIL_FAILED', target, r.ok ? 'SUCCESS' : 'FAILED', { label, status: r.status, error: r.error });
   })());
+}
+
+/** Route a new ticket to an owner and escalate major issues to every role. */
+async function routeTicket(c, ticket, { skipAssign = false } = {}) {
+  const env = c.env;
+  const users = await getUsers(env);
+  let owner = ticket.assigned_to ? users.find((u) => u.id === ticket.assigned_to) : null;
+  if (!owner && !skipAssign) {
+    const pick = assignTicket(ticket, users, await getTickets(env));
+    if (pick) {
+      owner = pick.user;
+      ticket.assigned_to = owner.id;
+      if (ticket.status === 'NEW') ticket.status = 'ASSIGNED';
+      ticket.auto_assigned = { to: owner.id, why: pick.why, at: nowIso() };
+      (ticket.internal_notes = ticket.internal_notes || []).push({ id: newId('note'), author_id: null, author_name: 'Auto-assign', note: `Assigned to ${owner.name}. ${pick.why}.`, created_at: nowIso() });
+    }
+  }
+  ticket.major = isMajorIssue(ticket);
+  await saveTicket(env, ticket);
+  if (ticket.major) {
+    await c.audit('MAJOR_ISSUE_RAISED', ticket.public_id, 'SUCCESS', { priority: ticket.priority, category: ticket.category });
+    mail(c, 'staff:major-issue', ticket.public_id, () => notifyMajorIssue(env, ticket, owner?.name, users.filter((u) => u.status === 'active').map((u) => u.email)));
+  }
+  return owner;
 }
 
 function limited(check) {
@@ -590,7 +620,7 @@ async function handleApi(c) {
       created_at: now, updated_at: now, deleted_at: null, deleted_by: null, deletion_reason: null,
       internal_notes: [], customer_updates: [{ id: newId('upd'), message: 'Ticket received and logged into our service queue.', created_at: now }],
     };
-    await saveTicket(env, ticket);
+    await routeTicket(c, ticket);
     await c.audit('TICKET_CREATED_PUBLIC', ticket.public_id, 'SUCCESS', { username: email });
     mail(c, 'staff:new-ticket', ticket.public_id, () => notifyStaffNewTicket(env, ticket, 'Website chatbot'));
     mail(c, 'customer:ticket-received', ticket.public_id, () => notifyCustomerTicketReceived(env, ticket));
@@ -653,7 +683,8 @@ async function handleApi(c) {
         internal_notes: note ? [{ id: newId('note'), author_id: me.id, author_name: me.name, note, created_at: now }] : [],
         customer_updates: [{ id: newId('upd'), message: 'Ticket created and registered in our service queue.', created_at: now }],
       };
-      await saveTicket(env, ticket);
+      if (assignedTo && !(await getUsers(env)).some((u) => u.id === assignedTo && u.status === 'active')) throw new HttpError(400, 'Assignee is not an active staff member.');
+      await routeTicket(c, ticket, { skipAssign: body.autoAssign === false });
       await c.audit('TICKET_CREATED', ticket.public_id);
       if (!internalAddress(email)) mail(c, 'customer:ticket-received', ticket.public_id, () => notifyCustomerTicketReceived(env, ticket));
       return json({ success: true, message: `Ticket ${ticket.public_id} created.`, ticket }, 201);
@@ -664,8 +695,14 @@ async function handleApi(c) {
     if (!ticket) throw new HttpError(404, 'Ticket not found.');
     const action = seg[2] || '';
     const prevStatus = ticket.status;
+    const wasMajor = Boolean(ticket.major);
     const touch = async (auditType, meta = {}) => {
       ticket.updated_at = nowIso();
+      ticket.major = isMajorIssue(ticket);
+      if (ticket.major && !wasMajor) {
+        const users = await getUsers(env);
+        mail(c, 'staff:major-issue', ticket.public_id, () => notifyMajorIssue(env, ticket, users.find((u) => u.id === ticket.assigned_to)?.name, users.filter((u) => u.status === 'active').map((u) => u.email)));
+      }
       // resolution clock: stamp when closed, clear if reopened
       if (CLOSED_TICKET_STATUSES.includes(ticket.status) && !ticket.resolved_at) ticket.resolved_at = ticket.updated_at;
       if (!CLOSED_TICKET_STATUSES.includes(ticket.status)) ticket.resolved_at = null;
@@ -774,6 +811,11 @@ async function handleApi(c) {
       owner_id: null, follow_up_at: null, first_response_at: null, last_contacted_at: null, activities: [],
     };
     enq.source = leadSource(enq);
+    const pick = assignLead(enq, await getUsers(env), await getEnquiries(env));
+    if (pick) {
+      enq.owner_id = pick.user.id;
+      enq.activities.push(activity('owner', `Auto-assigned to ${pick.user.name} (${pick.why})`, null));
+    }
     await saveEnquiry(env, enq);
     mail(c, 'staff:new-enquiry', enq.reference_id, () => notifyStaffNewEnquiry(env, enq));
     return json({ success: true, message: 'Your enquiry has been received. We will respond within 24 hours.', reference_id: enq.reference_id, status: 'NEW' }, 201);
@@ -820,6 +862,11 @@ async function handleApi(c) {
         const when = body.follow_up_at ? new Date(body.follow_up_at) : null;
         if (when && Number.isNaN(when.getTime())) throw new HttpError(400, 'Follow-up date is not valid.');
         enq.follow_up_at = when ? when.toISOString() : null;
+      }
+      if ('estimated_value' in body) {
+        const v = body.estimated_value === '' || body.estimated_value == null ? null : Number(body.estimated_value);
+        if (v != null && !(v >= 0 && v < 1e10)) throw new HttpError(400, 'Estimated value must be a positive amount.');
+        enq.estimated_value = v;
       }
       if (body.notes !== undefined) enq.notes = str(body.notes, 3000);
       enq.updated_at = nowIso();
@@ -971,6 +1018,168 @@ async function handleApi(c) {
     return json({ success: true });
   }
 
+  if (path === '/api/assignment-rules' && method === 'GET') {
+    await c.auth();
+    return json({ tickets: TICKET_RULES, leads: { role: LEAD_ROLE, why: 'New leads are shared across Marketing' }, approval_limit: APPROVAL_LIMIT, major: 'Critical or urgent priority, or any security ticket, alerts all three roles' });
+  }
+
+  if (seg[0] === 'projects') {
+    const projects = (await listDocs(env, 'projects')).filter((x) => !x.deleted_at);
+    const num = (v) => (v === '' || v == null ? NaN : Number(v));
+    const money = (v, label) => { const n = num(v); if (!(n > 0) || n > 1e10) throw new HttpError(400, `${label} must be a positive amount.`); return Math.round(n * 100) / 100; };
+    const date = (v, label) => { const d = str(v, 10); if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) throw new HttpError(400, `${label} must be a date (YYYY-MM-DD).`); return d; };
+    const hist = (pr, me, text) => (pr.history = pr.history || []).push({ at: nowIso(), by: me?.name || 'System', by_id: me?.id || null, text });
+    // plan fields, validated into the shape schedule() understands
+    const planFields = (b, base = {}) => {
+      const plan = PLANS.includes(b.plan) ? b.plan : base.plan || 'one_time';
+      const out = { plan, start_date: date(b.start_date || base.start_date || nowIso().slice(0, 10), 'Start date') };
+      if (plan === 'one_time') { out.amount = money(b.amount ?? base.amount, 'Amount'); out.due_date = date(b.due_date || base.due_date || out.start_date, 'Due date'); }
+      else if (plan === 'milestone') {
+        const ms = Array.isArray(b.milestones) ? b.milestones : base.milestones || [];
+        if (!ms.length || ms.length > 24) throw new HttpError(400, 'Add between 1 and 24 milestones.');
+        out.milestones = ms.map((m, i) => ({ title: str(m.title, 120) || `Milestone ${i + 1}`, amount: money(m.amount, `Milestone ${i + 1} amount`), due_date: date(m.due_date, `Milestone ${i + 1} date`) }));
+      } else {
+        out.amount_per_period = money(b.amount_per_period ?? base.amount_per_period, 'Amount per period');
+        const periods = Math.round(num(b.periods ?? base.periods));
+        if (!(periods >= 1 && periods <= 120)) throw new HttpError(400, 'Number of billing periods must be 1–120.');
+        out.periods = periods;
+      }
+      return out;
+    };
+    const canDecide = (me, pr) => (me.role === 'super_admin') || (pr.approval?.required_role === 'admin' && (ROLE_PERMISSIONS[me.role] || []).includes('projects:approve'));
+    const approvers = async (role) => (await getUsers(env)).filter((u) => u.status === 'active' && (u.role === 'super_admin' || (role === 'admin' && u.role === 'admin'))).map((u) => u.email);
+
+    if (seg.length === 1 && method === 'GET') {
+      await c.auth('projects:read');
+      const p = url.searchParams;
+      let list = projects;
+      if (p.get('customer')) list = list.filter((x) => x.customer_email === p.get('customer').toLowerCase());
+      if (p.get('status') && p.get('status') !== 'all') list = list.filter((x) => x.status === p.get('status'));
+      return json({ projects: list.map((x) => withFinance(x)), approval_limit: APPROVAL_LIMIT });
+    }
+    if (seg.length === 1 && method === 'POST') {
+      const me = await c.auth('projects:create');
+      const title = str(body.title, 160);
+      const email = str(body.customer_email, 190).toLowerCase();
+      if (!title) throw new HttpError(400, 'Project title is required.');
+      if (!isEmail(email)) throw new HttpError(400, 'A valid customer email is required.');
+      const lead = body.lead_id ? (await getEnquiries(env)).find((e) => e.id === body.lead_id) : null;
+      const now = nowIso();
+      const pr = {
+        id: newId('prj'), ref: 'PRJ-' + randomToken(6).replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase().padEnd(6, '7'),
+        title, customer_email: email, customer_name: str(body.customer_name, 100) || lead?.name || email, company: str(body.company, 120) || lead?.company || '',
+        service: str(body.service, 120) || lead?.service_name || '', lead_id: lead?.id || null, owner_id: lead?.owner_id || me.id,
+        ...planFields(body), status: 'draft', approval: null, payments: [], notes: str(body.notes, 3000),
+        created_by: me.id, created_at: now, updated_at: now, deleted_at: null, history: [],
+      };
+      hist(pr, me, 'Project created');
+      await putDoc(env, 'projects', pr);
+      await c.audit('PROJECT_CREATED', pr.ref, 'SUCCESS', { value: contractValue(pr) });
+      return json({ success: true, project: withFinance(pr) }, 201);
+    }
+
+    const pr = projects.find((x) => x.id === seg[1] || x.ref === decodeURIComponent(seg[1] || '').toUpperCase());
+    if (!pr) throw new HttpError(404, 'Project not found.');
+    const save = async (me, text, auditType, meta = {}) => {
+      pr.updated_at = nowIso();
+      if (text) hist(pr, me, text);
+      await putDoc(env, 'projects', pr);
+      if (auditType) await c.audit(auditType, pr.ref, 'SUCCESS', meta);
+      return json({ success: true, project: withFinance(pr) });
+    };
+
+    if (seg.length === 2 && method === 'GET') {
+      await c.auth('projects:read');
+      return json({ project: withFinance(pr) });
+    }
+    if (seg.length === 2 && method === 'PATCH') {
+      const me = await c.auth('projects:create');
+      const before = contractValue(pr);
+      for (const k of ['title', 'customer_name', 'company', 'service', 'notes']) if (body[k] !== undefined) pr[k] = str(body[k], k === 'notes' ? 3000 : 160);
+      if ('owner_id' in body) pr.owner_id = str(body.owner_id, 60) || null;
+      if (body.plan !== undefined || body.amount !== undefined || body.amount_per_period !== undefined || body.milestones !== undefined || body.periods !== undefined || body.start_date !== undefined || body.due_date !== undefined) {
+        Object.assign(pr, { amount: undefined, amount_per_period: undefined, periods: undefined, milestones: undefined, due_date: undefined }, planFields(body, pr));
+      }
+      const after = contractValue(pr);
+      // changing the money on an approved deal sends it back for approval
+      if (after !== before && ['pending_approval', 'approved', 'active'].includes(pr.status)) {
+        pr.status = 'pending_approval';
+        pr.approval = { required_role: requiredApprover(after), requested_by: me.id, requested_by_name: me.name, requested_at: nowIso(), decision: null };
+        const full = withFinance(pr);
+        mail(c, 'staff:approval-needed', pr.ref, async () => notifyApprovalNeeded(env, full, me.name, await approvers(pr.approval.required_role)));
+        return save(me, `Value changed from ₹${before} to ₹${after}; sent for re-approval`, 'PROJECT_UPDATED', { before, after });
+      }
+      return save(me, 'Details updated', 'PROJECT_UPDATED');
+    }
+    if (seg[2] === 'submit' && method === 'POST') {
+      const me = await c.auth('projects:create');
+      if (!['draft', 'rejected'].includes(pr.status)) throw new HttpError(400, 'Only draft or rejected projects can be sent for approval.');
+      const value = contractValue(pr);
+      pr.status = 'pending_approval';
+      pr.approval = { required_role: requiredApprover(value), requested_by: me.id, requested_by_name: me.name, requested_at: nowIso(), decision: null };
+      const full = withFinance(pr);
+      mail(c, 'staff:approval-needed', pr.ref, async () => notifyApprovalNeeded(env, full, me.name, await approvers(pr.approval.required_role)));
+      return save(me, `Sent for ${pr.approval.required_role === 'super_admin' ? 'Super Admin' : 'Admin'} approval (₹${value})`, 'PROJECT_SUBMITTED', { value, required: pr.approval.required_role });
+    }
+    if (seg[2] === 'decision' && method === 'POST') {
+      const me = await c.auth('projects:approve');
+      if (pr.status !== 'pending_approval') throw new HttpError(400, 'This project is not waiting for approval.');
+      if (!canDecide(me, pr)) throw new HttpError(403, `Projects above ₹${APPROVAL_LIMIT.toLocaleString('en-IN')} need a Super Admin's approval.`);
+      if (pr.approval.requested_by === me.id && me.role !== 'super_admin') throw new HttpError(403, 'You cannot approve a project you submitted. Ask another approver.');
+      const decision = body.decision === 'approve' ? 'approved' : body.decision === 'reject' ? 'rejected' : null;
+      if (!decision) throw new HttpError(400, 'Decision must be approve or reject.');
+      const note = str(body.note, 1000);
+      if (decision === 'rejected' && !note) throw new HttpError(400, 'Please give a reason for rejecting.');
+      pr.status = decision;
+      Object.assign(pr.approval, { decision, decided_by: me.id, decided_by_name: me.name, decided_at: nowIso(), note });
+      if (decision === 'approved' && pr.lead_id) {
+        const lead = (await getEnquiries(env)).find((e) => e.id === pr.lead_id);
+        if (lead && lead.status !== 'WON') {
+          (lead.activities = lead.activities || []).push(activity('status', `Won: project ${pr.ref} approved`, me));
+          lead.status = 'WON'; lead.won_at = nowIso(); lead.updated_at = nowIso();
+          await saveEnquiry(env, lead);
+        }
+      }
+      const full = withFinance(pr);
+      const creator = (await getUsers(env)).find((u) => u.id === pr.approval.requested_by);
+      mail(c, 'staff:approval-decision', pr.ref, () => notifyApprovalDecision(env, full, me.name, [creator?.email]));
+      return save(me, `${decision === 'approved' ? 'Approved' : 'Rejected'}${note ? `: ${note}` : ''}`, decision === 'approved' ? 'PROJECT_APPROVED' : 'PROJECT_REJECTED', { value: full.finance.value });
+    }
+    if (seg[2] === 'status' && method === 'POST') {
+      const me = await c.auth('projects:create');
+      const next = str(body.status, 20);
+      const allowed = { approved: ['active', 'cancelled'], active: ['completed', 'cancelled'], draft: ['cancelled'], rejected: ['cancelled'], completed: ['active'] };
+      if (!(allowed[pr.status] || []).includes(next)) throw new HttpError(400, `Cannot move a ${pr.status.replace('_', ' ')} project to ${next}.`);
+      pr.status = next;
+      return save(me, `Marked ${next}`, 'PROJECT_STATUS', { status: next });
+    }
+    if (seg[2] === 'payments' && seg.length === 3 && method === 'POST') {
+      const me = await c.auth('payments:record');
+      if (!WON_STATUSES.has(pr.status)) throw new HttpError(400, 'Payments can only be recorded on approved, active or completed projects.');
+      const pay = {
+        id: newId('pay'), amount: money(body.amount, 'Amount'), date: date(body.date || nowIso().slice(0, 10), 'Payment date'),
+        method: PAYMENT_METHODS.includes(body.method) ? body.method : 'bank_transfer', reference: str(body.reference, 120), note: str(body.note, 500),
+        recorded_by: me.id, recorded_by_name: me.name, recorded_at: nowIso(),
+      };
+      if (pay.date > nowIso().slice(0, 10)) throw new HttpError(400, 'Payment date cannot be in the future.');
+      (pr.payments = pr.payments || []).push(pay);
+      return save(me, `Payment of ₹${pay.amount} recorded (${pay.method.replace('_', ' ')}${pay.reference ? `, ref ${pay.reference}` : ''})`, 'PAYMENT_RECORDED', { amount: pay.amount });
+    }
+    if (seg[2] === 'payments' && seg[3] && method === 'DELETE') {
+      const me = await c.auth('projects:delete');
+      const pay = (pr.payments || []).find((x) => x.id === seg[3]);
+      if (!pay) throw new HttpError(404, 'Payment not found.');
+      pr.payments = pr.payments.filter((x) => x.id !== pay.id);
+      return save(me, `Payment of ₹${pay.amount} removed`, 'PAYMENT_REMOVED', { amount: pay.amount });
+    }
+    if (seg.length === 2 && method === 'DELETE') {
+      const me = await c.auth('projects:delete');
+      pr.deleted_at = nowIso();
+      return save(me, 'Archived', 'PROJECT_ARCHIVED');
+    }
+    throw new HttpError(404, 'Not found.');
+  }
+
   if (path === '/api/roles' && method === 'GET') {
     await c.auth('users:read');
     return json({ roles: ROLE_PERMISSIONS });
@@ -978,14 +1187,14 @@ async function handleApi(c) {
 
   if (seg[0] === 'customers' && method === 'GET') {
     await c.auth('enquiries:read');
-    const [enquiries, tickets] = await Promise.all([getEnquiries(env), getTickets(env)]);
+    const [enquiries, tickets, projects] = await Promise.all([getEnquiries(env), getTickets(env), listDocs(env, 'projects')]);
     if (seg.length === 1) {
       const q = (url.searchParams.get('search') || '').toLowerCase();
-      let list = buildCustomers(enquiries, tickets);
+      let list = buildCustomers(enquiries, tickets, projects);
       if (q) list = list.filter((x) => [x.name, x.email, x.company].some((f) => (f || '').toLowerCase().includes(q)));
       return json({ customers: list });
     }
-    const profile = customerProfile(decodeURIComponent(seg[1]), enquiries, tickets);
+    const profile = customerProfile(decodeURIComponent(seg[1]), enquiries, tickets, projects);
     if (!profile) throw new HttpError(404, 'Customer not found.');
     return json({ customer: profile });
   }
@@ -996,15 +1205,16 @@ async function handleApi(c) {
 /** Everything the dashboard and notifications need, loaded only if the role may see it. */
 async function loadWorkspace(env, perms) {
   const want = (perm, loader) => (perms.includes(perm) ? loader() : Promise.resolve([]));
-  const [users, tickets, enquiries, content, audit, analytics] = await Promise.all([
+  const [users, tickets, enquiries, content, audit, analytics, projects] = await Promise.all([
     getUsers(env),
     want('tickets:read', () => getTickets(env)),
     want('enquiries:read', () => getEnquiries(env)),
     want('content:read', () => listDocs(env, 'content')),
     want('audit:read', () => listDocs(env, 'audit', { limit: 2000 })),
     getValue(env, 'analytics', emptyAnalytics()),
+    want('projects:read', () => listDocs(env, 'projects')),
   ]);
-  return { users, tickets, enquiries, content, audit, analytics };
+  return { users, tickets, enquiries, content, audit, analytics, projects };
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1014,7 +1224,8 @@ async function loadWorkspace(env, perms) {
 async function runDailyDigest(env) {
   if (!mailConfigured(env)) return { skipped: 'email not configured' };
   const now = Date.now();
-  const [users, tickets, enquiries] = await Promise.all([getUsers(env), getTickets(env), getEnquiries(env)]);
+  const [users, tickets, enquiries, projects] = await Promise.all([getUsers(env), getTickets(env), getEnquiries(env), listDocs(env, 'projects')]);
+  const live = projects.filter((p) => !p.deleted_at).map((p) => withFinance(p, now));
   const name = (id) => users.find((u) => u.id === id)?.name || 'Unassigned';
   const openLeads = enquiries.filter((e) => !e.deleted_at && !['WON', 'LOST'].includes(e.status));
   const groups = [
@@ -1035,6 +1246,16 @@ async function runDailyDigest(env) {
         .map((e) => ({ label: `${e.name} · ${e.email}`, detail: `Came in ${e.created_at.slice(0, 10)} · ${e.service_name} · ${name(e.owner_id)}` })),
     },
   ];
+  groups.push(
+    {
+      title: 'Projects waiting for approval',
+      items: live.filter((p) => p.status === 'pending_approval').map((p) => ({ label: `${p.ref} · ${p.title} · Rs ${p.finance.value.toLocaleString('en-IN')}`, detail: `Needs ${p.approval?.required_role === 'super_admin' ? 'Super Admin' : 'Admin'} · requested by ${p.approval?.requested_by_name}` })),
+    },
+    {
+      title: 'Customer payments overdue',
+      items: live.filter((p) => WON_STATUSES.has(p.status) && p.finance.overdue > 0).map((p) => ({ label: `${p.customer_name} · Rs ${p.finance.overdue.toLocaleString('en-IN')} overdue`, detail: `${p.ref} · ${p.title}` })),
+    },
+  );
   if (!groups.some((g) => g.items.length)) return { skipped: 'nothing due' };
   const r = await sendDigest(env, null, groups);
   const entry = { id: newId('aud'), type: r.ok ? 'EMAIL_SENT' : 'EMAIL_FAILED', timestamp: nowIso(), userId: 'system', role: 'system', reqId: 'CRON', ip: '', userAgent: 'cron', target: 'daily-digest', action: 'DAILY_DIGEST', result: r.ok ? 'SUCCESS' : 'FAILED', metadata: { label: 'digest', status: r.status, error: r.error } };

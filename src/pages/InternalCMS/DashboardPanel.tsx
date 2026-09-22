@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw, AlertTriangle, XCircle, Info, ArrowUpRight, ArrowDownRight, Mail } from 'lucide-react';
 import { api } from '../../lib/api';
-import { Notification, human, fmtHours, ago } from './crmShared';
+import { Notification, human, fmtHours, ago, inrShort, inr } from './crmShared';
 
 interface Bucket { key: string; count: number }
 interface Day { date: string; count: number }
@@ -23,6 +23,11 @@ interface Dashboard {
   website: { visits30: number; total_visits: number; unique_visitors: number; conversion_pct: number | null; top_pages: Bucket[] };
   content: { awaiting: number; published: number };
   actions: Notification[];
+  action_summary?: { key: string; severity: 'critical' | 'warning' | 'info'; count: number; text: string; tab: string }[];
+  money?: {
+    pipeline_value: number; pending_approval: number; won_revenue30: number; won_revenue_prev30: number; won_revenue_total: number;
+    collected30: number; outstanding: number; overdue: number; active_projects: number; revenue_by_service: Bucket[];
+  };
   team?: TeamRow[];
   health?: { emails_sent7: number; emails_failed7: number; failed_logins24: number; access_denied24: number; logins7: number; active_users: number };
 }
@@ -52,8 +57,8 @@ function Stat({ label, value, sub, onClick }: { label: string; value: React.Reac
   );
 }
 
-function Trend({ now, prev }: { now: number; prev: number }) {
-  if (!prev) return <span>{now ? 'first month with leads' : 'no leads yet'}</span>;
+function Trend({ now, prev, unit = 'leads' }: { now: number; prev: number; unit?: string }) {
+  if (!prev) return <span>{now ? `first month with ${unit}` : `no ${unit} yet`}</span>;
   const pct = Math.round(((now - prev) / prev) * 100);
   const Up = pct >= 0 ? ArrowUpRight : ArrowDownRight;
   return <span className="inline-flex items-center gap-0.5"><Up className="w-3 h-3" />{Math.abs(pct)}% vs previous 30 days</span>;
@@ -89,16 +94,16 @@ function Columns({ data, label }: { data: Day[]; label: string }) {
 }
 
 /** Horizontal single-hue bars, labelled directly. */
-function Bars({ data, format = human, empty = 'Nothing yet' }: { data: Bucket[]; format?: (k: string) => string; empty?: string }) {
+function Bars({ data, format = human, empty = 'Nothing yet', valueFormat = (n: number) => String(n) }: { data: Bucket[]; format?: (k: string) => string; empty?: string; valueFormat?: (n: number) => string }) {
   const max = Math.max(1, ...data.map((d) => d.count));
   if (!data.length) return <div className="text-xs text-text-secondary py-4">{empty}</div>;
   return (
     <ul className="space-y-2">
       {data.slice(0, 7).map((d) => (
-        <li key={d.key} title={`${format(d.key)}: ${d.count}`}>
+        <li key={d.key} title={`${format(d.key)}: ${valueFormat(d.count)}`}>
           <div className="flex justify-between text-[11px] mb-0.5">
             <span className="text-ink truncate pr-2">{format(d.key)}</span>
-            <span className="text-text-secondary tabular-nums">{d.count}</span>
+            <span className="text-text-secondary tabular-nums">{valueFormat(d.count)}</span>
           </div>
           <div className="h-2 rounded-full bg-surface-raised overflow-hidden">
             <div className="h-full rounded-full bg-primary/75" style={{ width: `${(d.count / max) * 100}%` }} />
@@ -181,9 +186,33 @@ export default function DashboardPanel({ userName, onNavigate, notify }: {
         <Stat label="Won · last 30 days" value={L.won30} sub={<>{L.today} lead{L.today === 1 ? '' : 's'} today · {L.last7} this week</>} />
       </div>
 
+      {d.money && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Stat label="Pipeline value" value={inrShort(d.money.pipeline_value)} sub={<>open leads' estimates + projects awaiting approval{d.money.pending_approval ? ` · ${d.money.pending_approval} to approve` : ''}</>} onClick={() => onNavigate('projects')} />
+          <Stat label="Won revenue · last 30 days" value={inrShort(d.money.won_revenue30)} sub={<Trend now={d.money.won_revenue30} prev={d.money.won_revenue_prev30} unit="revenue" />} onClick={() => onNavigate('projects')} />
+          <Stat label="Collected · last 30 days" value={inrShort(d.money.collected30)} sub={`${inr(d.money.won_revenue_total)} won to date`} onClick={() => onNavigate('projects')} />
+          <Stat label="Still to collect" value={inrShort(d.money.outstanding)} sub={d.money.overdue ? <span className="inline-flex items-center gap-1 text-red-300"><AlertTriangle className="w-3 h-3" />{inr(d.money.overdue)} overdue</span> : 'nothing overdue'} onClick={() => onNavigate('projects')} />
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-3 gap-3">
         {/* Action list */}
         <Card title="Do these first" className="lg:col-span-1 lg:row-span-2" action={<span className="text-[11px] text-text-secondary tabular-nums">{d.actions.length}</span>}>
+          {(d.action_summary || []).length > 0 && (
+            <ul className="space-y-1 mb-3 pb-3 border-b border-border/70">
+              {(d.action_summary || []).map((a) => {
+                const Icon = STATUS_ICON[a.severity];
+                return (
+                  <li key={a.key}>
+                    <button onClick={() => onNavigate(a.tab)} className="w-full text-left flex items-center gap-2.5 rounded-xl px-2.5 py-2 bg-surface-raised/50 hover:bg-surface-raised">
+                      <Icon className={`w-4 h-4 shrink-0 ${STATUS_CLS[a.severity]}`} aria-label={a.severity} />
+                      <span className="text-xs text-ink font-medium">{a.text}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
           {d.actions.length === 0 ? (
             <div className="text-xs text-text-secondary py-6 text-center">Nothing overdue. Nice work.</div>
           ) : (
@@ -232,7 +261,7 @@ export default function DashboardPanel({ userName, onNavigate, notify }: {
       </div>
 
       <div className="grid md:grid-cols-3 gap-3">
-        <Card title="Services requested · 30 days"><Bars data={L.by_service} format={(k) => k} /></Card>
+        {d.money ? <Card title="Revenue by service · all time"><Bars data={d.money.revenue_by_service} format={(k) => k} valueFormat={inr} empty="No approved projects yet" /></Card> : <Card title="Services requested · 30 days"><Bars data={L.by_service} format={(k) => k} /></Card>}
         <Card title="Open tickets by category"><Bars data={T.by_category} empty="No open tickets" /></Card>
         <Card title="Tickets raised per day"><Columns data={T.daily} label="tickets" /></Card>
       </div>

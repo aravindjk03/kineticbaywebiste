@@ -153,6 +153,42 @@ export function sendDigest(env, to, groups) {
   });
 }
 
+/* ─── Escalations & approvals ─────────────────────────── */
+
+const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+const withExtra = (env, extra = []) => [...new Set([...staffInbox(env), ...extra.filter((e) => e && !internalAddress(e))])];
+
+/** Critical / urgent / security tickets: every role hears about it at once. */
+export function notifyMajorIssue(env, t, assignee, extra) {
+  const subject = `MAJOR ISSUE ${t.public_id} · ${human(t.priority)} · ${t.subject}`;
+  const html = layout('A major issue needs everyone\'s attention', table([
+    row('Ticket', t.public_id), row('Priority', human(t.priority)), row('Category', human(t.category)),
+    row('From', `${t.requester_name} <${t.requester_email}>`), row('Owner', assignee || 'Unassigned'),
+  ]) + quote(t.description) + para('Super Admin, Admin and Marketing have all been alerted. Reply to the customer within 4 hours.'));
+  const text = `MAJOR ISSUE ${t.public_id}\nPriority: ${human(t.priority)}\nCategory: ${human(t.category)}\nFrom: ${t.requester_name} <${t.requester_email}>\nOwner: ${assignee || 'Unassigned'}\n\n${t.description}`;
+  return send(env, { to: withExtra(env, extra), subject, html, text, replyTo: t.requester_email });
+}
+
+export function notifyApprovalNeeded(env, p, requestedBy, extra) {
+  const who = p.approval?.required_role === 'super_admin' ? 'Super Admin' : 'Admin';
+  const subject = `Approval needed (${who}) · ${p.ref} · ${inr(p.finance?.value)} · ${p.title}`;
+  const html = layout(`A project needs ${who} approval`, table([
+    row('Project', `${p.ref} · ${p.title}`), row('Customer', `${p.customer_name} <${p.customer_email}>`), row('Service', p.service || '—'),
+    row('Plan', human(p.plan)), row('Contract value', inr(p.finance?.value)), row('Requested by', requestedBy),
+  ]) + para(`Projects above ${inr(50000)} need a Super Admin; up to that an Admin can approve. Open Projects & Billing in the CMS to decide.`));
+  const text = `${p.ref} ${p.title}\nCustomer: ${p.customer_name} <${p.customer_email}>\nValue: ${inr(p.finance?.value)}\nNeeds: ${who}\nRequested by: ${requestedBy}`;
+  return send(env, { to: withExtra(env, extra), subject, html, text });
+}
+
+export function notifyApprovalDecision(env, p, decidedBy, extra) {
+  const ok = p.status === 'approved';
+  const subject = `${ok ? 'Approved' : 'Rejected'} · ${p.ref} · ${p.title}`;
+  const html = layout(`Project ${ok ? 'approved' : 'rejected'}`, table([
+    row('Project', `${p.ref} · ${p.title}`), row('Value', inr(p.finance?.value)), row('Decided by', decidedBy),
+  ]) + (p.approval?.note ? quote(p.approval.note) : ''));
+  return send(env, { to: withExtra(env, extra), subject, html, text: `${subject}\nDecided by ${decidedBy}\n${p.approval?.note || ''}` });
+}
+
 /* ─── Diagnostics ─────────────────────────────────────── */
 
 export function sendTestEmail(env, to) {

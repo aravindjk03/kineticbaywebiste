@@ -3,6 +3,8 @@
  * notifications and dashboard metrics. Pure functions over plain records.
  */
 
+import { finance, WON_STATUSES } from './projects.js';
+
 const HOUR = 3600 * 1000;
 const DAY = 24 * HOUR;
 
@@ -68,11 +70,11 @@ export function activity(type, text, author, extra = {}) {
 const internal = (email) => /@kineticbay\.internal$/i.test(email || '');
 
 /** Group enquiries and tickets into one profile per email address. */
-export function buildCustomers(enquiries, tickets) {
+export function buildCustomers(enquiries, tickets, projects = []) {
   const map = new Map();
   const get = (email) => {
     const key = (email || '').toLowerCase();
-    if (!map.has(key)) map.set(key, { email: key, name: '', company: '', enquiries: [], tickets: [] });
+    if (!map.has(key)) map.set(key, { email: key, name: '', company: '', enquiries: [], tickets: [], projects: [] });
     return map.get(key);
   };
   for (const e of enquiries) {
@@ -85,11 +87,17 @@ export function buildCustomers(enquiries, tickets) {
     const c = get(t.requester_email);
     c.tickets.push(t);
   }
+  for (const p of projects) {
+    if (p.deleted_at || !p.customer_email) continue;
+    get(p.customer_email).projects.push(p);
+  }
   return [...map.values()].map((c) => {
-    const all = [...c.enquiries.map((e) => ({ at: e.updated_at || e.created_at, name: e.name, company: e.company })), ...c.tickets.map((t) => ({ at: t.updated_at || t.created_at, name: t.requester_name }))]
+    const all = [...c.enquiries.map((e) => ({ at: e.updated_at || e.created_at, name: e.name, company: e.company })), ...c.tickets.map((t) => ({ at: t.updated_at || t.created_at, name: t.requester_name })), ...c.projects.map((p) => ({ at: p.updated_at || p.created_at, name: p.customer_name, company: p.company }))]
       .sort((a, b) => b.at.localeCompare(a.at));
     const latestLead = [...c.enquiries].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
-    const firstSeen = [...c.enquiries, ...c.tickets].map((x) => x.created_at).sort()[0];
+    const firstSeen = [...c.enquiries, ...c.tickets, ...c.projects].map((x) => x.created_at).sort()[0];
+    const won = c.projects.filter((p) => WON_STATUSES.has(p.status));
+    const money = won.map((p) => finance(p));
     return {
       email: c.email,
       name: all.find((x) => x.name)?.name || c.email,
@@ -101,17 +109,25 @@ export function buildCustomers(enquiries, tickets) {
       owner_id: latestLead?.owner_id || null,
       first_seen: firstSeen,
       last_activity: all[0]?.at || firstSeen,
+      services: [...new Set(won.map((p) => p.service || p.title))],
+      project_count: c.projects.length,
+      active_projects: c.projects.filter((p) => p.status === 'active' || p.status === 'approved').length,
+      total_business: Math.round(money.reduce((s, f) => s + f.value, 0)),
+      paid: Math.round(money.reduce((s, f) => s + f.paid, 0)),
+      outstanding: Math.round(money.reduce((s, f) => s + f.outstanding, 0)),
+      overdue: Math.round(money.reduce((s, f) => s + f.overdue, 0)),
     };
   }).sort((a, b) => (b.last_activity || '').localeCompare(a.last_activity || ''));
 }
 
 /** Full profile with a merged timeline for one customer. */
-export function customerProfile(email, enquiries, tickets) {
+export function customerProfile(email, enquiries, tickets, projects = []) {
   const key = email.toLowerCase();
   const es = enquiries.filter((e) => !e.deleted_at && (e.email || '').toLowerCase() === key);
   const ts = tickets.filter((t) => !t.deleted_at && (t.requester_email || '').toLowerCase() === key);
-  if (!es.length && !ts.length) return null;
-  const summary = buildCustomers(es, ts)[0];
+  const ps = projects.filter((p) => !p.deleted_at && (p.customer_email || '').toLowerCase() === key);
+  if (!es.length && !ts.length && !ps.length) return null;
+  const summary = buildCustomers(es, ts, ps)[0];
   const timeline = [];
   for (const e of es) {
     timeline.push({ at: e.created_at, kind: 'enquiry', ref: e.reference_id, id: e.id, title: `Enquiry about ${e.service_name}`, text: e.message });
@@ -122,8 +138,13 @@ export function customerProfile(email, enquiries, tickets) {
     for (const u of (t.customer_updates || []).slice(1)) timeline.push({ at: u.created_at, kind: 'ticket_update', ref: t.public_id, id: t.id, title: 'Update sent to customer', text: u.message });
     if (t.resolved_at) timeline.push({ at: t.resolved_at, kind: 'ticket_resolved', ref: t.public_id, id: t.id, title: `Ticket ${t.status.toLowerCase()}`, text: '' });
   }
+  for (const p of ps) {
+    timeline.push({ at: p.created_at, kind: 'project', ref: p.ref, id: p.id, title: `Project created: ${p.title}`, text: '' });
+    if (p.approval?.decided_at) timeline.push({ at: p.approval.decided_at, kind: p.approval.decision === 'approved' ? 'project_approved' : 'project_rejected', ref: p.ref, id: p.id, title: `Project ${p.approval.decision} by ${p.approval.decided_by_name}`, text: p.approval.note || '' });
+    for (const pay of p.payments || []) timeline.push({ at: `${pay.date}T12:00:00.000Z`, kind: 'payment', ref: p.ref, id: p.id, title: `Payment received: ₹${Number(pay.amount).toLocaleString('en-IN')}`, text: [pay.method.replace('_', ' '), pay.reference, pay.note].filter(Boolean).join(' · '), author: pay.recorded_by_name });
+  }
   timeline.sort((a, b) => b.at.localeCompare(a.at));
-  return { ...summary, enquiries: es, tickets: ts.map((t) => withSla(t)), timeline };
+  return { ...summary, enquiries: es, tickets: ts.map((t) => withSla(t)), projects: ps.map((p) => ({ ...p, finance: finance(p) })), timeline };
 }
 
 /* ─── Notifications ─────────────────────────────────────── */
@@ -132,7 +153,7 @@ export function customerProfile(email, enquiries, tickets) {
  * Everything that needs someone's attention, filtered to what this user can act on.
  * Severity: critical (breached) > warning (at risk / overdue) > info (new / assigned).
  */
-export function notificationsFor(user, perms, { tickets, enquiries, content, audit }, now = Date.now()) {
+export function notificationsFor(user, perms, { tickets, enquiries, content, audit, projects = [] }, now = Date.now()) {
   const out = [];
   const add = (n) => out.push(n);
   const isAdmin = perms.includes('users:read');
@@ -142,13 +163,18 @@ export function notificationsFor(user, perms, { tickets, enquiries, content, aud
       if (raw.deleted_at || CLOSED_TICKET.has(raw.status)) continue;
       const t = withSla(raw, now);
       const mine = t.assigned_to === user.id;
+      // major issues are everyone's business until they're resolved
+      if (t.major) add({ id: `major-${t.id}`, kind: 'ticket_major', severity: 'critical', at: t.created_at, title: `Major issue ${t.public_id}: ${t.subject}`, detail: `${t.priority} · ${t.category.replace(/_/g, ' ')}`, link: { tab: 'tickets', id: t.id } });
       const relevant = mine || !t.assigned_to || isAdmin;
       if (!relevant) continue;
       const r = t.sla.response, s = t.sla.resolution;
       if (r.state === 'breached' || s.state === 'breached') {
         add({ id: `sla-breach-${t.id}`, kind: 'ticket_sla', severity: 'critical', at: r.state === 'breached' ? r.due : s.due, title: `${t.public_id} missed its ${r.state === 'breached' ? 'response' : 'resolution'} target`, detail: t.subject, link: { tab: 'tickets', id: t.id } });
       } else if (r.state === 'at_risk' || s.state === 'at_risk') {
-        add({ id: `sla-risk-${t.id}`, kind: 'ticket_sla', severity: 'warning', at: new Date(now).toISOString(), title: `${t.public_id} is close to its ${r.state === 'at_risk' ? 'response' : 'resolution'} target`, detail: t.subject, link: { tab: 'tickets', id: t.id } });
+        // stable timestamp: the moment the clock entered its last 25%
+        const riskClock = r.state === 'at_risk' ? r : s;
+        const riskHours = r.state === 'at_risk' ? t.sla.target_hours.response : t.sla.target_hours.resolution;
+        add({ id: `sla-risk-${t.id}`, kind: 'ticket_sla', severity: 'warning', at: new Date(Date.parse(riskClock.due) - riskHours * HOUR * 0.25).toISOString(), title: `${t.public_id} is close to its ${r.state === 'at_risk' ? 'response' : 'resolution'} target`, detail: t.subject, link: { tab: 'tickets', id: t.id } });
       }
       if (t.status === 'NEW' && !t.assigned_to) {
         add({ id: `ticket-new-${t.id}`, kind: 'ticket_new', severity: 'info', at: t.created_at, title: `New ticket ${t.public_id} needs an owner`, detail: `${t.requester_name} · ${t.subject}`, link: { tab: 'tickets', id: t.id } });
@@ -171,6 +197,24 @@ export function notificationsFor(user, perms, { tickets, enquiries, content, aud
         add({ id: `lead-uncontacted-${e.id}`, kind: 'lead_uncontacted', severity: 'warning', at: c.due, title: `${e.name} has not been contacted for ${Math.floor((now - Date.parse(e.created_at)) / HOUR)}h`, detail: e.service_name, link: { tab: 'crm', id: e.id } });
       } else if (!e.owner_id && now - Date.parse(e.created_at) < DAY) {
         add({ id: `lead-new-${e.id}`, kind: 'lead_new', severity: 'info', at: e.created_at, title: `New lead: ${e.name}`, detail: `${e.company || e.email} · ${e.service_name}`, link: { tab: 'crm', id: e.id } });
+      }
+    }
+  }
+
+  if (perms.includes('projects:read')) {
+    for (const p of projects) {
+      if (p.deleted_at) continue;
+      const canApprove = user.role === 'super_admin' || (perms.includes('projects:approve') && p.approval?.required_role === 'admin');
+      if (p.status === 'pending_approval' && canApprove && p.approval?.requested_by !== user.id) {
+        add({ id: `approve-${p.id}-${p.approval.requested_at}`, kind: 'project_approval', severity: 'warning', at: p.approval.requested_at, title: `Approval needed: ${p.title}`, detail: `${p.ref} · ₹${finance(p).value.toLocaleString('en-IN')} · from ${p.approval.requested_by_name}`, link: { tab: 'projects', id: p.id } });
+      }
+      if (p.approval?.decided_at && p.approval.requested_by === user.id && now - Date.parse(p.approval.decided_at) < 3 * DAY) {
+        add({ id: `decided-${p.id}-${p.approval.decided_at}`, kind: 'project_decision', severity: p.status === 'rejected' ? 'warning' : 'info', at: p.approval.decided_at, title: `${p.title} was ${p.approval.decision}`, detail: p.approval.note || `by ${p.approval.decided_by_name}`, link: { tab: 'projects', id: p.id } });
+      }
+      if (perms.includes('payments:record') && WON_STATUSES.has(p.status)) {
+        const f = finance(p, now);
+        const firstLate = f.schedule.find((x) => x.state === 'overdue');
+        if (f.overdue > 0) add({ id: `pay-overdue-${p.id}-${f.due_to_date}`, kind: 'payment_overdue', severity: 'warning', at: `${firstLate ? firstLate.due_date : new Date(now).toISOString().slice(0, 10)}T00:00:00.000Z`, title: `₹${f.overdue.toLocaleString('en-IN')} overdue from ${p.customer_name}`, detail: `${p.ref} · ${p.title}`, link: { tab: 'projects', id: p.id } });
       }
     }
   }
@@ -216,7 +260,7 @@ const tally = (items, fn) => {
 const hoursBetween = (a, b) => (Date.parse(b) - Date.parse(a)) / HOUR;
 const avg = (xs) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : null);
 
-export function dashboard({ user, perms, users, tickets, enquiries, content, audit, analytics, notifications }, now = Date.now()) {
+export function dashboard({ user, perms, users, tickets, enquiries, content, audit, analytics, notifications, projects = [] }, now = Date.now()) {
   const since = (ms) => (iso) => iso && now - Date.parse(iso) <= ms;
   const leads = enquiries.filter((e) => !e.deleted_at);
   const openLeads = leads.filter((e) => !CLOSED_LEAD.has(e.status));
@@ -280,6 +324,51 @@ export function dashboard({ user, perms, users, tickets, enquiries, content, aud
     },
     actions: notifications.slice(0, 8),
   };
+
+  if (perms.includes('projects:read')) {
+    const live = projects.filter((p) => !p.deleted_at).map((p) => ({ p, f: finance(p, now) }));
+    const won = live.filter(({ p }) => WON_STATUSES.has(p.status));
+    const wonAt = ({ p }) => p.approval?.decided_at || p.updated_at;
+    const linked = new Set(live.map(({ p }) => p.lead_id).filter(Boolean));
+    const payments = live.flatMap(({ p }) => (p.payments || []).map((x) => ({ ...x, service: p.service || p.title })));
+    const sum = (xs, fn) => Math.round(xs.reduce((s, x) => s + fn(x), 0));
+    out.money = {
+      pipeline_value: sum(live.filter(({ p }) => ['draft', 'pending_approval'].includes(p.status)), ({ f }) => f.value)
+        + sum(openLeads.filter((e) => !linked.has(e.id)), (e) => Number(e.estimated_value) || 0),
+      pending_approval: live.filter(({ p }) => p.status === 'pending_approval').length,
+      won_revenue30: sum(won.filter((x) => last30(wonAt(x))), ({ f }) => f.value),
+      won_revenue_prev30: sum(won.filter((x) => prev30(wonAt(x))), ({ f }) => f.value),
+      won_revenue_total: sum(won, ({ f }) => f.value),
+      collected30: sum(payments.filter((x) => last30(`${x.date}T12:00:00Z`)), (x) => Number(x.amount)),
+      outstanding: sum(won, ({ f }) => f.outstanding),
+      overdue: sum(won, ({ f }) => f.overdue),
+      active_projects: live.filter(({ p }) => p.status === 'active' || p.status === 'approved').length,
+      revenue_by_service: Object.entries(won.reduce((m, { p, f }) => { const k = p.service || 'Other'; m[k] = (m[k] || 0) + f.value; return m; }, {}))
+        .map(([key, count]) => ({ key, count: Math.round(count) })).sort((a, b) => b.count - a.count),
+    };
+  }
+
+  // grouped to-do lines, each with a count and where to go
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+  const summary = [];
+  if (perms.includes('enquiries:read')) {
+    const stale = openLeads.filter((e) => !e.first_response_at && now - Date.parse(e.created_at) >= 2 * DAY).length;
+    if (stale) summary.push({ key: 'leads_no_reply', severity: 'critical', count: stale, text: `${plural(stale, 'lead has', 'leads have')} had no reply for 2+ days`, tab: 'crm' });
+    const due = openLeads.filter((e) => e.follow_up_at && Date.parse(e.follow_up_at) < now).length;
+    if (due) summary.push({ key: 'followups_overdue', severity: 'warning', count: due, text: `${plural(due, 'follow-up is', 'follow-ups are')} overdue`, tab: 'crm' });
+  }
+  if (perms.includes('tickets:read')) {
+    const breached = out.tickets.breached, risk = out.tickets.at_risk;
+    if (breached) summary.push({ key: 'tickets_breached', severity: 'critical', count: breached, text: `${plural(breached, 'ticket has', 'tickets have')} missed a response or resolution target`, tab: 'tickets' });
+    if (risk) summary.push({ key: 'tickets_at_risk', severity: 'warning', count: risk, text: `${plural(risk, 'ticket is', 'tickets are')} about to miss a target`, tab: 'tickets' });
+    if (out.tickets.unassigned) summary.push({ key: 'tickets_unassigned', severity: 'warning', count: out.tickets.unassigned, text: `${plural(out.tickets.unassigned, 'ticket has', 'tickets have')} no owner`, tab: 'tickets' });
+  }
+  if (perms.includes('content:publish') && out.content.awaiting) summary.push({ key: 'content_waiting', severity: 'info', count: out.content.awaiting, text: `${plural(out.content.awaiting, 'content item is', 'content items are')} waiting for approval`, tab: 'content' });
+  const approvals = notifications.filter((n) => n.kind === 'project_approval').length;
+  if (approvals) summary.push({ key: 'projects_approval', severity: 'warning', count: approvals, text: `${plural(approvals, 'project is', 'projects are')} waiting for your approval`, tab: 'projects' });
+  const overduePays = notifications.filter((n) => n.kind === 'payment_overdue').length;
+  if (overduePays) summary.push({ key: 'payments_overdue', severity: 'warning', count: overduePays, text: `${plural(overduePays, 'project has', 'projects have')} an overdue payment`, tab: 'projects' });
+  out.action_summary = summary;
 
   if (perms.includes('users:read')) {
     out.team = users.filter((u) => u.status === 'active').map((u) => {

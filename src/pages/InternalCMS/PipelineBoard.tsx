@@ -24,8 +24,8 @@ function csv(leads: Lead[], staff: StaffMember[]) {
 
 /* ═══════════════════════════ Pipeline board ═══════════════════════════ */
 
-export default function PipelineBoard({ staff, meId, canEdit, notify, focusId, onOpenCustomer }: {
-  staff: StaffMember[]; meId: string; canEdit: boolean; notify: Feedback; focusId?: string | null; onOpenCustomer: (email: string) => void;
+export default function PipelineBoard({ staff, meId, canEdit, notify, focusId, onOpenCustomer, onCreateProject }: {
+  staff: StaffMember[]; meId: string; canEdit: boolean; notify: Feedback; focusId?: string | null; onOpenCustomer: (email: string) => void; onCreateProject?: (lead: Lead) => void;
 }) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -161,7 +161,7 @@ export default function PipelineBoard({ staff, meId, canEdit, notify, focusId, o
         })}
       </div>
 
-      <LeadDrawer lead={openLead} staff={staff} canEdit={canEdit} notify={notify} onClose={() => setOpenId(null)} onUpdated={replace} onOpenCustomer={onOpenCustomer} />
+      <LeadDrawer lead={openLead} staff={staff} canEdit={canEdit} notify={notify} onClose={() => setOpenId(null)} onUpdated={replace} onOpenCustomer={onOpenCustomer} onCreateProject={onCreateProject} />
     </div>
   );
 }
@@ -175,8 +175,8 @@ const toLocalInput = (iso?: string | null) => {
   return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 };
 
-export function LeadDrawer({ lead, staff, canEdit, notify, onClose, onUpdated, onOpenCustomer }: {
-  lead: Lead | null; staff: StaffMember[]; canEdit: boolean; notify: Feedback; onClose: () => void; onUpdated: (l: Lead) => void; onOpenCustomer?: (email: string) => void;
+export function LeadDrawer({ lead, staff, canEdit, notify, onClose, onUpdated, onOpenCustomer, onCreateProject }: {
+  lead: Lead | null; staff: StaffMember[]; canEdit: boolean; notify: Feedback; onClose: () => void; onUpdated: (l: Lead) => void; onOpenCustomer?: (email: string) => void; onCreateProject?: (lead: Lead) => void;
 }) {
   const [mode, setMode] = useState<'reply' | 'log'>('reply');
   const [subject, setSubject] = useState('');
@@ -184,6 +184,7 @@ export function LeadDrawer({ lead, staff, canEdit, notify, onClose, onUpdated, o
   const [logType, setLogType] = useState<'call' | 'meeting' | 'whatsapp' | 'note'>('call');
   const [logText, setLogText] = useState('');
   const [notes, setNotes] = useState('');
+  const [estimate, setEstimate] = useState('');
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -192,6 +193,7 @@ export function LeadDrawer({ lead, staff, canEdit, notify, onClose, onUpdated, o
     setMessage('');
     setLogText('');
     setNotes(lead.notes || '');
+    setEstimate(lead.estimated_value != null ? String(lead.estimated_value) : '');
   }, [lead?.id]);
 
   if (!lead) return null;
@@ -268,6 +270,22 @@ export function LeadDrawer({ lead, staff, canEdit, notify, onClose, onUpdated, o
         {!closed && <FollowUpChip at={lead.follow_up_at} />}
         {lead.last_contacted_at && <span className="text-[11px] text-text-secondary">Last contacted {ago(lead.last_contacted_at)}</span>}
         {onOpenCustomer && <button onClick={() => onOpenCustomer(lead.email)} className="text-[11px] text-primary hover:underline ml-auto">Open customer profile →</button>}
+      </div>
+
+      {/* Deal value */}
+      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-border/80 bg-surface/60 p-3.5">
+        <label className="space-y-1 flex-1 min-w-[160px]">
+          <span className="text-[11px] text-text-secondary">Estimated deal value (₹)</span>
+          <input
+            type="number" min="0" disabled={!canEdit || busy} value={estimate}
+            onChange={(e) => setEstimate(e.target.value)}
+            onBlur={() => estimate !== (lead.estimated_value != null ? String(lead.estimated_value) : '') && patch({ estimated_value: estimate === '' ? null : Number(estimate) }, 'Estimated value saved')}
+            className={field} placeholder="Counts towards pipeline value"
+          />
+        </label>
+        {onCreateProject && !closed && (
+          <button onClick={() => onCreateProject(lead)} className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-light text-ink text-xs font-semibold">Create project & send for approval</button>
+        )}
       </div>
 
       {/* Ownership */}

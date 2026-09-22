@@ -56,10 +56,10 @@ class Client {
     const data = await res.json().catch(() => ({}));
     return { status: res.status, data };
   }
-  async login(user, { useRecovery = false } = {}) {
+  async login(user, { useRecovery = false, offset = 0 } = {}) {
     const r1 = await this.call('POST', '/api/auth/login', { username: user, password: creds[user].password });
     if (r1.status !== 200) return r1;
-    const code = useRecovery ? creds[user].recovery.shift() : totp(creds[user].totp);
+    const code = useRecovery ? creds[user].recovery.shift() : totp(creds[user].totp, offset);
     const r2 = await this.call('POST', '/api/auth/mfa-verify', { mfaToken: r1.data.mfaToken, code });
     if (r2.data.csrfToken) this.csrf = r2.data.csrfToken;
     return r2;
@@ -126,7 +126,7 @@ let ticketId, publicId;
   r = await visitor.call('POST', '/api/public/tickets', { name: 'X', email: 'not-an-email', subject: 's', description: 'd' });
   check(r.status === 400, 'invalid email is rejected');
   r = await visitor.call('POST', '/api/public/ticket-status', { ticketId: publicId, email: 'smoke@example.com' });
-  check(r.status === 200 && r.data.ticket?.status === 'NEW', 'visitor can track the ticket');
+  check(r.status === 200 && r.data.ticket?.status === 'ASSIGNED', 'visitor can track the ticket (auto-assigned)');
   r = await visitor.call('POST', '/api/public/ticket-status', { ticketId: publicId, email: 'someone-else@example.com' });
   check(r.status === 404, 'tracking with the wrong email is refused');
 
@@ -250,6 +250,76 @@ section('Pipeline, customers, SLA, dashboard, notifications');
   check(r.status === 403, 'marketing cannot read the role table');
   r = await su.call('GET', '/api/roles');
   check(r.status === 200 && r.data.roles?.super_admin?.includes('team:manage') && !r.data.roles?.marketing?.includes('audit:read'), 'super admin sees the role table');
+}
+
+section('Auto-assignment, approvals, payments');
+{
+  const staffAll = (await su.call('GET', '/api/users')).data.users || [];
+  const roleOf = (id) => staffAll.find((u) => u.id === id)?.role;
+  const visitor = new Client(ip());
+  const cust = `autolead-${Date.now()}@example.com`;
+  let r = await visitor.call('POST', '/api/public/tickets', { name: 'Bill Payer', email: 'billing@example.com', category: 'billing', priority: 'medium', subject: 'Invoice question', description: 'x' });
+  let t = (await su.call('GET', `/api/tickets/${r.data.ticket?.public_id}`)).data.ticket;
+  check(roleOf(t?.assigned_to) === 'admin' && t?.status === 'ASSIGNED' && t?.auto_assigned?.why, 'billing ticket auto-assigned to an Admin', t?.auto_assigned);
+  r = await visitor.call('POST', '/api/public/tickets', { name: 'Sales Q', email: 'salesq@example.com', category: 'consultation', priority: 'low', subject: 'Consult', description: 'x' });
+  t = (await su.call('GET', `/api/tickets/${r.data.ticket?.public_id}`)).data.ticket;
+  check(roleOf(t?.assigned_to) === 'marketing', 'consultation ticket goes to Marketing');
+  r = await visitor.call('POST', '/api/public/tickets', { name: 'Down', email: 'down@example.com', category: 'technical_support', priority: 'critical', subject: 'Site down', description: 'x' });
+  t = (await su.call('GET', `/api/tickets/${r.data.ticket?.public_id}`)).data.ticket;
+  check(t?.major === true, 'critical ticket flagged as a major issue');
+  r = await su.call('GET', '/api/notifications');
+  check((r.data.items || []).some((n) => n.kind === 'ticket_major'), 'major issue appears in notifications');
+  r = await visitor.call('POST', '/api/public/enquiries', { name: 'Auto Lead', email: cust, company: 'Initech', service_slug: 'Web', message: 'hi' });
+  const lead = ((await su.call('GET', '/api/enquiries?search=initech')).data.enquiries || []).find((e) => e.email === cust);
+  check(roleOf(lead?.owner_id) === 'marketing', 'new lead auto-owned by Marketing', lead?.owner_id);
+  r = await su.call('GET', '/api/assignment-rules');
+  check(r.status === 200 && r.data.approval_limit === 50000, 'assignment rules are published');
+
+  const mk2 = new Client(ip()); await mk2.login('marketing', { offset: 1 });
+  const ad = new Client(ip()); await ad.login('admin');
+  // small project: Admin can approve
+  r = await mk2.call('POST', '/api/projects', { title: 'Landing page', customer_email: cust, customer_name: 'Auto Lead', service: 'Web', plan: 'one_time', amount: 30000, due_date: '2026-01-15', lead_id: lead?.id });
+  check(r.status === 201 && r.data.project?.finance?.value === 30000 && r.data.project.status === 'draft', 'marketing creates a draft project', r.data);
+  const small = r.data.project;
+  r = await mk2.call('POST', `/api/projects/${small?.id}/decision`, { decision: 'approve' });
+  check(r.status === 403, 'marketing cannot approve projects');
+  r = await mk2.call('POST', `/api/projects/${small?.id}/submit`);
+  check(r.data.project?.approval?.required_role === 'admin', 'up to 50,000 needs Admin approval');
+  r = await ad.call('POST', `/api/projects/${small?.id}/decision`, { decision: 'approve' });
+  check(r.status === 200 && r.data.project?.status === 'approved', 'Admin approves a 30,000 project', r.data);
+  r = await su.call('GET', '/api/enquiries?search=initech');
+  check(r.data.enquiries?.find((e) => e.email === cust)?.status === 'WON', 'approving a linked project marks the lead won');
+  // large project: only Super Admin
+  r = await mk2.call('POST', '/api/projects', { title: 'IoT rollout', customer_email: cust, service: 'IoT', plan: 'monthly', amount_per_period: 20000, periods: 6, start_date: '2026-01-01' });
+  const big = r.data.project;
+  check(big?.finance?.value === 120000 && big.finance.schedule.length === 6, 'monthly plan builds a 6-instalment schedule');
+  r = await mk2.call('POST', `/api/projects/${big?.id}/submit`);
+  check(r.data.project?.approval?.required_role === 'super_admin', 'above 50,000 needs Super Admin approval');
+  r = await ad.call('POST', `/api/projects/${big?.id}/decision`, { decision: 'approve' });
+  check(r.status === 403, 'Admin cannot approve above 50,000');
+  r = await ad.call('GET', '/api/notifications');
+  check(!(r.data.items || []).some((n) => n.kind === 'project_approval' && n.link?.id === big?.id), 'Admin is not asked to approve a large project');
+  r = await su.call('GET', '/api/notifications');
+  check((r.data.items || []).some((n) => n.kind === 'project_approval' && n.link?.id === big?.id), 'Super Admin is asked to approve it');
+  r = await su.call('POST', `/api/projects/${big?.id}/decision`, { decision: 'reject' });
+  check(r.status === 400, 'rejecting needs a reason');
+  r = await su.call('POST', `/api/projects/${big?.id}/decision`, { decision: 'approve', note: 'Go' });
+  check(r.data.project?.status === 'approved', 'Super Admin approves');
+  r = await mk2.call('POST', `/api/projects/${big?.id}/payments`, { amount: 20000, date: '2026-01-05' });
+  check(r.status === 403, 'marketing cannot record payments');
+  r = await ad.call('POST', `/api/projects/${big?.id}/payments`, { amount: 30000, date: '2026-01-05', method: 'upi', reference: 'UTR123' });
+  check(r.status === 200 && r.data.project?.finance?.paid === 30000 && r.data.project.finance.outstanding === 90000, 'payment recorded and balances updated', r.data);
+  check(r.data.project?.finance?.overdue > 0, 'overdue instalments are detected');
+  r = await ad.call('POST', `/api/projects/${big?.id}/payments`, { amount: 10, date: '2999-01-01' });
+  check(r.status === 400, 'future-dated payment rejected');
+  r = await ad.call('PATCH', `/api/projects/${big?.id}`, { amount_per_period: 25000 });
+  check(r.data.project?.status === 'pending_approval', 'changing an approved value sends it back for approval');
+  await su.call('POST', `/api/projects/${big?.id}/decision`, { decision: 'approve' });
+  r = await su.call('GET', `/api/customers/${encodeURIComponent(cust)}`);
+  check(r.data.customer?.total_business === 180000 && r.data.customer.paid === 30000 && r.data.customer.services.length === 2, 'customer shows services and total business', r.data.customer && { t: r.data.customer.total_business, p: r.data.customer.paid, s: r.data.customer.services });
+  r = await su.call('GET', '/api/dashboard');
+  const m = r.data.dashboard?.money;
+  check(m && m.won_revenue_total >= 180000 && m.outstanding >= 150000 && Array.isArray(r.data.dashboard.action_summary), 'dashboard shows revenue, outstanding and grouped actions', m);
 }
 
 section('Content workflow');

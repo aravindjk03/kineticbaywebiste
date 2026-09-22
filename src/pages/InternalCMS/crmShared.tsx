@@ -46,6 +46,7 @@ export interface Lead {
   last_contacted_at?: string | null;
   activities?: LeadActivity[];
   response_clock?: SlaClock;
+  estimated_value?: number | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -98,6 +99,19 @@ export const fmtHours = (h: number | null | undefined) => (h == null ? '—' : h
 
 export const initials = (name?: string) =>
   (name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+
+export const inr = (n?: number | null) =>
+  n == null ? '—' : `₹${Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+
+/** ₹1.2L / ₹3.4Cr style for headline tiles. */
+export const inrShort = (n?: number | null) => {
+  if (n == null) return '—';
+  const v = Number(n);
+  if (v >= 1e7) return `₹${(v / 1e7).toFixed(v >= 1e8 ? 0 : 1)}Cr`;
+  if (v >= 1e5) return `₹${(v / 1e5).toFixed(v >= 1e6 ? 0 : 1)}L`;
+  if (v >= 1e3) return `₹${(v / 1e3).toFixed(v >= 1e4 ? 0 : 1)}K`;
+  return `₹${Math.round(v)}`;
+};
 
 export const staffName = (staff: StaffMember[], id?: string | null) => (id ? staff.find((s) => s.id === id)?.name || 'Former staff' : 'Unassigned');
 

@@ -30,11 +30,14 @@ import {
   LayoutDashboard,
   KanbanSquare,
   Contact,
+  Briefcase,
+  Siren,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import DashboardPanel from './DashboardPanel';
 import PipelineBoard from './PipelineBoard';
 import CustomersPanel from './CustomersPanel';
+import ProjectsPanel, { ProjectDraft } from './ProjectsPanel';
 import NotificationBell from './NotificationBell';
 import { SlaBadge, TicketSla } from './crmShared';
 import { canOpen, MyAccess, RoleMatrix } from './access';
@@ -153,6 +156,8 @@ interface CmsTicket {
   created_at: string;
   updated_at: string;
   sla?: TicketSla;
+  major?: boolean;
+  auto_assigned?: { to: string; why: string; at: string };
 }
 
 interface CmsEnquiry {
@@ -186,10 +191,13 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
   const canSee = (tab: string) => canOpen(tab, currentUser.role, currentUser.permissions);
 
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'analytics' | 'content' | 'tickets' | 'enquiries' | 'crm' | 'customers' | 'team' | 'chatbot' | 'users' | 'audit' | 'security' | 'cookies'
+    'dashboard' | 'analytics' | 'content' | 'tickets' | 'enquiries' | 'crm' | 'customers' | 'projects' | 'team' | 'chatbot' | 'users' | 'audit' | 'security' | 'cookies'
   >('dashboard');
   const [crmFocus, setCrmFocus] = useState<string | null>(null);
   const [customerFocus, setCustomerFocus] = useState<string | null>(null);
+  const [projectFocus, setProjectFocus] = useState<string | null>(null);
+  const [projectDraft, setProjectDraft] = useState<ProjectDraft | null>(null);
+  const [routingRules, setRoutingRules] = useState<{ tickets: { categories: string[]; role: string; why: string }[]; major: string } | null>(null);
 
   // Telemetry & local data
   const [analytics, setAnalytics] = useState<VisitAnalytics>(EMPTY_ANALYTICS);
@@ -291,12 +299,14 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
 
   useEffect(() => {
     if (!canSee(activeTab)) setActiveTab('dashboard');
+    if (activeTab === 'tickets' && !routingRules) api.getAssignmentRules().then(setRoutingRules).catch(() => undefined);
   }, [activeTab]);
 
   /** Jump to a tab, optionally opening one record there (from notifications, dashboard, profiles). */
   const navigateTo = (tab: string, id?: string) => {
     if (tab === 'crm') { setCrmFocus(null); setTimeout(() => setCrmFocus(id || null), 0); }
     if (tab === 'customers') { setCustomerFocus(null); setTimeout(() => setCustomerFocus(id || null), 0); }
+    if (tab === 'projects') { setProjectFocus(null); setTimeout(() => setProjectFocus(id || null), 0); }
     if (!canSee(tab)) return;
     setActiveTab(tab as typeof activeTab);
     if (tab === 'tickets' && id) {
@@ -1057,6 +1067,21 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
               </div>
             </button>
           )}
+          {canSee('projects') && (
+            <button
+              onClick={() => setActiveTab('projects')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                activeTab === 'projects'
+                  ? 'bg-primary text-ink shadow-ember-sm'
+                  : 'text-text-secondary hover:bg-surface hover:text-ink'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Briefcase className="w-4 h-4" />
+                <span>Projects & Billing</span>
+              </div>
+            </button>
+          )}
 
           {canSee('team') && (
             <button
@@ -1675,6 +1700,19 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                   <p className="text-xs text-text-secondary mt-0.5">
                     Triage incoming client requests, assign engineering leads, track statuses, and maintain confidential internal notes.
                   </p>
+                  {routingRules && (
+                    <details className="mt-2 text-[11px] text-text-secondary">
+                      <summary className="cursor-pointer text-primary">New tickets are assigned automatically · see the rules</summary>
+                      <ul className="mt-1.5 space-y-0.5 pl-1">
+                        {routingRules.tickets.map((r) => (
+                          <li key={r.role + r.categories.join()}>
+                            <b className="text-ink font-medium">{r.categories.map((c) => c.replace(/_/g, ' ')).join(', ')}</b> → {r.role.replace('_', ' ')} (whoever has the fewest open tickets)
+                          </li>
+                        ))}
+                        <li><b className="text-ink font-medium">Major issues</b>: {routingRules.major}</li>
+                      </ul>
+                    </details>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 self-start">
                   <button
@@ -1804,6 +1842,9 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                         <tr key={t.id} className="hover:bg-surface-raised/40 transition-colors">
                           <td className="p-3.5">
                             <span className="font-mono font-bold text-primary text-xs">{t.public_id}</span>
+                            {t.major && !['RESOLVED', 'CLOSED'].includes(t.status) && (
+                              <span className="mt-1 flex items-center gap-1 text-[9px] font-semibold uppercase text-red-300"><Siren className="w-3 h-3" />Major issue</span>
+                            )}
                             {t.deleted_at && (
                               <span className="block text-[9px] text-red-400 font-semibold uppercase">Archived</span>
                             )}
@@ -1853,6 +1894,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                           <td className="p-3.5">
                             <span className="text-[11px] text-text-secondary">
                               {t.assigned_to ? staff.find((m) => m.id === t.assigned_to)?.name || 'Former staff' : 'Unassigned'}
+                              {t.auto_assigned && t.auto_assigned.to === t.assigned_to && <span className="block text-[10px] text-text-secondary/70" title={t.auto_assigned.why}>auto-assigned</span>}
                             </span>
                           </td>
                           <td className="p-3.5 text-text-secondary text-[11px] whitespace-nowrap">
@@ -2613,6 +2655,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
               notify={(type, message) => notify(message, type)}
               focusId={crmFocus}
               onOpenCustomer={(email) => navigateTo('customers', email)}
+              onCreateProject={canSee('projects') && can('projects:create') ? (l) => { setProjectDraft({ lead_id: l.id, customer_email: l.email, customer_name: l.name, company: l.company, service: l.service_name, title: `${l.service_name} for ${l.company || l.name}` }); setActiveTab('projects'); } : undefined}
             />
           )}
 
@@ -2623,6 +2666,19 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
               focusEmail={customerFocus}
               onOpenLead={(id) => navigateTo('crm', id)}
               onOpenTicket={(id) => navigateTo('tickets', id)}
+              onOpenProject={(id) => navigateTo('projects', id)}
+            />
+          )}
+
+          {activeTab === 'projects' && canSee('projects') && (
+            <ProjectsPanel
+              staff={staff}
+              me={currentUser}
+              notify={(type, message) => notify(message, type)}
+              focusId={projectFocus}
+              draft={projectDraft}
+              onDraftUsed={() => setProjectDraft(null)}
+              onOpenCustomer={(email) => navigateTo('customers', email)}
             />
           )}
 

@@ -399,7 +399,7 @@ export const api = {
     return request('/api/dashboard');
   },
 
-  async updateLead(id: string, data: { status?: string; owner_id?: string | null; follow_up_at?: string | null; notes?: string }) {
+  async updateLead(id: string, data: { status?: string; owner_id?: string | null; follow_up_at?: string | null; notes?: string; estimated_value?: number | null }) {
     return request(`/api/enquiries/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
   },
 
@@ -425,6 +425,50 @@ export const api = {
 
   async markNotificationsSeen() {
     return request('/api/notifications/seen', { method: 'POST' });
+  },
+
+  // ── Projects, plans & payments ──
+  async getProjects(params?: { customer?: string; status?: string }) {
+    const q = new URLSearchParams();
+    if (params?.customer) q.set('customer', params.customer);
+    if (params?.status) q.set('status', params.status);
+    return request(`/api/projects${q.toString() ? `?${q}` : ''}`);
+  },
+
+  async createProject(data: Record<string, unknown>) {
+    return request('/api/projects', { method: 'POST', body: JSON.stringify(data) });
+  },
+
+  async updateProject(id: string, data: Record<string, unknown>) {
+    return request(`/api/projects/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
+  },
+
+  async submitProject(id: string) {
+    return request(`/api/projects/${encodeURIComponent(id)}/submit`, { method: 'POST' });
+  },
+
+  async decideProject(id: string, decision: 'approve' | 'reject', note?: string) {
+    return request(`/api/projects/${encodeURIComponent(id)}/decision`, { method: 'POST', body: JSON.stringify({ decision, note }) });
+  },
+
+  async setProjectStatus(id: string, status: string) {
+    return request(`/api/projects/${encodeURIComponent(id)}/status`, { method: 'POST', body: JSON.stringify({ status }) });
+  },
+
+  async recordPayment(id: string, data: { amount: number; date: string; method: string; reference?: string; note?: string }) {
+    return request(`/api/projects/${encodeURIComponent(id)}/payments`, { method: 'POST', body: JSON.stringify(data) });
+  },
+
+  async deletePayment(id: string, paymentId: string) {
+    return request(`/api/projects/${encodeURIComponent(id)}/payments/${encodeURIComponent(paymentId)}`, { method: 'DELETE' });
+  },
+
+  async archiveProject(id: string) {
+    return request(`/api/projects/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+
+  async getAssignmentRules() {
+    return request('/api/assignment-rules');
   },
 
   async getRoles() {

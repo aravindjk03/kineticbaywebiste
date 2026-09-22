@@ -14,6 +14,7 @@ export const MODULES: { tab: string; label: string; any: string[]; abilities: { 
   { tab: 'enquiries', label: 'Enquiries', any: ['enquiries:read'], abilities: [{ label: 'Update status & notes', perm: 'enquiries:update' }, { label: 'Delete', perm: 'enquiries:delete' }] },
   { tab: 'crm', label: 'Sales pipeline', any: ['enquiries:read'], abilities: [{ label: 'Move, assign, follow up & email leads', perm: 'enquiries:update' }] },
   { tab: 'customers', label: 'Customers', any: ['enquiries:read'], abilities: [] },
+  { tab: 'projects', label: 'Projects & billing', any: ['projects:read'], abilities: [{ label: 'Create projects & send for approval', perm: 'projects:create' }, { label: 'Approve up to ₹50,000', perm: 'projects:approve' }, { label: 'Approve above ₹50,000', perm: 'projects:approve_above' }, { label: 'Record payments', perm: 'payments:record' }, { label: 'Archive projects, remove payments', perm: 'projects:delete' }] },
   { tab: 'team', label: 'Team roster', any: ['team:manage'], abilities: [] },
   { tab: 'chatbot', label: 'Chatbot settings', any: ['chatbot:manage'], abilities: [] },
   { tab: 'users', label: 'Users & roles', any: ['users:read'], abilities: [{ label: 'Create users', perm: 'users:create' }, { label: 'Change roles', perm: 'users:update' }, { label: 'Disable super admins', perm: 'users:disable' }] },
