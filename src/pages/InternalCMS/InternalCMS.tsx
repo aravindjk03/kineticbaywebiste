@@ -32,12 +32,14 @@ import {
   Contact,
   Briefcase,
   Siren,
+  Award,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import DashboardPanel from './DashboardPanel';
 import PipelineBoard from './PipelineBoard';
 import CustomersPanel from './CustomersPanel';
 import ProjectsPanel, { ProjectDraft } from './ProjectsPanel';
+import ClientsPanel from './ClientsPanel';
 import NotificationBell from './NotificationBell';
 import { SlaBadge, TicketSla } from './crmShared';
 import { canOpen, MyAccess, RoleMatrix } from './access';
@@ -191,7 +193,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
   const canSee = (tab: string) => canOpen(tab, currentUser.role, currentUser.permissions);
 
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'analytics' | 'content' | 'tickets' | 'enquiries' | 'crm' | 'customers' | 'projects' | 'team' | 'chatbot' | 'users' | 'audit' | 'security' | 'cookies'
+    'dashboard' | 'analytics' | 'content' | 'tickets' | 'enquiries' | 'crm' | 'customers' | 'projects' | 'clients' | 'team' | 'chatbot' | 'users' | 'audit' | 'security' | 'cookies'
   >('dashboard');
   const [crmFocus, setCrmFocus] = useState<string | null>(null);
   const [customerFocus, setCustomerFocus] = useState<string | null>(null);
@@ -1083,6 +1085,21 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
             </button>
           )}
 
+          {canSee('clients') && (
+            <button
+              onClick={() => setActiveTab('clients')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                activeTab === 'clients'
+                  ? 'bg-primary text-ink shadow-ember-sm'
+                  : 'text-text-secondary hover:bg-surface hover:text-ink'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Award className="w-4 h-4" />
+                <span>Client Logos</span>
+              </div>
+            </button>
+          )}
           {canSee('team') && (
             <button
               onClick={() => setActiveTab('team')}
@@ -2668,6 +2685,10 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
               onOpenTicket={(id) => navigateTo('tickets', id)}
               onOpenProject={(id) => navigateTo('projects', id)}
             />
+          )}
+
+          {activeTab === 'clients' && canSee('clients') && (
+            <ClientsPanel notify={(type, message) => notify(message, type)} />
           )}
 
           {activeTab === 'projects' && canSee('projects') && (

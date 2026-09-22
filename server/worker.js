@@ -39,7 +39,7 @@ const ROLE_PERMISSIONS = {
     'cms-route:update', 'tickets:read', 'tickets:create', 'tickets:update', 'tickets:assign', 'tickets:delete',
     'enquiries:read', 'enquiries:update', 'enquiries:delete', 'analytics:read', 'audit:read', 'settings:update',
     'team:manage', 'chatbot:manage', 'cookies:read',
-    'projects:read', 'projects:create', 'projects:approve', 'payments:record', 'projects:delete',
+    'projects:read', 'projects:create', 'projects:approve', 'payments:record', 'projects:delete', 'clients:manage',
   ],
   admin: [
     'content:read', 'content:create', 'content:update', 'content:delete', 'content:publish', 'content:submit',
@@ -47,12 +47,12 @@ const ROLE_PERMISSIONS = {
     'tickets:update', 'tickets:assign', 'tickets:delete', 'enquiries:read', 'enquiries:update', 'enquiries:delete',
     'analytics:read', 'audit:read', 'settings:update',
     'team:manage', 'chatbot:manage', 'cookies:read',
-    'projects:read', 'projects:create', 'projects:approve', 'payments:record',
+    'projects:read', 'projects:create', 'projects:approve', 'payments:record', 'clients:manage',
   ],
   marketing: [
     'content:read', 'content:create', 'content:update', 'content:submit',
     'tickets:read', 'tickets:create', 'tickets:update', 'enquiries:read', 'enquiries:update', 'analytics:read',
-    'projects:read', 'projects:create',
+    'projects:read', 'projects:create', 'clients:manage',
   ],
 };
 const ROLES = Object.keys(ROLE_PERMISSIONS);
@@ -593,6 +593,64 @@ async function handleApi(c) {
       await c.auth('team:manage');
       await deleteDoc(env, 'team', member.id);
       await c.audit('TEAM_MEMBER_REMOVED', member.name);
+      return json({ success: true });
+    }
+  }
+
+  /* ─── Client logos (shown on the homepage) ─── */
+  if (path === '/api/public/clients' && method === 'GET') {
+    const list = (await listDocs(env, 'clients')).filter((x) => x.visible).sort((a, b) => (a.order || 0) - (b.order || 0));
+    return json({ clients: list.map(({ id, name, logo, website }) => ({ id, name, logo, website })) }, 200, { 'Cache-Control': 'public, max-age=300' });
+  }
+  if (seg[0] === 'clients') {
+    const list = (await listDocs(env, 'clients')).sort((a, b) => (a.order || 0) - (b.order || 0));
+    const logoOk = (v) => {
+      const logo = String(v || '');
+      if (!/^data:image\/(png|jpeg|webp|svg\+xml);base64,[A-Za-z0-9+/=]+$/.test(logo)) throw new HttpError(400, 'Logo must be a PNG, JPG, WebP or SVG image.');
+      if (logo.length > 400000) throw new HttpError(400, 'Logo is too large (keep it under about 300 KB).');
+      return logo;
+    };
+    const site = (v) => { const w = str(v, 300); if (w && !/^https?:\/\//i.test(w)) throw new HttpError(400, 'Website must start with http:// or https://'); return w; };
+    if (seg.length === 1 && method === 'GET') {
+      await c.auth('clients:manage');
+      return json({ clients: list });
+    }
+    if (seg.length === 1 && method === 'POST') {
+      const me = await c.auth('clients:manage');
+      const name = str(body.name, 100);
+      if (!name) throw new HttpError(400, 'Client name is required.');
+      const item = { id: newId('cli'), name, logo: logoOk(body.logo), website: site(body.website), visible: body.visible !== false, order: (list.at(-1)?.order || 0) + 1, created_by: me.id, created_at: nowIso(), updated_at: nowIso() };
+      await putDoc(env, 'clients', item);
+      await c.audit('CLIENT_LOGO_ADDED', name);
+      return json({ success: true, client: item }, 201);
+    }
+    const item = list.find((x) => x.id === seg[1]);
+    if (!item) throw new HttpError(404, 'Client not found.');
+    if (seg.length === 2 && method === 'PUT') {
+      await c.auth('clients:manage');
+      if (body.name !== undefined) { item.name = str(body.name, 100); if (!item.name) throw new HttpError(400, 'Client name is required.'); }
+      if (body.logo !== undefined) item.logo = logoOk(body.logo);
+      if (body.website !== undefined) item.website = site(body.website);
+      if (body.visible !== undefined) item.visible = Boolean(body.visible);
+      if (body.move === 'up' || body.move === 'down') {
+        const i = list.indexOf(item), j = body.move === 'up' ? i - 1 : i + 1;
+        if (list[j]) {
+          const other = list[j];
+          [item.order, other.order] = [other.order ?? j, item.order ?? i];
+          if (item.order === other.order) item.order += body.move === 'up' ? -1 : 1;
+          other.updated_at = nowIso();
+          await putDoc(env, 'clients', other);
+        }
+      }
+      item.updated_at = nowIso();
+      await putDoc(env, 'clients', item);
+      await c.audit('CLIENT_LOGO_UPDATED', item.name);
+      return json({ success: true, client: item });
+    }
+    if (seg.length === 2 && method === 'DELETE') {
+      await c.auth('clients:manage');
+      await deleteDoc(env, 'clients', item.id);
+      await c.audit('CLIENT_LOGO_REMOVED', item.name);
       return json({ success: true });
     }
   }

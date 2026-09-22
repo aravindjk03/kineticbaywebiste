@@ -467,6 +467,27 @@ export const api = {
     return request(`/api/projects/${encodeURIComponent(id)}`, { method: 'DELETE' });
   },
 
+  // ── Client logos ──
+  async getPublicClients() {
+    return request('/api/public/clients');
+  },
+
+  async getClients() {
+    return request('/api/clients');
+  },
+
+  async createClient(data: { name: string; logo: string; website?: string; visible?: boolean }) {
+    return request('/api/clients', { method: 'POST', body: JSON.stringify(data) });
+  },
+
+  async updateClient(id: string, data: { name?: string; logo?: string; website?: string; visible?: boolean; move?: 'up' | 'down' }) {
+    return request(`/api/clients/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
+  },
+
+  async deleteClient(id: string) {
+    return request(`/api/clients/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+
   async getAssignmentRules() {
     return request('/api/assignment-rules');
   },

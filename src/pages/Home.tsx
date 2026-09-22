@@ -5,6 +5,7 @@ import TypeStage from '../components/home/TypeStage';
 import Reveal from '../components/Reveal';
 import Btn from '../components/Btn';
 import SdgWheel from '../components/home/SdgWheel';
+import ClientLogoStrip from '../components/home/ClientLogoStrip';
 import { PillarPanels, ProductStack, IndustryIndex, ExploreRows } from '../components/home/HomeCards';
 import { SectionHead, Counter, FaqSection, FinalCta, faqJsonLd } from '../components/ui';
 import {
@@ -36,18 +37,7 @@ function ImpactBoard() {
           ))}
         </div>
       </div>
-      {/* marquee strip */}
-      <div className="relative border-t border-border py-4 overflow-hidden bg-primary text-bg">
-        <div className="ticker-track flex gap-10 whitespace-nowrap font-heading font-bold text-lg uppercase tracking-tight" style={{ width: 'max-content' }}>
-          {[0, 1].map((k) => (
-            <span key={k} className="flex gap-10">
-              {['AI & Automation', 'Digital Engineering', 'Cybersecurity & Cloud', 'IoT Projects', 'HRMS', 'VMS', 'PMS', 'CRM', 'Attendance', 'Chennai → World'].map((t) => (
-                <span key={t} className="flex items-center gap-10">{t}<span className="w-2 h-2 bg-bg rotate-45" /></span>
-              ))}
-            </span>
-          ))}
-        </div>
-      </div>
+      <ClientLogoStrip />
     </section>
   );
 }

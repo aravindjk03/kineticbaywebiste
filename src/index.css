@@ -358,6 +358,11 @@ body {
 }
 .ticker-track { animation: ticker 30s linear infinite; }
 .ticker-track:hover { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track { animation: none; }
+  .logo-track { flex-wrap: wrap; justify-content: center; width: 100% !important; }
+  .logo-track > div[aria-hidden='true'] { display: none; }
+}
 
 /* DecryptedText */
 .decrypt-encrypted {

@@ -322,6 +322,24 @@ section('Auto-assignment, approvals, payments');
   check(m && m.won_revenue_total >= 180000 && m.outstanding >= 150000 && Array.isArray(r.data.dashboard.action_summary), 'dashboard shows revenue, outstanding and grouped actions', m);
 }
 
+section('Client logos');
+{
+  const svg = (label, fill) => 'data:image/svg+xml;base64,' + Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="160" height="48" viewBox="0 0 160 48"><rect width="160" height="48" rx="8" fill="${fill}"/><text x="80" y="31" font-family="Arial" font-size="18" font-weight="700" fill="#fff" text-anchor="middle">${label}</text></svg>`).toString('base64');
+  let r = await su.call('POST', '/api/clients', { name: 'Test Client', logo: 'data:text/html;base64,PHNjcmlwdD4=' });
+  check(r.status === 400, 'non-image logo rejected');
+  r = await su.call('POST', '/api/clients', { name: 'Acme Test', logo: svg('ACME', '#1f4fd1'), website: 'https://example.com' });
+  check(r.status === 201, 'client logo uploaded', r.data);
+  const id = r.data.client?.id;
+  r = await new Client(ip()).call('GET', '/api/public/clients');
+  check((r.data.clients || []).some((x) => x.id === id), 'logo is public on the homepage feed');
+  r = await su.call('PUT', `/api/clients/${id}`, { visible: false });
+  r = await new Client(ip()).call('GET', '/api/public/clients');
+  check(!(r.data.clients || []).some((x) => x.id === id), 'hidden logo leaves the homepage');
+  r = await su.call('PUT', `/api/clients/${id}`, { visible: true });
+  r = await new Client(ip()).call('GET', '/api/clients');
+  check(r.status === 401, 'managing logos needs sign-in');
+}
+
 section('Content workflow');
 {
   let r = await su.call('POST', '/api/content', { title: 'Smoke banner', slug: `smoke-${Date.now()}`, category: 'homepage', content: 'Hello' });
