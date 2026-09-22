@@ -21,8 +21,6 @@ export default function EnterpriseAuthModal({ onAuthenticated }: EnterpriseAuthM
   const [password, setPassword] = useState('');
   const [mfaCode, setMfaCode] = useState('');
   const [mfaToken, setMfaToken] = useState('');
-  const [demoTotp, setDemoTotp] = useState('');
-  const [demoRecovery, setDemoRecovery] = useState('');
 
   useEffect(() => {
     document.title = 'KB NEXUS | Enterprise Login';
@@ -45,8 +43,6 @@ export default function EnterpriseAuthModal({ onAuthenticated }: EnterpriseAuthM
       const res = await api.login(username.trim(), password);
       if (res.mfaRequired) {
         setMfaToken(res.mfaToken);
-        setDemoTotp(res.demoTotp || '');
-        setDemoRecovery(res.demoRecoveryCode || '');
         setStep('mfa');
       }
     } catch (err: any) {
@@ -116,7 +112,7 @@ export default function EnterpriseAuthModal({ onAuthenticated }: EnterpriseAuthM
               </h2>
               <p className="text-xs text-text-secondary mt-1">
                 {step === 'credentials'
-                  ? 'Server-side scrypt credential verification and session protection.'
+                  ? 'Password, authenticator code and a signed, HttpOnly session.'
                   : 'RFC 6238 Time-Based One-Time Password (TOTP) verification.'}
               </p>
             </div>
@@ -148,7 +144,7 @@ export default function EnterpriseAuthModal({ onAuthenticated }: EnterpriseAuthM
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="e.g. superadmin, admin, marketing"
+                    placeholder="Your CMS username"
                     className="w-full pl-10 pr-4 py-2.5 bg-surface-raised rounded-xl border border-border text-ink text-xs placeholder-text-secondary/40 focus:outline-none focus:border-primary transition-colors"
                     required
                     autoFocus
@@ -188,12 +184,6 @@ export default function EnterpriseAuthModal({ onAuthenticated }: EnterpriseAuthM
                 )}
               </button>
 
-              <div className="p-3 rounded-xl bg-surface-raised/40 border border-border/50 text-[11px] text-text-secondary/70 space-y-1">
-                <span className="font-semibold text-text-secondary block">Provisioned Usernames:</span>
-                <div>• Super Admin: <code className="text-primary font-mono">superadmin</code></div>
-                <div>• Platform Admin: <code className="text-primary font-mono">admin</code></div>
-                <div>• Marketing: <code className="text-primary font-mono">marketing</code></div>
-              </div>
             </form>
           ) : (
             <form onSubmit={handleMfaSubmit} className="space-y-4">
@@ -211,7 +201,9 @@ export default function EnterpriseAuthModal({ onAuthenticated }: EnterpriseAuthM
                     type="text"
                     value={mfaCode}
                     onChange={(e) => setMfaCode(e.target.value)}
-                    placeholder={isRecovery ? 'XXXX-XXXX-XXXX-XXXX' : '123456'}
+                    placeholder={isRecovery ? 'XXXX-XXXX' : '6-digit code'}
+                    inputMode={isRecovery ? 'text' : 'numeric'}
+                    autoComplete="one-time-code"
                     className="w-full pl-10 pr-4 py-2.5 bg-surface-raised rounded-xl border border-border text-ink text-xs font-mono tracking-widest placeholder-text-secondary/40 focus:outline-none focus:border-primary transition-colors"
                     maxLength={30}
                     required
@@ -220,52 +212,11 @@ export default function EnterpriseAuthModal({ onAuthenticated }: EnterpriseAuthM
                 </div>
               </div>
 
-              {/* Live TOTP & Recovery Code Demo Helper */}
-              <div className="p-3.5 rounded-2xl bg-surface-raised border border-primary/30 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
-                    <Smartphone className="w-3.5 h-3.5" />
-                    Current 6-Digit TOTP
-                  </span>
-                  <span className="text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                    Live RFC 6238
-                  </span>
-                </div>
-                <div className="flex items-center justify-between bg-surface p-2.5 rounded-xl border border-border">
-                  <span className="font-mono text-lg font-bold tracking-widest text-emerald-400">
-                    {demoTotp || '123456'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (demoTotp) {
-                        setMfaCode(demoTotp);
-                        setIsRecovery(false);
-                      }
-                    }}
-                    className="px-2.5 py-1 rounded-lg bg-primary hover:bg-primary-light text-ink text-xs font-medium transition-colors"
-                  >
-                    Click to Fill TOTP
-                  </button>
-                </div>
-                {demoRecovery && (
-                  <div className="pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-text-secondary">
-                    <span>
-                      Recovery Code: <code className="text-ink font-mono">{demoRecovery}</code>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMfaCode(demoRecovery);
-                        setIsRecovery(true);
-                      }}
-                      className="text-primary hover:underline text-xs"
-                    >
-                      Fill Recovery
-                    </button>
-                  </div>
-                )}
-              </div>
+              <p className="text-[11px] text-text-secondary/70 leading-relaxed">
+                {isRecovery
+                  ? 'Each recovery code works once. After signing in, ask a Super Admin for new codes if you are running low.'
+                  : 'Open Google or Microsoft Authenticator and enter the current 6-digit code for KB NEXUS.'}
+              </p>
 
               <button
                 type="submit"

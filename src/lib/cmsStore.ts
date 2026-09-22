@@ -1,83 +1,15 @@
-import {
-  TeamMember,
-  SiteContent,
-  ChatbotConfig,
-  CapturedLead,
-  FAQItem,
-  GuardrailRule,
-  LeadStatus,
-} from '../types/cms';
-import { supabase } from './supabase';
+/**
+ * Public-site data helpers.
+ * - Chatbot knowledge base (bundled defaults, cached per browser).
+ * - Lead capture, which always goes to the server so the CMS sees every enquiry.
+ * CMS data (team, leads, tickets, content) lives server-side and is managed through `api`.
+ */
+import { ChatbotConfig, FAQItem, GuardrailRule, SiteContent, CapturedLead } from '../types/cms';
 import { api } from './api';
 
-const CMS_AUTH_KEY = 'kb_cms_session';
-const PASSCODE_KEY = 'kb_cms_passcode_hash';
-const TEAM_KEY = 'kb_cms_team_v1';
-const CONTENT_KEY = 'kb_cms_content_v2';
 const CHATBOT_CONFIG_KEY = 'kb_cms_chatbot_v3';
-const LEADS_KEY = 'kb_crm_leads_v1';
 
-// Internal local storage keys
-const DEFAULT_PASSCODE = '';
-
-/* ─── INITIAL SEED DATA ────────────────────────────────────────── */
-
-const DEFAULT_TEAM: TeamMember[] = [
-  {
-    id: 'team-1',
-    name: 'Arjun Mehta',
-    role: 'Founder & CEO',
-    image: 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=600',
-    bio: 'Ex-Google engineer turned founder. 12+ years building SaaS platforms and leading tech teams across three continents.',
-    linkedin: 'https://linkedin.com',
-    order: 1,
-  },
-  {
-    id: 'team-2',
-    name: 'Sofia Ramirez',
-    role: 'Head of Design',
-    image: 'https://images.pexels.com/photos/3763188/pexels-photo-3763188.jpeg?auto=compress&cs=tinysrgb&w=600',
-    bio: 'Award-winning brand designer who has shaped identities for 40+ startups. Believes great design is invisible — until it is not.',
-    linkedin: 'https://linkedin.com',
-    order: 2,
-  },
-  {
-    id: 'team-3',
-    name: 'Kenji Tanaka',
-    role: 'Lead Engineer',
-    image: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=600',
-    bio: 'Full-stack architect specializing in multi-tenant SaaS and PaaS. Has shipped products used by over 2M people.',
-    linkedin: 'https://linkedin.com',
-    order: 3,
-  },
-  {
-    id: 'team-4',
-    name: 'Amara Okafor',
-    role: 'Head of Human Training',
-    image: 'https://images.pexels.com/photos/3760263/pexels-photo-3760263.jpeg?auto=compress&cs=tinysrgb&w=600',
-    bio: 'Organizational psychologist and ICF-certified coach. Has trained 500+ founders and teams on productivity and leadership.',
-    linkedin: 'https://linkedin.com',
-    order: 4,
-  },
-  {
-    id: 'team-5',
-    name: 'Liam O\'Brien',
-    role: 'SEO & AIO Strategist',
-    image: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=600',
-    bio: 'Pioneered AI Optimization before it had a name. Has helped clients rank in both Google and AI search engines.',
-    linkedin: 'https://linkedin.com',
-    order: 5,
-  },
-  {
-    id: 'team-6',
-    name: 'Yuki Watanabe',
-    role: 'Product Manager',
-    image: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=600',
-    bio: 'Bridges the gap between human training and software. Turns team workflows into product features that scale.',
-    linkedin: 'https://linkedin.com',
-    order: 6,
-  },
-];
+/* ─── KNOWLEDGE BASE DEFAULTS ─────────────────────────────── */
 
 const DEFAULT_CONTENT: SiteContent = {
   companyName: 'Kinetic Bay',
@@ -204,290 +136,42 @@ const DEFAULT_CHATBOT_CONFIG: ChatbotConfig = {
   fallbackMessage: 'That is a great question regarding technical implementation. To give you the exact technical solution for your specific needs, let me connect you with our engineering leads. Would you like to leave your email and project overview for a rapid 24-hour review?',
 };
 
-const SEED_LEADS: CapturedLead[] = [
-  {
-    id: 'lead-1',
-    name: 'Michael Vance',
-    email: 'm.vance@techcorp-demo.io',
-    phone: '+1 415-890-1234',
-    company: 'Vance Logistics',
-    service: 'Custom Software & Projects',
-    budget: '$25,000 - $50,000',
-    timeline: 'Within 2 months',
-    message: 'We need to modernize our fleet tracking dashboard and connect it to a real-time event pipeline with automated alerts.',
-    source: 'chatbot',
-    status: 'proposal_sent',
-    adminNotes: 'Reviewed requirements on Sep 18. Sent 14-page architectural draft. Scoping call scheduled for Tuesday.',
-    conversationTranscript: [
-      { sender: 'user', text: 'Hi, we are looking for a team to build an enterprise logistics tool.' },
-      { sender: 'bot', text: 'Kinetic Bay specializes in custom enterprise software, replacing fragmented tools with streamlined, high-throughput systems.' },
-      { sender: 'user', text: 'Sounds ideal. Can you send us a proposal?' },
-    ],
-    createdAt: '2026-09-18T14:22:10.000Z',
-    updatedAt: '2026-09-19T10:15:00.000Z',
-  },
-  {
-    id: 'lead-2',
-    name: 'Elena Rostova',
-    email: 'elena@solargrid-energy.org',
-    phone: '+1 206-555-7890',
-    company: 'SolarGrid Labs',
-    service: 'AI & Agent-Based Solutions',
-    budget: '$15,000 - $25,000',
-    timeline: 'Immediate (1 month)',
-    message: 'Interested in building an intelligent energy forecasting agent using Azure AI Foundry and historical telemetry.',
-    source: 'lead_gen_form',
-    status: 'new',
-    adminNotes: 'High priority lead aligned with SDG Clean Energy initiative.',
-    createdAt: '2026-09-20T09:40:00.000Z',
-    updatedAt: '2026-09-20T09:40:00.000Z',
-  },
-];
-
-/* ─── AUTHENTICATION HELPERS ──────────────────────────────────── */
-
-export function isCMSAuthenticated(): boolean {
-  try {
-    const session = sessionStorage.getItem(CMS_AUTH_KEY);
-    if (!session) return false;
-    const parsed = JSON.parse(session);
-    if (parsed.expiresAt && Date.now() < parsed.expiresAt) {
-      return true;
-    }
-  } catch {}
-  return false;
-}
-
-export function authenticateCMS(passcodeInput: string): boolean {
-  const currentPasscode = localStorage.getItem(PASSCODE_KEY) || DEFAULT_PASSCODE;
-  if (!currentPasscode || !passcodeInput.trim()) return false;
-  if (passcodeInput.trim() === currentPasscode.trim()) {
-    const sessionData = {
-      authenticated: true,
-      timestamp: Date.now(),
-      expiresAt: Date.now() + 8 * 60 * 60 * 1000, // 8 hour active session
-    };
-    sessionStorage.setItem(CMS_AUTH_KEY, JSON.stringify(sessionData));
-    return true;
-  }
-  return false;
-}
-
-export function logoutCMS(): void {
-  sessionStorage.removeItem(CMS_AUTH_KEY);
-}
-
-export function updateCMSPasscode(currentPass: string, newPass: string): { success: boolean; message: string } {
-  const current = localStorage.getItem(PASSCODE_KEY) || DEFAULT_PASSCODE;
-  if (currentPass.trim() !== current.trim()) {
-    return { success: false, message: 'Current passcode is incorrect.' };
-  }
-  if (!newPass || newPass.trim().length < 6) {
-    return { success: false, message: 'New passcode must be at least 6 characters.' };
-  }
-  localStorage.setItem(PASSCODE_KEY, newPass.trim());
-  return { success: true, message: 'Passcode updated successfully.' };
-}
-
-/* ─── TEAM MANAGEMENT ─────────────────────────────────────────── */
-
-export function getTeamMembers(): TeamMember[] {
-  try {
-    const raw = localStorage.getItem(TEAM_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (err) {
-    console.error('Error loading team members', err);
-  }
-  // Initialize with seed
-  try {
-    localStorage.setItem(TEAM_KEY, JSON.stringify(DEFAULT_TEAM));
-  } catch {}
-  return DEFAULT_TEAM;
-}
-
-export function saveTeamMembers(members: TeamMember[]): void {
-  localStorage.setItem(TEAM_KEY, JSON.stringify(members));
-  window.dispatchEvent(new CustomEvent('kb:team_updated', { detail: members }));
-}
-
-export function addTeamMember(member: Omit<TeamMember, 'id' | 'order'>): TeamMember {
-  const members = getTeamMembers();
-  const newMember: TeamMember = {
-    ...member,
-    id: 'team-' + Date.now(),
-    order: members.length + 1,
-  };
-  const updated = [...members, newMember];
-  saveTeamMembers(updated);
-  return newMember;
-}
-
-export function updateTeamMember(id: string, updates: Partial<TeamMember>): void {
-  const members = getTeamMembers();
-  const updated = members.map((m) => (m.id === id ? { ...m, ...updates } : m));
-  saveTeamMembers(updated);
-}
-
-export function deleteTeamMember(id: string): void {
-  const members = getTeamMembers();
-  const updated = members.filter((m) => m.id !== id);
-  saveTeamMembers(updated);
-}
-
-/* ─── CONTENT ALTERATION ──────────────────────────────────────── */
-
-export function getSiteContent(): SiteContent {
-  try {
-    const raw = localStorage.getItem(CONTENT_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (err) {
-    console.error('Error loading site content', err);
-  }
-  try {
-    localStorage.setItem(CONTENT_KEY, JSON.stringify(DEFAULT_CONTENT));
-  } catch {}
-  return DEFAULT_CONTENT;
-}
-
-export function saveSiteContent(content: SiteContent): void {
-  localStorage.setItem(CONTENT_KEY, JSON.stringify(content));
-  window.dispatchEvent(new CustomEvent('kb:content_updated', { detail: content }));
-}
-
-/* ─── CHATBOT CONFIG & KNOWLEDGE BASE ─────────────────────────── */
+/* ─── CHATBOT CONFIG ──────────────────────────────────────── */
 
 export function getChatbotConfig(): ChatbotConfig {
   try {
     const raw = localStorage.getItem(CHATBOT_CONFIG_KEY);
     if (raw) return JSON.parse(raw);
-  } catch (err) {
-    console.error('Error loading chatbot config', err);
+  } catch {
+    // storage unavailable (private mode) — fall through to defaults
   }
   try {
     localStorage.setItem(CHATBOT_CONFIG_KEY, JSON.stringify(DEFAULT_CHATBOT_CONFIG));
-  } catch {}
+  } catch {
+    // ignore
+  }
   return DEFAULT_CHATBOT_CONFIG;
 }
 
-export function saveChatbotConfig(config: ChatbotConfig): void {
-  localStorage.setItem(CHATBOT_CONFIG_KEY, JSON.stringify(config));
-  window.dispatchEvent(new CustomEvent('kb:chatbot_updated', { detail: config }));
-}
+/* ─── LEAD CAPTURE ────────────────────────────────────────── */
 
-/* ─── CRM & LEADS MANAGEMENT ──────────────────────────────────── */
-
-export function getLeads(): CapturedLead[] {
-  try {
-    const raw = localStorage.getItem(LEADS_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (err) {
-    console.error('Error loading leads', err);
-  }
-  try {
-    localStorage.setItem(LEADS_KEY, JSON.stringify(SEED_LEADS));
-  } catch {}
-  return SEED_LEADS;
-}
-
-export function saveLeads(leads: CapturedLead[]): void {
-  localStorage.setItem(LEADS_KEY, JSON.stringify(leads));
-  window.dispatchEvent(new CustomEvent('kb:leads_updated', { detail: leads }));
-}
-
+/**
+ * Submit a lead from the contact form or the chatbot. Throws if the server did
+ * not accept it, so the visitor never sees "sent" for a message that was lost.
+ */
 export async function addLead(
-  leadInput: Omit<CapturedLead, 'id' | 'status' | 'createdAt' | 'updatedAt'>
-): Promise<CapturedLead> {
-  const leads = getLeads();
-  const newLead: CapturedLead = {
-    ...leadInput,
-    id: 'lead_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-    status: 'new',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+  lead: Omit<CapturedLead, 'id' | 'status' | 'createdAt' | 'updatedAt'>
+): Promise<{ reference_id: string }> {
+  const extras = [lead.phone ? `Phone: ${lead.phone}` : '', `Source: ${lead.source}`].filter(Boolean).join(' · ');
+  return api.submitPublicEnquiry({
+    name: lead.name,
+    email: lead.email,
+    company: lead.company,
+    service_slug: lead.service,
+    budget_range: lead.budget,
+    timeline: lead.timeline,
+    message: `${lead.message}
 
-  const updated = [newLead, ...leads];
-  saveLeads(updated);
-
-  // Push to server-side enterprise enquiries queue
-  try {
-    await api.submitPublicEnquiry({
-      name: newLead.name,
-      email: newLead.email,
-      company: newLead.company,
-      service_slug: newLead.service,
-      budget_range: newLead.budget,
-      timeline: newLead.timeline,
-      message: `${newLead.message} [Source: ${newLead.source}] ${newLead.phone ? 'Phone: ' + newLead.phone : ''}`,
-    });
-  } catch (backendErr) {
-    console.warn('Backend enquiry sync skipped or offline:', backendErr);
-  }
-
-  // Attempt non-blocking push to Supabase if configured
-  try {
-    await supabase.from('contact_inquiries').insert({
-      name: newLead.name,
-      email: newLead.email,
-      service: newLead.service || 'General Consultation',
-      message: `${newLead.message} [Source: ${newLead.source}] ${newLead.phone ? 'Phone: ' + newLead.phone : ''}`,
-    });
-  } catch (err) {
-    // Graceful offline fallback — already safely persisted in local CRM store
-    console.warn('Supabase remote sync skipped or offline:', err);
-  }
-
-  return newLead;
-}
-
-export function updateLeadStatus(id: string, status: LeadStatus): void {
-  const leads = getLeads();
-  const updated = leads.map((l) =>
-    l.id === id ? { ...l, status, updatedAt: new Date().toISOString() } : l
-  );
-  saveLeads(updated);
-}
-
-export function updateLeadNotes(id: string, adminNotes: string): void {
-  const leads = getLeads();
-  const updated = leads.map((l) =>
-    l.id === id ? { ...l, adminNotes, updatedAt: new Date().toISOString() } : l
-  );
-  saveLeads(updated);
-}
-
-export function deleteLead(id: string): void {
-  const leads = getLeads();
-  const updated = leads.filter((l) => l.id !== id);
-  saveLeads(updated);
-}
-
-export function exportLeadsCSV(): void {
-  const leads = getLeads();
-  const headers = ['ID', 'Date', 'Name', 'Email', 'Phone', 'Company', 'Service', 'Budget', 'Timeline', 'Source', 'Status', 'Message', 'Notes'];
-  
-  const rows = leads.map((l) => [
-    `"${l.id}"`,
-    `"${new Date(l.createdAt).toLocaleDateString()}"`,
-    `"${(l.name || '').replace(/"/g, '""')}"`,
-    `"${(l.email || '').replace(/"/g, '""')}"`,
-    `"${(l.phone || '').replace(/"/g, '""')}"`,
-    `"${(l.company || '').replace(/"/g, '""')}"`,
-    `"${(l.service || '').replace(/"/g, '""')}"`,
-    `"${(l.budget || '').replace(/"/g, '""')}"`,
-    `"${(l.timeline || '').replace(/"/g, '""')}"`,
-    `"${l.source}"`,
-    `"${l.status}"`,
-    `"${(l.message || '').replace(/"/g, '""')}"`,
-    `"${(l.adminNotes || '').replace(/"/g, '""')}"`,
-  ]);
-
-  const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement('a');
-  link.setAttribute('href', encodedUri);
-  link.setAttribute('download', `kineticbay_crm_leads_${new Date().toISOString().split('T')[0]}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+— ${extras}`,
+  });
 }

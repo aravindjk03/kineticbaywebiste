@@ -2,7 +2,6 @@ import { useState, type FormEvent } from 'react';
 import { contactCopy } from '../../data/site';
 import { Send, CheckCircle2, Sparkles, Building, Mail, User, Phone } from 'lucide-react';
 import { addLead } from '../../lib/cmsStore';
-import { api } from '../../lib/api';
 
 interface LeadCaptureCardProps {
   onSubmitted: (leadDetails: { name: string; service: string }) => void;
@@ -40,19 +39,7 @@ export default function LeadCaptureCard({ onSubmitted, conversationSnippet, defa
     setSubmitting(true);
 
     try {
-      // 1. Submit to backend API endpoint
-      await api.submitPublicEnquiry({
-        name: form.name.trim(),
-        email: form.email.trim(),
-        company: form.company.trim() || undefined,
-        service_slug: form.service.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-        message: form.message.trim() || `Proposal request for ${form.service}`,
-      }).catch((err) => {
-        if (err?.status === 429) throw err;
-        console.warn('Backend enquiry submission sync warning:', err);
-      });
-
-      // 2. Also log to local CMS store for redundancy
+      // Submit once, server-side; the CMS CRM and the team inbox both pick it up
       await addLead({
         name: form.name.trim(),
         email: form.email.trim(),

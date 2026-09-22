@@ -54,39 +54,16 @@ export default function TicketCreationCard({ onSubmitted, onTrackRequested, defa
     setSubmitting(true);
 
     try {
-      let finalTicket: any = null;
-
-      try {
-        const res = await api.submitPublicTicket({
-          name: finalName,
-          email: cleanEmail,
-          category: form.category,
-          priority: form.priority,
-          subject: finalSubject,
-          description: finalDescription,
-        });
-        finalTicket = res.ticket || (res.public_id ? res : null);
-      } catch (apiErr: any) {
-        if (apiErr?.status === 429) {
-          throw apiErr;
-        }
-        console.warn('Edge/server ticket submission fallback triggered:', apiErr);
-        // Resilient fallback: generate high-entropy ticket ID locally so user is never stranded
-        const entropy = Array.from(crypto.getRandomValues(new Uint8Array(4)))
-          .map((b) => b.toString(16).padStart(2, '0'))
-          .join('')
-          .toUpperCase();
-        const fallbackId = `KB-${entropy}`;
-
-        finalTicket = {
-          public_id: fallbackId,
-          subject: finalSubject,
-          category: form.category,
-          priority: form.priority,
-          status: 'NEW',
-          created_at: new Date().toISOString(),
-        };
-      }
+      // Only a ticket the server has actually stored is shown to the customer.
+      const res = await api.submitPublicTicket({
+        name: finalName,
+        email: cleanEmail,
+        category: form.category,
+        priority: form.priority,
+        subject: finalSubject,
+        description: finalDescription,
+      });
+      const finalTicket: any = res.ticket || null;
 
       if (finalTicket && finalTicket.public_id) {
         setCreatedTicket({

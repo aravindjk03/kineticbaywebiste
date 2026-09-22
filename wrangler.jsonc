@@ -18,6 +18,12 @@
       "id": "c7c227081bac4504a1dff8db75616aaa"
     }
   ],
+  // Non-secret configuration. Secrets (SESSION_SECRET, BREVO_API_KEY) are set with `wrangler secret put`.
+  "vars": {
+    "MAIL_FROM": "Kineticbay@gmail.com",
+    "MAIL_NOTIFY_TO": "Kineticbay@gmail.com",
+    "SITE_URL": "https://kineticbay.kineticbay.workers.dev"
+  },
   "compatibility_flags": [
     "nodejs_compat"
   ]

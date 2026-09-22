@@ -56,6 +56,7 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             {/* Obfuscated non-obvious CMS entry route dynamically resolved by the server */}
             <Route path="/:cmsRoute" element={<DynamicCMSEntry />} />
+            <Route path="*" element={<DynamicCMSEntry />} />
           </Routes>
         </Suspense>
       </Layout>

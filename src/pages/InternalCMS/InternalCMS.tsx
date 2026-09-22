@@ -30,26 +30,55 @@ import {
   Database,
 } from 'lucide-react';
 import { api } from '../../lib/api';
-import {
-  getTeamMembers,
-  addTeamMember,
-  updateTeamMember,
-  deleteTeamMember,
-  getChatbotConfig,
-  getLeads,
-  updateLeadStatus,
-  deleteLead,
-  exportLeadsCSV,
-} from '../../lib/cmsStore';
-import { getAnalytics, getCookieConsent } from '../../lib/analytics';
+import { getChatbotConfig } from '../../lib/cmsStore';
+import { getCookieConsent } from '../../lib/analytics';
 import { processChatQuery } from '../../lib/chatbotEngine';
 import {
   TeamMember,
   ChatbotConfig,
   CapturedLead,
-  LeadStatus,
   VisitAnalytics,
 } from '../../types/cms';
+
+const EMPTY_ANALYTICS: VisitAnalytics = {
+  totalVisits: 0,
+  uniqueVisitors: 0,
+  pageViews: {},
+  dailyVisits: [],
+  deviceBreakdown: { desktop: 0, mobile: 0, tablet: 0 },
+  recentVisits: [],
+};
+
+interface StaffMember { id: string; name: string; role: string }
+
+/** Enquiries from the website and chatbot, viewed as CRM leads. */
+function enquiryToLead(e: { id: string; name: string; email: string; company?: string; service_name: string; message: string; status: string; created_at: string; updated_at: string }): CapturedLead {
+  const source = /Source:\s*([a-z_]+)/i.exec(e.message || '')?.[1] || 'website';
+  return {
+    id: e.id,
+    name: e.name,
+    email: e.email,
+    company: e.company,
+    service: e.service_name,
+    message: e.message,
+    source: source as CapturedLead['source'],
+    status: (e.status || 'NEW').toLowerCase() as CapturedLead['status'],
+    createdAt: e.created_at,
+    updatedAt: e.updated_at,
+  };
+}
+
+function downloadLeadsCsv(leads: CapturedLead[]) {
+  const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const rows = [['Name', 'Email', 'Company', 'Service', 'Source', 'Status', 'Created', 'Message']]
+    .concat(leads.map((l) => [l.name, l.email, l.company || '', l.service, l.source, l.status, l.createdAt, l.message]));
+  const blob = new Blob([rows.map((r) => r.map(cell).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `kinetic-bay-leads-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
 
 interface AuthUser {
   id: string;
@@ -159,9 +188,15 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
   >('analytics');
 
   // Telemetry & local data
-  const [analytics, setAnalytics] = useState<VisitAnalytics>(getAnalytics());
-  const [leads, setLeads] = useState<CapturedLead[]>(getLeads());
-  const [team, setTeam] = useState<TeamMember[]>(getTeamMembers());
+  const [analytics, setAnalytics] = useState<VisitAnalytics>(EMPTY_ANALYTICS);
+  const [leads, setLeads] = useState<CapturedLead[]>([]);
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [newUserSecrets, setNewUserSecrets] = useState<{ username: string; secret: string; otpauthUrl: string; recoveryCodes: string[] } | null>(null);
+  const [pwModalOpen, setPwModalOpen] = useState(false);
+  const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
+  const [testEmailTo, setTestEmailTo] = useState('');
+  const [testEmailSending, setTestEmailSending] = useState(false);
   const [botConfig] = useState<ChatbotConfig>(getChatbotConfig());
   const [cookieConsent] = useState(getCookieConsent());
 
@@ -352,6 +387,36 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
     }
   };
 
+  // CRM view of every enquiry (independent of the Enquiries tab filters)
+  const loadLeads = async () => {
+    if (!canManageEnquiries) return;
+    try {
+      const res = await api.getCmsEnquiries({});
+      setLeads((res.enquiries || []).map(enquiryToLead));
+    } catch (err: any) {
+      notify(err.message || 'Failed to fetch leads', 'error', err.reference);
+    }
+  };
+
+  const loadTeam = async () => {
+    try {
+      const res = await api.getTeam();
+      setTeam((res.team || []).map((m: any, i: number) => ({ ...m, order: m.order ?? i + 1 })));
+    } catch (err: any) {
+      notify(err.message || 'Failed to fetch team', 'error', err.reference);
+    }
+  };
+
+  const loadStaff = async () => {
+    if (!canManageTickets) return;
+    try {
+      const res = await api.getStaff();
+      setStaff(res.staff || []);
+    } catch {
+      // assignment dropdown simply stays empty
+    }
+  };
+
   useEffect(() => {
     loadRealAnalytics();
     loadServerContent();
@@ -359,6 +424,9 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
     loadAuditLogs();
     loadTickets();
     loadEnquiries();
+    loadLeads();
+    loadTeam();
+    loadStaff();
   }, [includeDeleted]);
 
   const loadDatabaseStats = async () => {
@@ -661,8 +729,11 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
   /* ─── USER MANAGEMENT ACTIONS ─── */
   const handleCreateUser = async () => {
     try {
-      await api.createUser(userForm);
+      const res = await api.createUser(userForm);
       notify(`New user @${userForm.username || userForm.email} created.`);
+      if (res.mfaSetup) {
+        setNewUserSecrets({ username: res.user?.username || userForm.username, secret: res.mfaSetup.secret, otpauthUrl: res.mfaSetup.otpauthUrl, recoveryCodes: res.recoveryCodes || [] });
+      }
       setUserModalOpen(false);
       setUserForm({ username: '', email: '', name: '', role: 'marketing', initialPassword: '' });
       loadServerUsers();
@@ -713,21 +784,52 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
   };
 
   /* ─── TEAM MANAGEMENT ─── */
-  const handleSaveTeam = () => {
-    if (!memberForm.name.trim() || !memberForm.role.trim()) return;
-    if (editingMember) {
-      updateTeamMember(editingMember.id, memberForm);
-      notify('Team member updated.');
-    } else {
-      addTeamMember({
-        ...memberForm,
-        image: memberForm.image || 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=600',
-      });
-      notify('New team member added.');
+  const handleSaveTeam = async () => {
+    if (!memberForm.name.trim() || !memberForm.role.trim()) {
+      notify('Name and role are required.', 'error');
+      return;
     }
-    setTeam(getTeamMembers());
-    setTeamModalOpen(false);
-    setEditingMember(null);
+    try {
+      if (editingMember) {
+        await api.updateTeamMember(editingMember.id, memberForm);
+        notify('Team member updated.');
+      } else {
+        await api.createTeamMember(memberForm);
+        notify('New team member added.');
+      }
+      setTeamModalOpen(false);
+      setEditingMember(null);
+      loadTeam();
+    } catch (err: any) {
+      notify(err.message || 'Failed to save team member', 'error', err.reference);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (pwForm.next !== pwForm.confirm) {
+      notify('New passwords do not match.', 'error');
+      return;
+    }
+    try {
+      await api.changePassword(pwForm.current, pwForm.next);
+      notify('Password changed. Other sessions have been signed out.');
+      setPwModalOpen(false);
+      setPwForm({ current: '', next: '', confirm: '' });
+    } catch (err: any) {
+      notify(err.message || 'Password change failed', 'error', err.reference);
+    }
+  };
+
+  const handleTestEmail = async () => {
+    setTestEmailSending(true);
+    try {
+      await api.sendTestEmail(testEmailTo.trim() || undefined);
+      notify('Test email sent. Check the inbox (and spam folder).');
+    } catch (err: any) {
+      notify(err.message || 'Test email failed', 'error', err.reference);
+    } finally {
+      setTestEmailSending(false);
+    }
   };
 
   /* ─── CHATBOT SANDBOX ─── */
@@ -791,6 +893,13 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
             </div>
           )}
 
+          <button
+            onClick={() => setPwModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-raised hover:bg-surface border border-border text-xs text-text-secondary hover:text-ink transition-colors"
+          >
+            <KeyRound className="w-3.5 h-3.5" />
+            <span>Change Password</span>
+          </button>
           <button
             onClick={onLogout}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-raised hover:bg-surface border border-border text-xs text-text-secondary hover:text-ink transition-colors"
@@ -1888,9 +1997,9 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                             className="w-full p-2 bg-surface rounded-xl border border-border text-ink focus:border-primary"
                           >
                             <option value="">-- Unassigned --</option>
-                            <option value="usr_superadmin_01">Chief Security Officer (SuperAdmin)</option>
-                            <option value="usr_admin_01">Platform Operations Admin</option>
-                            <option value="usr_marketing_01">Growth & Content Specialist</option>
+                            {staff.map((m) => (
+                              <option key={m.id} value={m.id}>{m.name} ({m.role.replace('_', ' ')})</option>
+                            ))}
                           </select>
                         </div>
                       </div>
@@ -2122,9 +2231,9 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                             className="w-full p-2 bg-surface-raised border border-border rounded-xl text-ink text-xs focus:outline-none focus:border-primary"
                           >
                             <option value="">-- Unassigned --</option>
-                            <option value="usr_superadmin_01">Chief Security Officer (SuperAdmin)</option>
-                            <option value="usr_admin_01">Platform Operations Admin</option>
-                            <option value="usr_marketing_01">Growth & Content Specialist</option>
+                            {staff.map((m) => (
+                              <option key={m.id} value={m.id}>{m.name} ({m.role.replace('_', ' ')})</option>
+                            ))}
                           </select>
                         </div>
 
@@ -2436,7 +2545,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                   </p>
                 </div>
                 <button
-                  onClick={exportLeadsCSV}
+                  onClick={() => downloadLeadsCsv(leads)}
                   className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-light text-ink text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-ember-sm self-start"
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -2446,7 +2555,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
 
               {/* Status Filter Tabs */}
               <div className="flex flex-wrap items-center gap-2">
-                {['all', 'new', 'contacted', 'proposal_sent', 'won', 'lost'].map((status) => {
+                {['all', 'new', 'contacted', 'qualified', 'proposal_sent', 'won', 'lost'].map((status) => {
                   const count = status === 'all' ? leads.length : leads.filter((l) => l.status === status).length;
                   return (
                     <button
@@ -2498,15 +2607,21 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                           <td className="p-3.5">
                             <select
                               value={lead.status}
-                              onChange={(e) => {
-                                updateLeadStatus(lead.id, e.target.value as LeadStatus);
-                                setLeads(getLeads());
-                                notify(`Status updated to ${e.target.value}.`);
+                              onChange={async (e) => {
+                                try {
+                                  await api.updateEnquiryStatus(lead.id, e.target.value.toUpperCase());
+                                  notify(`Status updated to ${e.target.value.replace('_', ' ')}.`);
+                                  loadLeads();
+                                  loadEnquiries();
+                                } catch (err: any) {
+                                  notify(err.message || 'Failed to update lead', 'error', err.reference);
+                                }
                               }}
                               className="px-2.5 py-1 rounded-lg bg-surface border border-border text-ink text-xs"
                             >
                               <option value="new">New</option>
                               <option value="contacted">Contacted</option>
+                              <option value="qualified">Qualified</option>
                               <option value="proposal_sent">Proposal Sent</option>
                               <option value="won">Won / Closed</option>
                               <option value="lost">Lost</option>
@@ -2523,9 +2638,9 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                             <button
                               onClick={() => {
                                 if (confirm(`Delete lead from ${lead.name}?`)) {
-                                  deleteLead(lead.id);
-                                  setLeads(getLeads());
-                                  notify('Lead deleted.');
+                                  api.softDeleteEnquiry(lead.id)
+                                    .then(() => { notify('Lead deleted.'); loadLeads(); loadEnquiries(); })
+                                    .catch((err: any) => notify(err.message || 'Failed to delete lead', 'error', err.reference));
                                 }
                               }}
                               className="p-1.5 rounded-lg bg-surface hover:bg-red-500/10 border border-border text-text-secondary hover:text-red-400 inline-flex"
@@ -2568,7 +2683,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                         <span className="text-[11px] text-text-secondary font-semibold uppercase block mb-1">
                           Message Body
                         </span>
-                        <p className="text-xs text-ink">{selectedLead.message}</p>
+                        <p className="text-xs text-ink whitespace-pre-wrap">{selectedLead.message}</p>
                       </div>
 
                       {selectedLead.conversationTranscript && selectedLead.conversationTranscript.length > 0 && (
@@ -2613,7 +2728,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                     Team Addition & Public Roster
                   </h2>
                   <p className="text-xs text-text-secondary mt-0.5">
-                    Profiles managed here automatically reflect on the public Team page.
+                    Profiles are stored centrally and shared by every CMS user. The public Team page currently tells the team story rather than listing individual profiles.
                   </p>
                 </div>
                 <button
@@ -2630,9 +2745,18 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {team.length === 0 && (
+                  <div className="md:col-span-3 p-6 rounded-2xl border border-dashed border-border text-xs text-text-secondary text-center">
+                    No team members yet. Use “Add Member” to create the first profile.
+                  </div>
+                )}
                 {team.map((member) => (
                   <div key={member.id} className="p-4 rounded-2xl bg-surface/70 border border-border/80 space-y-3">
-                    <img src={member.image} alt={member.name} className="w-14 h-14 rounded-xl object-cover border border-border" />
+                    {member.image ? (
+                      <img src={member.image} alt={member.name} className="w-14 h-14 rounded-xl object-cover border border-border" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-xl border border-border bg-surface flex items-center justify-center text-primary font-bold">{member.name.slice(0, 1)}</div>
+                    )}
                     <div>
                       <h4 className="font-semibold text-ink text-sm">{member.name}</h4>
                       <p className="text-xs text-primary font-medium">{member.role}</p>
@@ -2652,9 +2776,9 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                       <button
                         onClick={() => {
                           if (confirm('Delete member?')) {
-                            deleteTeamMember(member.id);
-                            setTeam(getTeamMembers());
-                            notify('Member deleted.');
+                            api.deleteTeamMember(member.id)
+                              .then(() => { notify('Member deleted.'); loadTeam(); })
+                              .catch((err: any) => notify(err.message || 'Failed to delete member', 'error', err.reference));
                           }
                         }}
                         className="p-1 rounded bg-surface text-text-secondary hover:text-red-400 text-xs flex items-center gap-1"
@@ -2699,6 +2823,13 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                           placeholder="Image URL"
                           value={memberForm.image}
                           onChange={(e) => setMemberForm({ ...memberForm, image: e.target.value })}
+                          className="w-full p-2.5 bg-surface rounded-xl border border-border text-ink"
+                        />
+                        <input
+                          type="url"
+                          placeholder="LinkedIn URL (optional)"
+                          value={memberForm.linkedin}
+                          onChange={(e) => setMemberForm({ ...memberForm, linkedin: e.target.value })}
                           className="w-full p-2.5 bg-surface rounded-xl border border-border text-ink"
                         />
                         <textarea
@@ -3061,6 +3192,35 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                 </p>
               </div>
 
+              <div className="p-6 rounded-2xl bg-surface/70 border border-border/80 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Send className="w-5 h-5 text-primary" />
+                  <h3 className="font-heading font-semibold text-sm text-ink">Email Notifications</h3>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full border ${dbStats?.emailConfigured ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}`}>
+                    {dbStats?.emailConfigured ? 'Connected (Brevo)' : 'Not configured'}
+                  </span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed max-w-xl">
+                  New tickets and enquiries email the team inbox; customers get a confirmation with their ticket ID, and an email whenever you post a customer update or resolve their ticket. Every send is recorded in the Audit Logs.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2 max-w-md text-xs">
+                  <input
+                    type="email"
+                    placeholder="Send to (defaults to team inbox)"
+                    value={testEmailTo}
+                    onChange={(e) => setTestEmailTo(e.target.value)}
+                    className="flex-1 p-2.5 bg-surface rounded-xl border border-border text-ink"
+                  />
+                  <button
+                    onClick={handleTestEmail}
+                    disabled={testEmailSending || !dbStats?.emailConfigured}
+                    className="px-4 py-2 rounded-xl bg-primary text-ink font-semibold disabled:opacity-40"
+                  >
+                    {testEmailSending ? 'Sending…' : 'Send test email'}
+                  </button>
+                </div>
+              </div>
+
               {rotateSuccess && (
                 <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs space-y-1.5">
                   <div className="flex items-center gap-2 font-semibold">
@@ -3281,6 +3441,46 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
           )}
         </main>
       </div>
+
+      {/* ── Change password ── */}
+      <AnimatePresence>
+        {pwModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-surface-raised border border-border rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+              <h3 className="font-heading font-bold text-base text-ink">Change your password</h3>
+              <p className="text-[11px] text-text-secondary">At least 12 characters, mixing upper-case, lower-case letters and numbers. Other signed-in sessions will be signed out.</p>
+              <div className="space-y-3 text-xs">
+                <input type="password" autoComplete="current-password" placeholder="Current password" value={pwForm.current} onChange={(e) => setPwForm({ ...pwForm, current: e.target.value })} className="w-full p-2.5 bg-surface rounded-xl border border-border text-ink" />
+                <input type="password" autoComplete="new-password" placeholder="New password" value={pwForm.next} onChange={(e) => setPwForm({ ...pwForm, next: e.target.value })} className="w-full p-2.5 bg-surface rounded-xl border border-border text-ink" />
+                <input type="password" autoComplete="new-password" placeholder="Confirm new password" value={pwForm.confirm} onChange={(e) => setPwForm({ ...pwForm, confirm: e.target.value })} className="w-full p-2.5 bg-surface rounded-xl border border-border text-ink" />
+              </div>
+              <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                <button onClick={() => setPwModalOpen(false)} className="px-3.5 py-2 rounded-xl bg-surface border border-border text-xs">Cancel</button>
+                <button onClick={handleChangePassword} className="px-4 py-2 rounded-xl bg-primary text-ink text-xs font-semibold">Update password</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── One-time MFA setup for a newly created user ── */}
+      <AnimatePresence>
+        {newUserSecrets && (
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-surface-raised border border-border rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+              <h3 className="font-heading font-bold text-base text-ink">Authenticator setup for @{newUserSecrets.username}</h3>
+              <p className="text-xs text-text-secondary">Share these with the new user securely. They are shown only once. In Google or Microsoft Authenticator choose “Enter a setup key”, time-based.</p>
+              <div className="space-y-2 text-xs">
+                <div><span className="text-text-secondary">Setup key</span><code className="block mt-1 p-2 rounded-lg bg-surface border border-border font-mono select-all break-all">{newUserSecrets.secret}</code></div>
+                <div><span className="text-text-secondary">Recovery codes (single use)</span><code className="block mt-1 p-2 rounded-lg bg-surface border border-border font-mono select-all">{newUserSecrets.recoveryCodes.join('   ')}</code></div>
+              </div>
+              <div className="flex justify-end pt-2 border-t border-border">
+                <button onClick={() => setNewUserSecrets(null)} className="px-4 py-2 rounded-xl bg-primary text-ink text-xs font-semibold">I have saved these</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

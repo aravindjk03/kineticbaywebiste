@@ -186,20 +186,7 @@ export const api = {
     return request('/api/security/audit-logs');
   },
 
-  async getSecurityTelemetry() {
-    return request('/api/security/telemetry');
-  },
-
-  // ── Public Service Catalogue & Ticketing (No CMS exposure) ──
-  async getPublicServices(category?: string) {
-    const query = category ? `?category=${encodeURIComponent(category)}` : '';
-    return request(`/api/public/services${query}`);
-  },
-
-  async getPublicServiceBySlug(slug: string) {
-    return request(`/api/public/services/${encodeURIComponent(slug)}`);
-  },
-
+  // ── Public Ticketing & Enquiries (No CMS exposure) ──
   async submitPublicEnquiry(data: {
     name: string;
     email: string;
@@ -356,7 +343,7 @@ export const api = {
   },
 
   // ── Real Visitor Analytics & Telemetry ──
-  async recordPublicVisit(payload: { path: string; visitorId?: string; referrer?: string; device?: string }) {
+  async recordPublicVisit(payload: { path: string; visitorId?: string; referrer?: string; device?: string; isNew?: boolean }) {
     return request('/api/public/analytics/visit', {
       method: 'POST',
       body: JSON.stringify(payload),
@@ -373,8 +360,37 @@ export const api = {
     });
   },
 
-  // ── NoSQL Database Diagnostics ──
+  // ── Storage diagnostics & email ──
   async getDatabaseStats() {
     return request('/api/security/database');
+  },
+
+  async sendTestEmail(to?: string) {
+    return request('/api/security/test-email', {
+      method: 'POST',
+      body: JSON.stringify({ to }),
+    });
+  },
+
+  // ── Staff directory (for ticket assignment) ──
+  async getStaff() {
+    return request('/api/staff');
+  },
+
+  // ── Team members (shared across all CMS users) ──
+  async getTeam() {
+    return request('/api/team');
+  },
+
+  async createTeamMember(data: { name: string; role: string; bio?: string; image?: string; linkedin?: string }) {
+    return request('/api/team', { method: 'POST', body: JSON.stringify(data) });
+  },
+
+  async updateTeamMember(id: string, data: { name?: string; role?: string; bio?: string; image?: string; linkedin?: string }) {
+    return request(`/api/team/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
+  },
+
+  async deleteTeamMember(id: string) {
+    return request(`/api/team/${encodeURIComponent(id)}`, { method: 'DELETE' });
   },
 };

@@ -140,6 +140,7 @@ export function recordVisit(path: string): void {
       visitorId: visitor.id,
       referrer,
       device,
+      isNew: visitor.isNew,
     }).catch(() => {});
 
     // 6. Update local client mirror for zero-latency local feedback

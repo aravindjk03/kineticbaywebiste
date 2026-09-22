@@ -1,0 +1,302 @@
+#!/usr/bin/env node
+/**
+ * End-to-end smoke test for the Worker API.
+ *
+ *   node scripts/api-smoke-test.mjs [baseUrl] [credentialsFile]
+ *
+ * Defaults to http://127.0.0.1:8787 and the local credentials written by
+ * `node scripts/cms-bootstrap.mjs --local`. Uses the TOTP secret from that file
+ * to complete MFA. Only run against a local or disposable environment: it
+ * creates and archives records and rotates the CMS route.
+ */
+import { readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { createHmac, createHash } from 'node:crypto';
+
+const BASE = process.argv[2] || 'http://127.0.0.1:8787';
+const CREDS = process.argv[3] || join(homedir(), 'kb-cms-credentials-local.txt');
+
+/* ─── credentials ─────────────────────────────── */
+const creds = {};
+let cur = null;
+for (const line of readFileSync(CREDS, 'utf8').split('\n')) {
+  const m = /^(Username|Password|Authenticator|Recovery codes):\s+(\S+)(.*)$/.exec(line.trim());
+  if (!m) continue;
+  if (m[1] === 'Username') { cur = m[2]; creds[cur] = {}; }
+  else if (m[1] === 'Password') creds[cur].password = m[2];
+  else if (m[1] === 'Authenticator') creds[cur].totp = m[2];
+  else creds[cur].recovery = (m[2] + m[3]).trim().split(/\s+/);
+}
+
+const b32 = (s) => {
+  const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = 0, val = 0; const out = [];
+  for (const ch of s.toUpperCase()) { val = (val << 5) | A.indexOf(ch); bits += 5; if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; } }
+  return Buffer.from(out);
+};
+const totp = (secret, offsetSteps = 0) => {
+  const step = Math.floor(Date.now() / 30000) + offsetSteps;
+  const buf = Buffer.alloc(8); buf.writeUInt32BE(Math.floor(step / 2 ** 32), 0); buf.writeUInt32BE(step >>> 0, 4);
+  const mac = createHmac('sha1', b32(secret)).update(buf).digest();
+  const o = mac[mac.length - 1] & 15;
+  return String((((mac[o] & 127) << 24) | (mac[o + 1] << 16) | (mac[o + 2] << 8) | mac[o + 3]) % 1e6).padStart(6, '0');
+};
+
+/* ─── tiny client ─────────────────────────────── */
+class Client {
+  constructor(ip) { this.cookie = ''; this.csrf = ''; this.ip = ip; }
+  async call(method, path, body, { csrf = true } = {}) {
+    const headers = { 'content-type': 'application/json', 'cf-connecting-ip': this.ip };
+    if (this.cookie) headers.cookie = this.cookie;
+    if (csrf && this.csrf) headers['x-csrf-token'] = this.csrf;
+    const res = await fetch(BASE + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+    const set = res.headers.get('set-cookie');
+    if (set) { const v = /kb_cms_sess=([^;]*)/.exec(set); if (v) this.cookie = v[1] ? `kb_cms_sess=${v[1]}` : ''; }
+    const data = await res.json().catch(() => ({}));
+    return { status: res.status, data };
+  }
+  async login(user, { useRecovery = false } = {}) {
+    const r1 = await this.call('POST', '/api/auth/login', { username: user, password: creds[user].password });
+    if (r1.status !== 200) return r1;
+    const code = useRecovery ? creds[user].recovery.shift() : totp(creds[user].totp);
+    const r2 = await this.call('POST', '/api/auth/mfa-verify', { mfaToken: r1.data.mfaToken, code });
+    if (r2.data.csrfToken) this.csrf = r2.data.csrfToken;
+    return r2;
+  }
+}
+
+let passed = 0, failed = 0;
+const check = (cond, label, extra) => {
+  if (cond) { passed++; console.log(`  ✓ ${label}`); }
+  else { failed++; console.log(`  ✗ ${label}`, extra !== undefined ? JSON.stringify(extra).slice(0, 300) : ''); }
+};
+const section = (t) => console.log(`\n${t}`);
+const ip = () => `10.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`;
+
+/* ─── tests ───────────────────────────────────── */
+section('CMS route resolution');
+{
+  const c = new Client(ip());
+  for (const guess of ['cms', 'admin', 'internal-cms', 'dashboard', 'cms_00000000000000000000000000000000']) {
+    const r = await c.call('POST', '/api/security/resolve-route', { pathSegment: guess });
+    check(r.data.valid === false, `guessable route "/${guess}" is rejected`);
+  }
+  const r = await c.call('POST', '/api/security/resolve-route', { pathSegment: 'cms_e2b9c7a104f6d5e8237b1c4a9f8e0d35' });
+  check(r.data.valid === true, 'configured secret route resolves');
+}
+
+section('Authentication & MFA');
+const su = new Client(ip());
+{
+  const c = new Client(ip());
+  let r = await c.call('POST', '/api/auth/login', { username: 'superadmin', password: 'SuperSecurePass2026!' });
+  check(r.status === 401, 'old leaked password no longer works', r);
+  r = await c.call('POST', '/api/auth/login', { username: 'superadmin', password: creds.superadmin.password });
+  check(r.status === 200 && r.data.mfaRequired && r.data.mfaToken, 'correct password → MFA challenge');
+  const tok = r.data.mfaToken;
+  r = await c.call('POST', '/api/auth/mfa-verify', { mfaToken: tok, code: '123456' });
+  check(r.status === 401, 'arbitrary 6-digit code "123456" is rejected');
+  r = await c.call('POST', '/api/auth/mfa-verify', { mfaToken: tok.slice(0, -3) + 'abc', code: totp(creds.superadmin.totp) });
+  check(r.status === 401, 'tampered MFA challenge token is rejected');
+
+  // forge a session the way the old worker signed them (public salt + SHA-256)
+  const exp = Date.now() + 3600e3;
+  const forged = `sess_superadmin.${exp}.${createHash('sha256').update(`kb_salt_2026_superadmin.${exp}`).digest('hex')}`;
+  const f = new Client(ip()); f.cookie = `kb_cms_sess=${forged}`;
+  r = await f.call('GET', '/api/tickets');
+  check(r.status === 401, 'forged legacy session token is rejected');
+
+  r = await su.login('superadmin');
+  check(r.status === 200 && r.data.user?.role === 'super_admin' && su.cookie && su.csrf, 'TOTP login establishes a session');
+  r = await su.call('GET', '/api/auth/me');
+  check(r.status === 200 && r.data.user?.username === 'superadmin', '/me returns the signed-in user');
+  r = await su.call('POST', '/api/tickets', { subject: 'csrf probe', description: 'x' }, { csrf: false });
+  check(r.status === 403, 'state-changing call without CSRF token is rejected');
+}
+
+section('Public ticket → CMS service desk');
+let ticketId, publicId;
+{
+  const visitor = new Client(ip());
+  let r = await visitor.call('POST', '/api/public/tickets', { name: 'Smoke Tester', email: 'smoke@example.com', category: 'project_enquiry', priority: 'urgent', subject: 'Smoke test ticket', description: 'Created by the API smoke test.' });
+  check(r.status === 201 && /^KB-[A-Z0-9]{8}$/.test(r.data.ticket?.public_id), 'visitor can raise a ticket', r);
+  check(r.data.ticket?.category === 'project_enquiry' && r.data.ticket?.priority === 'urgent', 'chatbot category/priority values are preserved');
+  publicId = r.data.ticket?.public_id;
+  r = await visitor.call('POST', '/api/public/tickets', { name: 'X', email: 'not-an-email', subject: 's', description: 'd' });
+  check(r.status === 400, 'invalid email is rejected');
+  r = await visitor.call('POST', '/api/public/ticket-status', { ticketId: publicId, email: 'smoke@example.com' });
+  check(r.status === 200 && r.data.ticket?.status === 'NEW', 'visitor can track the ticket');
+  r = await visitor.call('POST', '/api/public/ticket-status', { ticketId: publicId, email: 'someone-else@example.com' });
+  check(r.status === 404, 'tracking with the wrong email is refused');
+
+  r = await su.call('GET', '/api/tickets?search=smoke');
+  const t = (r.data.tickets || []).find((x) => x.public_id === publicId);
+  check(Boolean(t), 'ticket appears in the CMS list');
+  ticketId = t?.id;
+  r = await su.call('GET', '/api/staff');
+  const staff = r.data.staff || [];
+  check(staff.length >= 3, 'staff directory lists active users');
+  r = await su.call('PATCH', `/api/tickets/${ticketId}/assign`, { assignedTo: staff[1]?.id });
+  check(r.status === 200 && r.data.ticket?.status === 'ASSIGNED', 'assign → status moves to ASSIGNED');
+  r = await su.call('PATCH', `/api/tickets/${ticketId}/assign`, { assignedTo: 'usr_nobody' });
+  check(r.status === 400, 'cannot assign to a non-existent user');
+  r = await su.call('POST', `/api/tickets/${ticketId}/notes`, { note: 'Internal note' });
+  check(r.status === 200 && r.data.note?.author_name, 'internal note added');
+  r = await su.call('POST', `/api/tickets/${publicId}/customer-update`, { message: 'We are on it.' });
+  check(r.status === 200 && r.data.update, 'customer update posted (by public ID)');
+  r = await su.call('PATCH', `/api/tickets/${ticketId}`, { subject: 'Smoke test ticket (edited)', requester_email: 'smoke@example.com' });
+  check(r.status === 200 && r.data.ticket?.subject.endsWith('(edited)'), 'ticket details edited');
+  r = await su.call('PATCH', `/api/tickets/${ticketId}/status`, { status: 'RESOLVED' });
+  check(r.status === 200 && r.data.ticket?.status === 'RESOLVED', 'status → RESOLVED');
+  r = await su.call('PATCH', `/api/tickets/${ticketId}/status`, { status: 'BOGUS' });
+  check(r.status === 400, 'unknown status rejected');
+  r = await visitor.call('POST', '/api/public/ticket-status', { ticketId: publicId, email: 'smoke@example.com' });
+  check(r.data.ticket?.status === 'RESOLVED' && r.data.ticket.customer_updates.length === 2, 'visitor sees the new status and update');
+  r = await su.call('POST', '/api/tickets', { name: 'Walk-in', email: 'walkin@example.com', subject: 'Created in CMS', description: 'desk', priority: 'high' });
+  check(r.status === 201, 'staff can create a ticket from the CMS');
+  r = await su.call('DELETE', `/api/tickets/${ticketId}`, { reason: 'smoke' });
+  check(r.status === 200, 'ticket archived');
+  r = await su.call('GET', '/api/tickets');
+  check(!(r.data.tickets || []).some((x) => x.id === ticketId), 'archived ticket hidden by default');
+  r = await su.call('POST', `/api/tickets/${ticketId}/restore`);
+  check(r.status === 200, 'ticket restored');
+}
+
+section('Enquiries / CRM');
+{
+  const visitor = new Client(ip());
+  let r = await visitor.call('POST', '/api/public/enquiries', { name: 'Lead Person', email: 'lead@example.com', company: 'Acme', service_slug: 'AI & Automation', message: 'Please call me.' });
+  check(r.status === 201 && /^ENQ-/.test(r.data.reference_id), 'contact form enquiry accepted');
+  const ref = r.data.reference_id;
+  r = await su.call('GET', '/api/enquiries?search=acme');
+  const e = (r.data.enquiries || []).find((x) => x.reference_id === ref);
+  check(Boolean(e), 'enquiry visible in CMS');
+  r = await su.call('PATCH', `/api/enquiries/${e?.id}/status`, { status: 'QUALIFIED', notes: 'Good fit' });
+  check(r.status === 200 && r.data.enquiry?.status === 'QUALIFIED', 'enquiry status + notes updated');
+  r = await su.call('DELETE', `/api/enquiries/${e?.id}`);
+  check(r.status === 200, 'enquiry deleted');
+}
+
+section('Content workflow');
+{
+  let r = await su.call('POST', '/api/content', { title: 'Smoke banner', slug: `smoke-${Date.now()}`, category: 'homepage', content: 'Hello' });
+  check(r.status === 201 && r.data.item?.status === 'draft', 'draft created');
+  const id = r.data.item?.id;
+  r = await su.call('GET', '/api/content');
+  check((r.data.items || []).some((i) => i.id === id), 'content list returns items[] (the CMS tab reads this)');
+  for (const to of ['submitted', 'review', 'approved', 'published']) {
+    r = await su.call('POST', `/api/content/${id}/transition`, { targetStatus: to });
+    check(r.status === 200 && r.data.item?.status === to, `transition → ${to}`);
+  }
+  r = await su.call('POST', `/api/content/${id}/transition`, { targetStatus: 'review' });
+  check(r.status === 400, 'illegal transition published → review is refused');
+  r = await su.call('PUT', `/api/content/${id}`, { content: 'Edited' });
+  check(r.status === 200 && r.data.item?.status === 'draft' && r.data.item?.version === 2, 'editing published content sends it back to draft (v2)');
+  r = await su.call('DELETE', `/api/content/${id}`, { reason: 'smoke' });
+  check(r.status === 200, 'content soft-deleted');
+  r = await su.call('POST', `/api/content/${id}/restore`);
+  check(r.status === 200, 'content restored');
+}
+
+section('Users & roles');
+{
+  let r = await su.call('POST', '/api/users', { username: 'smoke.user', email: `smoke${Date.now()}@example.com`, name: 'Smoke User', role: 'marketing', initialPassword: 'short' });
+  check(r.status === 400, 'weak initial password rejected');
+  const pw = 'SmokeUserPass2026x';
+  r = await su.call('POST', '/api/users', { username: `smoke${Date.now().toString(36)}`, email: `smoke${Date.now()}@example.com`, name: 'Smoke User', role: 'marketing', initialPassword: pw });
+  check(r.status === 201 && r.data.mfaSetup?.secret && r.data.recoveryCodes?.length === 6, 'user created with authenticator secret + recovery codes');
+  const newUser = r.data.user;
+  creds[newUser.username] = { password: pw, totp: r.data.mfaSetup.secret, recovery: r.data.recoveryCodes };
+  const nu = new Client(ip());
+  r = await nu.login(newUser.username);
+  check(r.status === 200 && r.data.user?.role === 'marketing', 'new user can sign in with MFA');
+  r = await nu.call('GET', '/api/users');
+  check(r.status === 403, 'marketing role cannot list users (RBAC)');
+  r = await nu.call('DELETE', `/api/tickets/${ticketId}`, {});
+  check(r.status === 403, 'marketing role cannot delete tickets (RBAC)');
+  r = await su.call('PATCH', `/api/users/${newUser.id}/role`, { newRole: 'admin' });
+  check(r.status === 200 && r.data.user?.role === 'admin', 'role changed to admin');
+  r = await nu.call('GET', '/api/auth/me');
+  check(r.status === 401, 'role change signs the user out (session invalidated)');
+  r = await su.call('PATCH', `/api/users/${newUser.id}/status`, { status: 'disabled' });
+  check(r.status === 200, 'user disabled');
+  r = await new Client(ip()).call('POST', '/api/auth/login', { username: newUser.username, password: pw });
+  check(r.status === 401, 'disabled user cannot sign in');
+  const me = (await su.call('GET', '/api/auth/me')).data.user;
+  r = await su.call('PATCH', `/api/users/${me.id}/status`, { status: 'disabled' });
+  check(r.status === 400, 'cannot disable your own account');
+  const rc = new Client(ip());
+  r = await rc.login('admin', { useRecovery: true });
+  check(r.status === 200, 'recovery code works as MFA fallback');
+  r = await new Client(ip()).call('POST', '/api/auth/login', { username: 'admin', password: creds.admin.password });
+}
+
+section('Team, analytics, audit, storage');
+{
+  let r = await su.call('POST', '/api/team', { name: 'Test Member', role: 'Engineer', bio: 'Builds things', linkedin: 'https://linkedin.com/in/test' });
+  check(r.status === 201, 'team member added (server-side)');
+  const mid = r.data.member?.id;
+  r = await su.call('PUT', `/api/team/${mid}`, { role: 'Lead Engineer' });
+  check(r.data.member?.role === 'Lead Engineer', 'team member updated');
+  r = await new Client(ip()).call('GET', '/api/public/team');
+  check((r.data.team || []).some((m) => m.id === mid), 'public team endpoint reflects CMS changes');
+  r = await su.call('DELETE', `/api/team/${mid}`);
+  check(r.status === 200, 'team member removed');
+
+  const v = new Client(ip());
+  for (const p of ['/', '/about', '/products']) await v.call('POST', '/api/public/analytics/visit', { path: p, device: 'mobile', isNew: p === '/' });
+  r = await v.call('POST', '/api/public/analytics/visit', { path: '/cms_secret' });
+  check(r.data.recorded === false, 'CMS paths are never recorded as visits');
+  r = await su.call('GET', '/api/analytics');
+  check(r.status === 200 && r.data.analytics?.totalVisits >= 3 && r.data.analytics.pageViews['/about'] >= 1, 'visits are persisted and aggregated', r.data.analytics);
+  r = await su.call('POST', '/api/analytics/reset');
+  check(r.status === 200 && r.data.analytics?.totalVisits === 0, 'analytics reset');
+
+  r = await su.call('GET', '/api/security/audit-logs');
+  const types = new Set((r.data.logs || []).map((l) => l.type));
+  check(['LOGIN_SUCCESS', 'TICKET_CREATED_PUBLIC', 'TICKET_STATUS_CHANGED', 'USER_CREATED', 'LOGIN_FAILED', 'ACCESS_DENIED'].every((t) => types.has(t)), 'audit log captures logins, tickets, users and denials', [...types]);
+  r = await su.call('GET', '/api/security/database');
+  check(r.status === 200 && r.data.database?.collections?.tickets?.documents >= 1, 'storage diagnostics report live counts');
+  r = await su.call('POST', '/api/security/test-email', {});
+  check(r.status === 400 || r.status === 200, `test-email endpoint responds (${r.status === 200 ? 'sent' : 'email not configured'})`);
+}
+
+section('CMS route rotation & password change');
+{
+  let r = await su.call('POST', '/api/security/rotate-cms-route', { confirmationPassword: 'wrong' });
+  check(r.status === 401, 'rotation with wrong password refused');
+  r = await su.call('POST', '/api/security/rotate-cms-route', { confirmationPassword: creds.superadmin.password, reason: 'smoke' });
+  check(r.status === 200 && /^\/cms_[a-f0-9]{32}$/.test(r.data.newRoutePath), 'route rotated');
+  const anon = new Client(ip());
+  r = await anon.call('POST', '/api/security/resolve-route', { pathSegment: 'cms_e2b9c7a104f6d5e8237b1c4a9f8e0d35' });
+  check(r.data.valid === false, 'old route stops working');
+  r = await anon.call('POST', '/api/security/resolve-route', { pathSegment: r.data && (await su.call('POST', '/api/security/rotate-cms-route', { confirmationPassword: creds.superadmin.password, reason: 'smoke 2' })).data.newRoutePath.slice(1) });
+  check(r.data.valid === true, 'new route resolves');
+
+  r = await su.call('POST', '/api/auth/change-password', { currentPassword: creds.superadmin.password, newPassword: 'weak' });
+  check(r.status === 400, 'weak new password rejected');
+  const newPw = creds.superadmin.password + 'Aa1';
+  r = await su.call('POST', '/api/auth/change-password', { currentPassword: creds.superadmin.password, newPassword: newPw });
+  check(r.status === 200, 'password changed');
+  if (r.data.csrfToken) su.csrf = r.data.csrfToken;
+  r = await su.call('GET', '/api/auth/me');
+  check(r.status === 200, 'current session survives its own password change');
+  r = await su.call('POST', '/api/auth/change-password', { currentPassword: newPw, newPassword: creds.superadmin.password });
+  if (r.data.csrfToken) su.csrf = r.data.csrfToken;
+  check(r.status === 200, 'password changed back');
+  r = await su.call('POST', '/api/auth/logout');
+  r = await su.call('GET', '/api/auth/me');
+  check(r.status === 401, 'logout ends the session');
+}
+
+section('Brute-force protection');
+{
+  const attacker = new Client(ip());
+  let last;
+  for (let i = 0; i < 8; i++) last = await attacker.call('POST', '/api/auth/login', { username: 'marketing', password: `guess${i}` });
+  check(last.status === 429, 'repeated wrong passwords are rate-limited');
+}
+
+console.log(`\n${passed} passed, ${failed} failed`);
+process.exit(failed ? 1 : 0);
