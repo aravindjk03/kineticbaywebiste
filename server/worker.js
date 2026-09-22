@@ -896,6 +896,46 @@ async function handleApi(c) {
       if (p.get('owner') === 'me') out = out.filter((e) => e.owner_id === c.session.user.id);
       return json({ success: true, count: out.length, enquiries: out.map((e) => ({ ...e, source: leadSource(e), response_clock: leadClock(e) })) });
     }
+    if (seg.length === 1 && method === 'POST') {
+      const me = await c.auth('enquiries:update');
+      const SOURCES = ['phone', 'walk_in', 'whatsapp', 'referral', 'event', 'email', 'social', 'other'];
+      const name = str(body.name, 100);
+      const email = str(body.email, 190).toLowerCase();
+      const phone = str(body.phone, 30);
+      if (!name) throw new HttpError(400, 'Name is required.');
+      if (email && !isEmail(email)) throw new HttpError(400, 'Email is not valid.');
+      if (!email && !/^[+\d][\d\s-]{6,}$/.test(phone)) throw new HttpError(400, 'Enter an email or a phone number.');
+      const source = SOURCES.includes(body.source) ? body.source : 'other';
+      const now = nowIso();
+      const enq = {
+        id: newId('enq'), reference_id: 'ENQ-' + randomToken(6).replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase().padEnd(6, '7'),
+        name, email, phone, company: str(body.company, 120), service_slug: '', service_name: str(body.service, 80) || 'General',
+        budget_range: str(body.budget_range, 60) || 'Not specified', timeline: str(body.timeline, 60) || 'Not specified',
+        message: str(body.message, 5000) || '(recorded manually)', status: 'NEW', notes: '', source,
+        created_at: now, updated_at: now, deleted_at: null, owner_id: null, follow_up_at: null,
+        first_response_at: null, last_contacted_at: null, activities: [], entered_by: me.id,
+      };
+      if (body.estimated_value !== undefined && body.estimated_value !== '') {
+        const v = Number(body.estimated_value);
+        if (!(v >= 0 && v < 1e10)) throw new HttpError(400, 'Estimated value must be a positive amount.');
+        enq.estimated_value = v;
+      }
+      const owner = str(body.owner_id, 60);
+      const users = await getUsers(env);
+      if (owner && !users.some((u) => u.id === owner && u.status === 'active')) throw new HttpError(400, 'Owner must be an active staff member.');
+      const pick = owner ? null : assignLead(enq, users, list);
+      enq.owner_id = owner || pick?.user.id || me.id;
+      enq.activities.push(activity('owner', `Lead recorded manually by ${me.name} (source: ${source.replace('_', ' ')})`, me));
+      // a lead that phoned us has already been spoken to
+      if (body.contacted) {
+        const a = activity(source === 'whatsapp' ? 'whatsapp' : 'call', str(body.contact_note, 3000) || 'First conversation when the lead came in.', me);
+        enq.activities.push(a);
+        enq.first_response_at = a.at; enq.last_contacted_at = a.at; enq.status = 'CONTACTED';
+      }
+      await saveEnquiry(env, enq);
+      await c.audit('LEAD_CREATED_MANUAL', enq.reference_id, 'SUCCESS', { source });
+      return json({ success: true, enquiry: { ...enq, response_clock: leadClock(enq) } }, 201);
+    }
     const enq = list.find((e) => e.id === seg[1] || e.reference_id === seg[1]);
     if (!enq) throw new HttpError(404, 'Enquiry not found.');
     // status (pipeline moves), owner, follow-up date, notes — one endpoint, two paths for compatibility
@@ -955,6 +995,7 @@ async function handleApi(c) {
     if (seg[2] === 'reply' && method === 'POST') {
       const me = await c.auth('enquiries:update');
       if (!mailConfigured(env)) throw new HttpError(400, 'Email is not configured yet.');
+      if (!enq.email) throw new HttpError(400, 'This lead has no email address. Add one, or call and log the call instead.');
       const subject = str(body.subject, 200) || `Re: your enquiry ${enq.reference_id}`;
       const message = str(body.message, 8000);
       if (!message) throw new HttpError(400, 'Message cannot be empty.');

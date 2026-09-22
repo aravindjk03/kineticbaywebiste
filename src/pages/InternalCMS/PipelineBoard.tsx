@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Download, Mail, MessageCircle, Phone, RefreshCw, Search, Send, StickyNote, Users as UsersIcon, CalendarClock, UserRound } from 'lucide-react';
+import { Plus, Download, Mail, MessageCircle, Phone, RefreshCw, Search, Send, StickyNote, Users as UsersIcon, CalendarClock, UserRound } from 'lucide-react';
 import { api } from '../../lib/api';
 import {
   Lead, LeadActivity, StaffMember, LEAD_STAGES, human, ago, fmtDate, staffName,
@@ -34,6 +34,7 @@ export default function PipelineBoard({ staff, meId, canEdit, notify, focusId, o
   const [dragId, setDragId] = useState<string | null>(null);
   const [overStage, setOverStage] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -92,6 +93,7 @@ export default function PipelineBoard({ staff, meId, canEdit, notify, focusId, o
             ))}
           </div>
           <button onClick={load} className="p-2 rounded-xl bg-surface-raised border border-border text-text-secondary hover:text-ink" title="Refresh"><RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /></button>
+          {canEdit && <button onClick={() => setAdding(true)} className="px-3 py-2 rounded-xl bg-surface-raised border border-border text-xs text-ink hover:border-primary/60 flex items-center gap-1.5"><Plus className="w-3.5 h-3.5" />Add lead</button>}
           <button onClick={() => csv(visible, staff)} className="px-3 py-2 rounded-xl bg-primary hover:bg-primary-light text-ink text-xs font-semibold flex items-center gap-1.5"><Download className="w-3.5 h-3.5" />Export CSV</button>
         </div>
       </div>
@@ -161,6 +163,7 @@ export default function PipelineBoard({ staff, meId, canEdit, notify, focusId, o
         })}
       </div>
 
+      {adding && <AddLead staff={staff} meId={meId} notify={notify} onClose={() => setAdding(false)} onSaved={(l) => { setLeads((ls) => [l, ...ls]); setAdding(false); setOpenId(l.id); }} />}
       <LeadDrawer lead={openLead} staff={staff} canEdit={canEdit} notify={notify} onClose={() => setOpenId(null)} onUpdated={replace} onOpenCustomer={onOpenCustomer} onCreateProject={onCreateProject} />
     </div>
   );
@@ -258,7 +261,7 @@ export function LeadDrawer({ lead, staff, canEdit, notify, onClose, onUpdated, o
     >
       {/* Contact summary */}
       <div className="grid grid-cols-2 gap-3 text-xs">
-        <div><div className="text-text-secondary text-[11px]">Email</div><a href={`mailto:${lead.email}`} className="text-primary break-all">{lead.email}</a></div>
+        <div><div className="text-text-secondary text-[11px]">Email / phone</div>{lead.email ? <a href={`mailto:${lead.email}`} className="text-primary break-all">{lead.email}</a> : null}{lead.phone ? <a href={`tel:${lead.phone}`} className="block text-primary">{lead.phone}</a> : null}{!lead.email && !lead.phone ? '—' : null}</div>
         <div><div className="text-text-secondary text-[11px]">Company</div><div className="text-ink">{lead.company || '—'}</div></div>
         <div><div className="text-text-secondary text-[11px]">Interested in</div><div className="text-ink">{lead.service_name}</div></div>
         <div><div className="text-text-secondary text-[11px]">Source</div><div className="text-ink capitalize">{lead.source || 'website'}</div></div>
@@ -383,6 +386,60 @@ export function LeadDrawer({ lead, staff, canEdit, notify, onClose, onUpdated, o
         <span className="text-[11px] text-text-secondary">Private notes</span>
         <textarea disabled={!canEdit} value={notes} onChange={(e) => setNotes(e.target.value)} onBlur={() => notes !== (lead.notes || '') && patch({ notes }, 'Notes saved')} rows={3} className={field} placeholder="Anything the team should know (saved when you click away)" />
       </label>
+    </Drawer>
+  );
+}
+
+/* ═══════════════════════════ Add a lead by hand ═══════════════════════════ */
+
+const LEAD_SOURCES = [['phone', 'Phone call'], ['walk_in', 'Walk-in / meeting'], ['whatsapp', 'WhatsApp'], ['referral', 'Referral'], ['event', 'Event / expo'], ['email', 'Email'], ['social', 'Social media'], ['other', 'Other']];
+
+function AddLead({ staff, meId, notify, onClose, onSaved }: { staff: StaffMember[]; meId: string; notify: Feedback; onClose: () => void; onSaved: (l: Lead) => void }) {
+  const [f, setF] = useState({ name: '', company: '', email: '', phone: '', source: 'phone', service: '', message: '', estimated_value: '', owner_id: '', contacted: true, contact_note: '' });
+  const [busy, setBusy] = useState(false);
+  const set = (k: string, v: string | boolean) => setF((x) => ({ ...x, [k]: v }));
+  const field = 'w-full bg-surface-raised border border-border rounded-xl px-3 py-2 text-xs text-ink focus:outline-none focus:border-primary/60';
+  const save = async () => {
+    setBusy(true);
+    try {
+      const res = await api.createLead({ ...f, owner_id: f.owner_id || undefined });
+      notify('success', `Lead ${res.enquiry.reference_id} recorded`);
+      onSaved(res.enquiry);
+    } catch (e) {
+      notify('error', (e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Drawer open onClose={onClose} title="Add a lead" subtitle="For enquiries that came by phone, in person, WhatsApp, referral or an event">
+      <div className="grid sm:grid-cols-2 gap-3">
+        <label className="space-y-1"><span className="text-[11px] text-text-secondary">Name *</span><input className={field} value={f.name} onChange={(e) => set('name', e.target.value)} /></label>
+        <label className="space-y-1"><span className="text-[11px] text-text-secondary">Company</span><input className={field} value={f.company} onChange={(e) => set('company', e.target.value)} /></label>
+        <label className="space-y-1"><span className="text-[11px] text-text-secondary">Email</span><input className={field} value={f.email} onChange={(e) => set('email', e.target.value)} /></label>
+        <label className="space-y-1"><span className="text-[11px] text-text-secondary">Phone</span><input className={field} value={f.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+91" /></label>
+        <label className="space-y-1"><span className="text-[11px] text-text-secondary">How did it come in?</span>
+          <select className={field} value={f.source} onChange={(e) => set('source', e.target.value)}>{LEAD_SOURCES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+        </label>
+        <label className="space-y-1"><span className="text-[11px] text-text-secondary">Service interested in</span><input className={field} value={f.service} onChange={(e) => set('service', e.target.value)} placeholder="e.g. IoT Solutions" /></label>
+        <label className="space-y-1"><span className="text-[11px] text-text-secondary">Estimated value (₹)</span><input type="number" min="0" className={field} value={f.estimated_value} onChange={(e) => set('estimated_value', e.target.value)} /></label>
+        <label className="space-y-1"><span className="text-[11px] text-text-secondary">Owner</span>
+          <select className={field} value={f.owner_id} onChange={(e) => set('owner_id', e.target.value)}>
+            <option value="">Assign automatically</option>
+            {staff.map((s) => <option key={s.id} value={s.id}>{s.name}{s.id === meId ? ' (me)' : ''}</option>)}
+          </select>
+        </label>
+        <label className="sm:col-span-2 space-y-1"><span className="text-[11px] text-text-secondary">What do they need?</span><textarea rows={3} className={field} value={f.message} onChange={(e) => set('message', e.target.value)} /></label>
+      </div>
+      <label className="flex items-start gap-2 text-xs text-ink">
+        <input type="checkbox" checked={f.contacted} onChange={(e) => set('contacted', e.target.checked)} className="mt-0.5" />
+        <span>I have already spoken to this person (logs the conversation and marks the lead Contacted)</span>
+      </label>
+      {f.contacted && <textarea rows={2} className={field} value={f.contact_note} onChange={(e) => set('contact_note', e.target.value)} placeholder="What was discussed? Next step?" />}
+      <p className="text-[11px] text-text-secondary">Email or phone is required. Add the email whenever you have it, so the lead appears in the customer profile and can be emailed from the CMS.</p>
+      <div className="flex justify-end">
+        <button disabled={busy || !f.name.trim() || (!f.email.trim() && !f.phone.trim())} onClick={save} className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-light text-ink text-xs font-semibold disabled:opacity-50">Save lead</button>
+      </div>
     </Drawer>
   );
 }

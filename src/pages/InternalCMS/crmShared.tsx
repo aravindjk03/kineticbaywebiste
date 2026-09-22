@@ -32,6 +32,7 @@ export interface Lead {
   reference_id: string;
   name: string;
   email: string;
+  phone?: string;
   company: string;
   service_name: string;
   budget_range: string;

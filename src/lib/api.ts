@@ -320,6 +320,10 @@ export const api = {
   },
 
   // ── CMS Enquiries & CRM Pipeline ──
+  async createLead(data: Record<string, unknown>) {
+    return request('/api/enquiries', { method: 'POST', body: JSON.stringify(data) });
+  },
+
   async getCmsEnquiries(params?: { status?: string; search?: string; includeDeleted?: boolean }) {
     const q = new URLSearchParams();
     if (params?.status && params.status !== 'all') q.set('status', params.status);

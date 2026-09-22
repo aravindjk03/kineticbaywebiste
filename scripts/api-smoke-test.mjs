@@ -322,6 +322,19 @@ section('Auto-assignment, approvals, payments');
   check(m && m.won_revenue_total >= 180000 && m.outstanding >= 150000 && Array.isArray(r.data.dashboard.action_summary), 'dashboard shows revenue, outstanding and grouped actions', m);
 }
 
+section('Manual leads');
+{
+  let r = await su.call('POST', '/api/enquiries', { name: 'Walk In', source: 'phone' });
+  check(r.status === 400, 'manual lead needs an email or phone');
+  r = await su.call('POST', '/api/enquiries', { name: 'Phone Lead', phone: '+91 98400 12345', source: 'phone', service: 'IoT', contacted: true, contact_note: 'Wants a demo' });
+  check(r.status === 201 && r.data.enquiry?.status === 'CONTACTED' && r.data.enquiry.first_response_at && r.data.enquiry.owner_id, 'phone lead recorded, contacted and owned', r.data);
+  const id = r.data.enquiry?.id;
+  r = await su.call('POST', `/api/enquiries/${id}/reply`, { subject: 'x', message: 'y' });
+  check(r.status === 400, 'cannot email a lead without an email address');
+  r = await new Client(ip()).call('POST', '/api/enquiries', { name: 'x', email: 'x@example.com' });
+  check(r.status === 401, 'recording leads needs sign-in');
+}
+
 section('Client logos');
 {
   const svg = (label, fill) => 'data:image/svg+xml;base64,' + Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="160" height="48" viewBox="0 0 160 48"><rect width="160" height="48" rx="8" fill="${fill}"/><text x="80" y="31" font-family="Arial" font-size="18" font-weight="700" fill="#fff" text-anchor="middle">${label}</text></svg>`).toString('base64');
