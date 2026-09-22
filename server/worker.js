@@ -249,6 +249,9 @@ function mail(c, label, target, sendPromiseFactory) {
   if (!mailConfigured(c.env)) return;
   c.later((async () => {
     const r = await sendPromiseFactory();
+    // also surface in Cloudflare logs (`wrangler tail`) for quick diagnosis
+    if (r.ok) console.log(`[email] ${label} ${target} sent`);
+    else console.error(`[email] ${label} ${target} FAILED status=${r.status} ${r.error || ''}`);
     await c.audit(r.ok ? 'EMAIL_SENT' : 'EMAIL_FAILED', target, r.ok ? 'SUCCESS' : 'FAILED', { label, status: r.status, error: r.error });
   })());
 }

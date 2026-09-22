@@ -21,10 +21,13 @@ async function send(env, { to, subject, html, text, replyTo }) {
   if (!mailConfigured(env)) return { ok: false, status: 0, error: 'Email not configured (BREVO_API_KEY / MAIL_FROM missing).' };
   const recipients = (Array.isArray(to) ? to : [to]).filter(Boolean).map((email) => ({ email }));
   if (!recipients.length) return { ok: false, status: 0, error: 'No recipient.' };
+  // keys pasted into a terminal can pick up invisible characters (BOM, CR/LF, spaces)
+  const rawKey = String(env.BREVO_API_KEY);
+  const apiKey = rawKey.replace(/[^!-~]/g, '');
   try {
     const res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
-      headers: { 'api-key': env.BREVO_API_KEY, 'content-type': 'application/json', accept: 'application/json' },
+      headers: { 'api-key': apiKey, 'content-type': 'application/json', accept: 'application/json' },
       body: JSON.stringify({
         sender: { name: 'Kinetic Bay', email: env.MAIL_FROM },
         to: recipients,
@@ -35,8 +38,10 @@ async function send(env, { to, subject, html, text, replyTo }) {
       }),
     });
     if (res.ok) return { ok: true, status: res.status };
-    const body = await res.text().catch(() => '');
-    return { ok: false, status: res.status, error: body.slice(0, 300) };
+    const body = await res.text().catch((e) => `unreadable body: ${e}`);
+    const hdrs = ['content-type', 'x-sib-server', 'server', 'cf-ray'].map((h) => `${h}=${res.headers.get(h)}`).join(' ');
+    const keyShape = `key: len=${apiKey.length} raw=${rawKey.length} prefix_ok=${apiKey.startsWith('xkeysib-')}`;
+    return { ok: false, status: res.status, error: `${res.statusText} ${hdrs} ${keyShape} body=${body.slice(0, 300) || '(empty)'}` };
   } catch (err) {
     return { ok: false, status: 0, error: String(err && err.message || err) };
   }
