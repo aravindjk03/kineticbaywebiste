@@ -37,6 +37,7 @@ import PipelineBoard from './PipelineBoard';
 import CustomersPanel from './CustomersPanel';
 import NotificationBell from './NotificationBell';
 import { SlaBadge, TicketSla } from './crmShared';
+import { canOpen, MyAccess, RoleMatrix } from './access';
 import { getChatbotConfig } from '../../lib/cmsStore';
 import { getCookieConsent } from '../../lib/analytics';
 import { processChatQuery } from '../../lib/chatbotEngine';
@@ -179,6 +180,10 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
   const canManageSecurity = currentUser.permissions.includes('security:update') || currentUser.permissions.includes('cms-route:update');
   const canManageTickets = currentUser.permissions.includes('tickets:read');
   const canManageEnquiries = currentUser.permissions.includes('enquiries:read');
+  const isSuperAdmin = currentUser.role === 'super_admin';
+  /** Super admins see everything; everyone else only what their role allows. */
+  const can = (perm: string) => isSuperAdmin || currentUser.permissions.includes(perm);
+  const canSee = (tab: string) => canOpen(tab, currentUser.role, currentUser.permissions);
 
   const [activeTab, setActiveTab] = useState<
     'dashboard' | 'analytics' | 'content' | 'tickets' | 'enquiries' | 'crm' | 'customers' | 'team' | 'chatbot' | 'users' | 'audit' | 'security' | 'cookies'
@@ -284,10 +289,15 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
   ]);
   const [testLoading, setTestLoading] = useState(false);
 
+  useEffect(() => {
+    if (!canSee(activeTab)) setActiveTab('dashboard');
+  }, [activeTab]);
+
   /** Jump to a tab, optionally opening one record there (from notifications, dashboard, profiles). */
   const navigateTo = (tab: string, id?: string) => {
     if (tab === 'crm') { setCrmFocus(null); setTimeout(() => setCrmFocus(id || null), 0); }
     if (tab === 'customers') { setCustomerFocus(null); setTimeout(() => setCustomerFocus(id || null), 0); }
+    if (!canSee(tab)) return;
     setActiveTab(tab as typeof activeTab);
     if (tab === 'tickets' && id) {
       api.getCmsTicketById(id).then((res: { ticket: CmsTicket }) => openTicketDetails(res.ticket)).catch(() => undefined);
@@ -925,50 +935,56 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
           <div className="text-[11px] font-semibold text-text-secondary/50 uppercase tracking-wider px-3 py-2">
             Operations & Analytics
           </div>
-          <button
-            onClick={() => setActiveTab('dashboard')}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
-              activeTab === 'dashboard'
-                ? 'bg-primary text-ink shadow-ember-sm'
-                : 'text-text-secondary hover:bg-surface hover:text-ink'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <LayoutDashboard className="w-4 h-4" />
-              <span>Dashboard</span>
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('analytics')}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
-              activeTab === 'analytics'
-                ? 'bg-primary text-ink shadow-ember-sm'
-                : 'text-text-secondary hover:bg-surface hover:text-ink'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <BarChart3 className="w-4 h-4" />
-              <span>Visits & Telemetry</span>
-            </div>
-            <span className="text-[11px] opacity-80">{analytics.totalVisits}</span>
-          </button>
+          {canSee('dashboard') && (
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                activeTab === 'dashboard'
+                  ? 'bg-primary text-ink shadow-ember-sm'
+                  : 'text-text-secondary hover:bg-surface hover:text-ink'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <LayoutDashboard className="w-4 h-4" />
+                <span>Dashboard</span>
+              </div>
+            </button>
+          )}
+          {canSee('analytics') && (
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                activeTab === 'analytics'
+                  ? 'bg-primary text-ink shadow-ember-sm'
+                  : 'text-text-secondary hover:bg-surface hover:text-ink'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <BarChart3 className="w-4 h-4" />
+                <span>Visits & Telemetry</span>
+              </div>
+              <span className="text-[11px] opacity-80">{analytics.totalVisits}</span>
+            </button>
+          )}
 
-          <button
-            onClick={() => setActiveTab('content')}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
-              activeTab === 'content'
-                ? 'bg-primary text-ink shadow-ember-sm'
-                : 'text-text-secondary hover:bg-surface hover:text-ink'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <FileCheck className="w-4 h-4" />
-              <span>Content Workflow</span>
-            </div>
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-raised text-primary font-semibold">
-              {serverContent.length}
-            </span>
-          </button>
+          {canSee('content') && (
+            <button
+              onClick={() => setActiveTab('content')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                activeTab === 'content'
+                  ? 'bg-primary text-ink shadow-ember-sm'
+                  : 'text-text-secondary hover:bg-surface hover:text-ink'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <FileCheck className="w-4 h-4" />
+                <span>Content Workflow</span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-raised text-primary font-semibold">
+                {serverContent.length}
+              </span>
+            </button>
+          )}
 
           {canManageTickets && (
             <button
@@ -1042,32 +1058,36 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
             </button>
           )}
 
-          <button
-            onClick={() => setActiveTab('team')}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
-              activeTab === 'team'
-                ? 'bg-primary text-ink shadow-ember-sm'
-                : 'text-text-secondary hover:bg-surface hover:text-ink'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <Users className="w-4 h-4" />
-              <span>Team Addition</span>
-            </div>
-            <span className="text-[11px] opacity-80">{team.length}</span>
-          </button>
+          {canSee('team') && (
+            <button
+              onClick={() => setActiveTab('team')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                activeTab === 'team'
+                  ? 'bg-primary text-ink shadow-ember-sm'
+                  : 'text-text-secondary hover:bg-surface hover:text-ink'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Users className="w-4 h-4" />
+                <span>Team Addition</span>
+              </div>
+              <span className="text-[11px] opacity-80">{team.length}</span>
+            </button>
+          )}
 
-          <button
-            onClick={() => setActiveTab('chatbot')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
-              activeTab === 'chatbot'
-                ? 'bg-primary text-ink shadow-ember-sm'
-                : 'text-text-secondary hover:bg-surface hover:text-ink'
-            }`}
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span>Chatbot & Guardrails</span>
-          </button>
+          {canSee('chatbot') && (
+            <button
+              onClick={() => setActiveTab('chatbot')}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                activeTab === 'chatbot'
+                  ? 'bg-primary text-ink shadow-ember-sm'
+                  : 'text-text-secondary hover:bg-surface hover:text-ink'
+              }`}
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Chatbot & Guardrails</span>
+            </button>
+          )}
 
           <div className="text-[11px] font-semibold text-text-secondary/50 uppercase tracking-wider px-3 py-2 pt-4">
             Security & Governance
@@ -1125,17 +1145,19 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
             </button>
           )}
 
-          <button
-            onClick={() => setActiveTab('cookies')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
-              activeTab === 'cookies'
-                ? 'bg-primary text-ink shadow-ember-sm'
-                : 'text-text-secondary hover:bg-surface hover:text-ink'
-            }`}
-          >
-            <Cookie className="w-4 h-4" />
-            <span>Cookie Connection</span>
-          </button>
+          {canSee('cookies') && (
+            <button
+              onClick={() => setActiveTab('cookies')}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                activeTab === 'cookies'
+                  ? 'bg-primary text-ink shadow-ember-sm'
+                  : 'text-text-secondary hover:bg-surface hover:text-ink'
+              }`}
+            >
+              <Cookie className="w-4 h-4" />
+              <span>Cookie Connection</span>
+            </button>
+          )}
 
           <div className="pt-4 mt-4 border-t border-border/60 px-2">
             <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-surface-raised/40 border border-border/60">
@@ -1148,6 +1170,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
               </div>
             </div>
           </div>
+          <MyAccess role={currentUser.role} permissions={currentUser.permissions} />
         </aside>
 
         {/* Main Workspace View */}
@@ -1155,7 +1178,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
           {/* ════════════════════════════════════════════════════════════ */}
           {/* TAB 1: TOTAL VISITS & TELEMETRY                             */}
           {/* ════════════════════════════════════════════════════════════ */}
-          {activeTab === 'analytics' && (
+          {activeTab === 'analytics' && canSee('analytics') && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -1182,13 +1205,13 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Refresh</span>
                   </button>
-                  <button
+                  {can('settings:update') && (<button
                     onClick={handleResetAnalytics}
                     className="px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-xs text-red-400 transition-colors flex items-center gap-1.5"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Reset to Zero</span>
-                  </button>
+                  </button>)}
                 </div>
               </div>
 
@@ -1382,7 +1405,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
           {/* ════════════════════════════════════════════════════════════ */}
           {/* TAB 2: CONTENT APPROVAL WORKFLOW & SOFT DELETE              */}
           {/* ════════════════════════════════════════════════════════════ */}
-          {activeTab === 'content' && (
+          {activeTab === 'content' && canSee('content') && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -1471,7 +1494,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                         </td>
                         <td className="p-3.5 text-right space-x-1.5">
                           {item.deleted_at ? (
-                            <button
+                            can('content:delete') && <button
                               onClick={() => handleRestoreContent(item.id)}
                               className="px-2.5 py-1 rounded bg-surface hover:bg-surface-raised border border-border text-emerald-400 hover:text-emerald-300 text-[11px]"
                             >
@@ -1480,7 +1503,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                           ) : (
                             <>
                               {/* Workflow Transition Buttons */}
-                              {item.status === 'draft' && (
+                              {item.status === 'draft' && can('content:submit') && (
                                 <button
                                   onClick={() => handleTransition(item.id, 'submitted')}
                                   className="px-2 py-1 rounded bg-surface border border-border text-blue-400 hover:text-blue-300 text-[10px]"
@@ -1489,7 +1512,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                                   Submit
                                 </button>
                               )}
-                              {item.status === 'submitted' && (
+                              {item.status === 'submitted' && can('content:publish') && (
                                 <button
                                   onClick={() => handleTransition(item.id, 'review')}
                                   className="px-2 py-1 rounded bg-surface border border-border text-accent hover:text-accent text-[10px]"
@@ -1498,7 +1521,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                                   Review
                                 </button>
                               )}
-                              {item.status === 'review' && (
+                              {item.status === 'review' && can('content:publish') && (
                                 <button
                                   onClick={() => handleTransition(item.id, 'approved')}
                                   className="px-2 py-1 rounded bg-surface border border-border text-primary hover:text-primary-light text-[10px]"
@@ -1507,7 +1530,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                                   Approve
                                 </button>
                               )}
-                              {item.status === 'approved' && (
+                              {item.status === 'approved' && can('content:publish') && (
                                 <button
                                   onClick={() => handleTransition(item.id, 'published')}
                                   className="px-2 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-semibold"
@@ -1517,7 +1540,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                                 </button>
                               )}
 
-                              <button
+                              {can('content:update') && <button
                                 onClick={() => {
                                   setEditingContent(item);
                                   setContentForm({
@@ -1532,15 +1555,15 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                                 title="Edit"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
-                              </button>
+                              </button>}
 
-                              <button
+                              {can('content:delete') && <button
                                 onClick={() => handleSoftDeleteContent(item.id)}
                                 className="p-1 rounded bg-surface border border-border text-text-secondary hover:text-red-400 inline-flex"
                                 title="Soft Delete"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                              </button>}
                             </>
                           )}
                         </td>
@@ -1641,7 +1664,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
           {/* ════════════════════════════════════════════════════════════ */}
           {/* TAB: SERVICE DESK & TICKETS                                  */}
           {/* ════════════════════════════════════════════════════════════ */}
-          {activeTab === 'tickets' && (
+          {activeTab === 'tickets' && canSee('tickets') && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -2036,6 +2059,8 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                           <label className="text-[11px] font-semibold text-text-secondary block mb-1">Assign Staff</label>
                           <select
                             value={selectedTicket.assigned_to || ''}
+                            disabled={!can('tickets:assign')}
+                            title={can('tickets:assign') ? undefined : 'Your role cannot reassign tickets'}
                             onChange={(e) => handleAssignTicket(selectedTicket.id, e.target.value || null)}
                             className="w-full p-2 bg-surface rounded-xl border border-border text-ink focus:border-primary"
                           >
@@ -2138,7 +2163,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                       </div>
 
                       {/* Archive / Restore actions */}
-                      {['admin', 'super_admin'].includes(currentUser.role) && (
+                      {can('tickets:delete') && (
                         <div className="pt-2 border-t border-border flex items-center justify-between">
                           {selectedTicket.deleted_at ? (
                             <button
@@ -2352,7 +2377,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
           {/* ════════════════════════════════════════════════════════════ */}
           {/* TAB: ENQUIRIES & PROPOSALS                                  */}
           {/* ════════════════════════════════════════════════════════════ */}
-          {activeTab === 'enquiries' && (
+          {activeTab === 'enquiries' && canSee('enquiries') && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -2542,7 +2567,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                       </div>
 
                       <div className="flex items-center justify-between pt-2 border-t border-border">
-                        {['admin', 'super_admin'].includes(currentUser.role) && (
+                        {can('enquiries:delete') && (
                           <button
                             onClick={() => handleSoftDeleteEnquiry(selectedEnquiry.id)}
                             className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
@@ -2576,11 +2601,11 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
           {/* ════════════════════════════════════════════════════════════ */}
           {/* TAB 3: LEADS & CRM PIPELINE                                 */}
           {/* ════════════════════════════════════════════════════════════ */}
-          {activeTab === 'dashboard' && (
+          {activeTab === 'dashboard' && canSee('dashboard') && (
             <DashboardPanel userName={currentUser.name} onNavigate={navigateTo} notify={(type, message) => notify(message, type)} />
           )}
 
-          {activeTab === 'crm' && canManageEnquiries && (
+          {activeTab === 'crm' && canSee('crm') && canManageEnquiries && (
             <PipelineBoard
               staff={staff}
               meId={currentUser.id}
@@ -2591,7 +2616,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
             />
           )}
 
-          {activeTab === 'customers' && canManageEnquiries && (
+          {activeTab === 'customers' && canSee('customers') && canManageEnquiries && (
             <CustomersPanel
               staff={staff}
               notify={(type, message) => notify(message, type)}
@@ -2604,7 +2629,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
           {/* ════════════════════════════════════════════════════════════ */}
           {/* TAB 4: TEAM ADDITION & MANAGEMENT                          */}
           {/* ════════════════════════════════════════════════════════════ */}
-          {activeTab === 'team' && (
+          {activeTab === 'team' && canSee('team') && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -2748,7 +2773,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
           {/* ════════════════════════════════════════════════════════════ */}
           {/* TAB 5: CHATBOT & CONFIDENTIALITY GUARDRAILS                 */}
           {/* ════════════════════════════════════════════════════════════ */}
-          {activeTab === 'chatbot' && (
+          {activeTab === 'chatbot' && canSee('chatbot') && (
             <div className="space-y-6">
               <div>
                 <h2 className="font-heading font-bold text-xl text-ink">
@@ -2839,7 +2864,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
           {/* ════════════════════════════════════════════════════════════ */}
           {/* TAB 6: USER RBAC & PRIVILEGE MANAGEMENT                     */}
           {/* ════════════════════════════════════════════════════════════ */}
-          {activeTab === 'users' && canManageUsers && (
+          {activeTab === 'users' && canSee('users') && canManageUsers && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -2850,13 +2875,13 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                     Server-enforced RBAC: Marketing, Admin, and Super Admin. Privilege escalation is blocked.
                   </p>
                 </div>
-                <button
+                {can('users:create') && <button
                   onClick={() => setUserModalOpen(true)}
                   className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-light text-ink text-xs font-semibold flex items-center gap-1.5 shadow-ember-sm"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Create User</span>
-                </button>
+                </button>}
               </div>
 
               <div className="rounded-2xl border border-border/80 bg-surface/70 overflow-hidden">
@@ -2883,13 +2908,13 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                         <td className="p-3.5">
                           <select
                             value={u.role}
-                            disabled={u.id === currentUser.id} // Prevent self-privilege escalation
+                            disabled={u.id === currentUser.id || !can('users:update') || (u.role === 'super_admin' && !isSuperAdmin)} // no self-escalation; only super admins manage super admins
                             onChange={(e) => handleRoleChange(u.id, e.target.value)}
                             className="px-2 py-1 rounded bg-surface border border-border text-ink text-xs uppercase"
                           >
                             <option value="marketing">Marketing</option>
                             <option value="admin">Admin</option>
-                            <option value="super_admin">Super Admin</option>
+                            {(isSuperAdmin || u.role === 'super_admin') && <option value="super_admin">Super Admin</option>}
                           </select>
                         </td>
                         <td className="p-3.5">
@@ -2907,7 +2932,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                           </span>
                         </td>
                         <td className="p-3.5 text-right">
-                          {u.id !== currentUser.id && (
+                          {u.id !== currentUser.id && can('users:update') && (u.role !== 'super_admin' || isSuperAdmin) && (
                             <button
                               onClick={() => handleStatusToggle(u.id, u.status)}
                               className="px-2.5 py-1 rounded bg-surface hover:bg-surface-raised border border-border text-xs text-text-secondary hover:text-ink"
@@ -3000,7 +3025,11 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
           {/* ════════════════════════════════════════════════════════════ */}
           {/* TAB 7: IMMUTABLE AUDIT LOGGING VIEW                         */}
           {/* ════════════════════════════════════════════════════════════ */}
-          {activeTab === 'audit' && canViewAudits && (
+          {activeTab === 'users' && isSuperAdmin && (
+            <div className="mt-6"><RoleMatrix /></div>
+          )}
+
+          {activeTab === 'audit' && canSee('audit') && canViewAudits && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -3065,7 +3094,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
           {/* ════════════════════════════════════════════════════════════ */}
           {/* TAB 8: ROUTE OBFUSCATION & SECURITY SETTINGS (SUPER ADMIN)  */}
           {/* ════════════════════════════════════════════════════════════ */}
-          {activeTab === 'security' && canManageSecurity && (
+          {activeTab === 'security' && canSee('security') && canManageSecurity && (
             <div className="space-y-6">
               <div>
                 <h2 className="font-heading font-bold text-xl text-ink">
@@ -3266,7 +3295,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
           {/* ════════════════════════════════════════════════════════════ */}
           {/* TAB 9: COOKIE CONNECTION                                    */}
           {/* ════════════════════════════════════════════════════════════ */}
-          {activeTab === 'cookies' && (
+          {activeTab === 'cookies' && canSee('cookies') && (
             <div className="space-y-6">
               <div>
                 <h2 className="font-heading font-bold text-xl text-ink">

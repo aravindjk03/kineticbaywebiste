@@ -242,6 +242,14 @@ section('Pipeline, customers, SLA, dashboard, notifications');
   check(r.status === 200 && r.data.result, 'digest can be run on demand', r.data);
   r = await mk.call('POST', '/api/security/run-digest');
   check(r.status === 403, 'marketing cannot trigger the digest');
+  r = await mk.call('GET', '/api/auth/me');
+  check(!r.data.user?.permissions?.includes('team:manage') && !r.data.user?.permissions?.includes('users:read'), 'marketing role is not given team or user management', r.data.user?.permissions);
+  r = await mk.call('POST', '/api/team', { name: 'X', role: 'Y' });
+  check(r.status === 403, 'marketing cannot edit the team roster');
+  r = await mk.call('GET', '/api/roles');
+  check(r.status === 403, 'marketing cannot read the role table');
+  r = await su.call('GET', '/api/roles');
+  check(r.status === 200 && r.data.roles?.super_admin?.includes('team:manage') && !r.data.roles?.marketing?.includes('audit:read'), 'super admin sees the role table');
 }
 
 section('Content workflow');

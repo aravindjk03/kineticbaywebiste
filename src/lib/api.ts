@@ -427,6 +427,10 @@ export const api = {
     return request('/api/notifications/seen', { method: 'POST' });
   },
 
+  async getRoles() {
+    return request('/api/roles');
+  },
+
   async runDigest() {
     return request('/api/security/run-digest', { method: 'POST' });
   },

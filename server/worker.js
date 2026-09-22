@@ -35,12 +35,14 @@ const ROLE_PERMISSIONS = {
     'users:read', 'users:create', 'users:update', 'users:disable', 'security:read', 'security:update',
     'cms-route:update', 'tickets:read', 'tickets:create', 'tickets:update', 'tickets:assign', 'tickets:delete',
     'enquiries:read', 'enquiries:update', 'enquiries:delete', 'analytics:read', 'audit:read', 'settings:update',
+    'team:manage', 'chatbot:manage', 'cookies:read',
   ],
   admin: [
     'content:read', 'content:create', 'content:update', 'content:delete', 'content:publish', 'content:submit',
     'users:read', 'users:create', 'users:update', 'security:read', 'tickets:read', 'tickets:create',
     'tickets:update', 'tickets:assign', 'tickets:delete', 'enquiries:read', 'enquiries:update', 'enquiries:delete',
     'analytics:read', 'audit:read', 'settings:update',
+    'team:manage', 'chatbot:manage', 'cookies:read',
   ],
   marketing: [
     'content:read', 'content:create', 'content:update', 'content:submit',
@@ -531,11 +533,11 @@ async function handleApi(c) {
   if (seg[0] === 'team') {
     const team = (await listDocs(env, 'team')).sort((x, y) => (x.order || 0) - (y.order || 0));
     if (seg.length === 1 && method === 'GET') {
-      await c.auth('content:read');
+      await c.auth('team:manage');
       return json({ team });
     }
     if (seg.length === 1 && method === 'POST') {
-      await c.auth('content:update');
+      await c.auth('team:manage');
       const name = str(body.name, 80), role = str(body.role, 80);
       if (!name || !role) throw new HttpError(400, 'Name and role are required.');
       const member = {
@@ -549,7 +551,7 @@ async function handleApi(c) {
     const member = team.find((m) => m.id === seg[1]);
     if (seg[1] && !member) throw new HttpError(404, 'Team member not found.');
     if (seg.length === 2 && method === 'PUT') {
-      await c.auth('content:update');
+      await c.auth('team:manage');
       for (const k of ['name', 'role', 'bio', 'image', 'linkedin']) if (body[k] !== undefined) member[k] = str(body[k], k === 'bio' ? 600 : 500);
       if (typeof body.visible === 'boolean') member.visible = body.visible;
       member.updated_at = nowIso();
@@ -558,7 +560,7 @@ async function handleApi(c) {
       return json({ success: true, member });
     }
     if (seg.length === 2 && method === 'DELETE') {
-      await c.auth('content:delete');
+      await c.auth('team:manage');
       await deleteDoc(env, 'team', member.id);
       await c.audit('TEAM_MEMBER_REMOVED', member.name);
       return json({ success: true });
@@ -967,6 +969,11 @@ async function handleApi(c) {
     me.notificationsSeenAt = nowIso();
     await saveUser(env, me);
     return json({ success: true });
+  }
+
+  if (path === '/api/roles' && method === 'GET') {
+    await c.auth('users:read');
+    return json({ roles: ROLE_PERMISSIONS });
   }
 
   if (seg[0] === 'customers' && method === 'GET') {
