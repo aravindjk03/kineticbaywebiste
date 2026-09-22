@@ -9,7 +9,6 @@ import {
   Plus,
   Trash2,
   Edit2,
-  Download,
   CheckCircle,
   AlertTriangle,
   LogOut,
@@ -28,8 +27,16 @@ import {
   Search,
   Send,
   Database,
+  LayoutDashboard,
+  KanbanSquare,
+  Contact,
 } from 'lucide-react';
 import { api } from '../../lib/api';
+import DashboardPanel from './DashboardPanel';
+import PipelineBoard from './PipelineBoard';
+import CustomersPanel from './CustomersPanel';
+import NotificationBell from './NotificationBell';
+import { SlaBadge, TicketSla } from './crmShared';
 import { getChatbotConfig } from '../../lib/cmsStore';
 import { getCookieConsent } from '../../lib/analytics';
 import { processChatQuery } from '../../lib/chatbotEngine';
@@ -68,17 +75,6 @@ function enquiryToLead(e: { id: string; name: string; email: string; company?: s
   };
 }
 
-function downloadLeadsCsv(leads: CapturedLead[]) {
-  const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const rows = [['Name', 'Email', 'Company', 'Service', 'Source', 'Status', 'Created', 'Message']]
-    .concat(leads.map((l) => [l.name, l.email, l.company || '', l.service, l.source, l.status, l.createdAt, l.message]));
-  const blob = new Blob([rows.map((r) => r.map(cell).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `kinetic-bay-leads-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
 
 interface AuthUser {
   id: string;
@@ -155,6 +151,7 @@ interface CmsTicket {
   deletion_reason: string | null;
   created_at: string;
   updated_at: string;
+  sla?: TicketSla;
 }
 
 interface CmsEnquiry {
@@ -184,8 +181,10 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
   const canManageEnquiries = currentUser.permissions.includes('enquiries:read');
 
   const [activeTab, setActiveTab] = useState<
-    'analytics' | 'content' | 'tickets' | 'enquiries' | 'crm' | 'team' | 'chatbot' | 'users' | 'audit' | 'security' | 'cookies'
-  >('analytics');
+    'dashboard' | 'analytics' | 'content' | 'tickets' | 'enquiries' | 'crm' | 'customers' | 'team' | 'chatbot' | 'users' | 'audit' | 'security' | 'cookies'
+  >('dashboard');
+  const [crmFocus, setCrmFocus] = useState<string | null>(null);
+  const [customerFocus, setCustomerFocus] = useState<string | null>(null);
 
   // Telemetry & local data
   const [analytics, setAnalytics] = useState<VisitAnalytics>(EMPTY_ANALYTICS);
@@ -272,8 +271,6 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
 
   // Status feedback & filters
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string; ref?: string } | null>(null);
-  const [leadStatusFilter, setLeadStatusFilter] = useState<string>('all');
-  const [selectedLead, setSelectedLead] = useState<CapturedLead | null>(null);
 
   // Team modal state
   const [teamModalOpen, setTeamModalOpen] = useState(false);
@@ -286,6 +283,16 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
     { sender: 'bot', text: 'CMS Sandbox ready. Try asking about services, integration, or test confidential prompts.' },
   ]);
   const [testLoading, setTestLoading] = useState(false);
+
+  /** Jump to a tab, optionally opening one record there (from notifications, dashboard, profiles). */
+  const navigateTo = (tab: string, id?: string) => {
+    if (tab === 'crm') { setCrmFocus(null); setTimeout(() => setCrmFocus(id || null), 0); }
+    if (tab === 'customers') { setCustomerFocus(null); setTimeout(() => setCustomerFocus(id || null), 0); }
+    setActiveTab(tab as typeof activeTab);
+    if (tab === 'tickets' && id) {
+      api.getCmsTicketById(id).then((res: { ticket: CmsTicket }) => openTicketDetails(res.ticket)).catch(() => undefined);
+    }
+  };
 
   // Status notification helper
   const notify = (message: string, type: 'success' | 'error' = 'success', ref?: string) => {
@@ -893,6 +900,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
             </div>
           )}
 
+          <NotificationBell onNavigate={navigateTo} />
           <button
             onClick={() => setPwModalOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-raised hover:bg-surface border border-border text-xs text-text-secondary hover:text-ink transition-colors"
@@ -917,6 +925,19 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
           <div className="text-[11px] font-semibold text-text-secondary/50 uppercase tracking-wider px-3 py-2">
             Operations & Analytics
           </div>
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+              activeTab === 'dashboard'
+                ? 'bg-primary text-ink shadow-ember-sm'
+                : 'text-text-secondary hover:bg-surface hover:text-ink'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <LayoutDashboard className="w-4 h-4" />
+              <span>Dashboard</span>
+            </div>
+          </button>
           <button
             onClick={() => setActiveTab('analytics')}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
@@ -987,22 +1008,39 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
             </button>
           )}
 
-          <button
-            onClick={() => setActiveTab('crm')}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
-              activeTab === 'crm'
-                ? 'bg-primary text-ink shadow-ember-sm'
-                : 'text-text-secondary hover:bg-surface hover:text-ink'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <Users className="w-4 h-4" />
-              <span>Legacy Leads</span>
-            </div>
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-raised text-accent font-semibold">
-              {leads.length}
-            </span>
-          </button>
+          {canManageEnquiries && (
+            <button
+              onClick={() => setActiveTab('crm')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                activeTab === 'crm'
+                  ? 'bg-primary text-ink shadow-ember-sm'
+                  : 'text-text-secondary hover:bg-surface hover:text-ink'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <KanbanSquare className="w-4 h-4" />
+                <span>Sales Pipeline</span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-raised text-accent font-semibold">
+                {leads.filter((l) => l.status !== 'won' && l.status !== 'lost').length}
+              </span>
+            </button>
+          )}
+          {canManageEnquiries && (
+            <button
+              onClick={() => setActiveTab('customers')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                activeTab === 'customers'
+                  ? 'bg-primary text-ink shadow-ember-sm'
+                  : 'text-text-secondary hover:bg-surface hover:text-ink'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Contact className="w-4 h-4" />
+                <span>Customers</span>
+              </div>
+            </button>
+          )}
 
           <button
             onClick={() => setActiveTab('team')}
@@ -1725,6 +1763,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                       <th className="p-3.5">Subject & Requester</th>
                       <th className="p-3.5">Category & Priority</th>
                       <th className="p-3.5">Status</th>
+                      <th className="p-3.5">Response target</th>
                       <th className="p-3.5">Assigned Lead</th>
                       <th className="p-3.5">Created</th>
                       <th className="p-3.5 text-right">Actions</th>
@@ -1733,7 +1772,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                   <tbody className="divide-y divide-border/50">
                     {tickets.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="p-8 text-center text-text-secondary">
+                        <td colSpan={8} className="p-8 text-center text-text-secondary">
                           No tickets match the selected criteria.
                         </td>
                       </tr>
@@ -1786,8 +1825,11 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                             </span>
                           </td>
                           <td className="p-3.5">
+                            {t.deleted_at ? <span className="text-[11px] text-text-secondary">—</span> : <SlaBadge sla={t.sla} />}
+                          </td>
+                          <td className="p-3.5">
                             <span className="text-[11px] text-text-secondary">
-                              {t.assigned_to ? `@${t.assigned_to}` : 'Unassigned'}
+                              {t.assigned_to ? staff.find((m) => m.id === t.assigned_to)?.name || 'Former staff' : 'Unassigned'}
                             </span>
                           </td>
                           <td className="p-3.5 text-text-secondary text-[11px] whitespace-nowrap">
@@ -1838,6 +1880,7 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
                             <span className="text-[10px] uppercase px-1.5 py-0.5 rounded font-mono font-bold bg-primary/10 text-primary">
                               {selectedTicket.priority}
                             </span>
+                            <SlaBadge sla={selectedTicket.sla} />
                           </div>
                           {!isEditingDetails && (
                             <h3 className="font-heading font-bold text-base text-ink mt-0.5">{selectedTicket.subject}</h3>
@@ -2533,188 +2576,29 @@ export default function InternalCMS({ currentUser, onLogout }: InternalCMSProps)
           {/* ════════════════════════════════════════════════════════════ */}
           {/* TAB 3: LEADS & CRM PIPELINE                                 */}
           {/* ════════════════════════════════════════════════════════════ */}
-          {activeTab === 'crm' && (
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="font-heading font-bold text-xl text-ink">
-                    Leads & Inquiry CRM Pipeline
-                  </h2>
-                  <p className="text-xs text-text-secondary mt-0.5">
-                    Unified intake for Chatbot inquiries, Lead Gen proposals, and Contact submissions.
-                  </p>
-                </div>
-                <button
-                  onClick={() => downloadLeadsCsv(leads)}
-                  className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-light text-ink text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-ember-sm self-start"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Export CSV</span>
-                </button>
-              </div>
+          {activeTab === 'dashboard' && (
+            <DashboardPanel userName={currentUser.name} onNavigate={navigateTo} notify={(type, message) => notify(message, type)} />
+          )}
 
-              {/* Status Filter Tabs */}
-              <div className="flex flex-wrap items-center gap-2">
-                {['all', 'new', 'contacted', 'qualified', 'proposal_sent', 'won', 'lost'].map((status) => {
-                  const count = status === 'all' ? leads.length : leads.filter((l) => l.status === status).length;
-                  return (
-                    <button
-                      key={status}
-                      onClick={() => setLeadStatusFilter(status)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-medium capitalize transition-colors ${
-                        leadStatusFilter === status
-                          ? 'bg-primary text-ink font-semibold'
-                          : 'bg-surface-raised border border-border text-text-secondary hover:text-ink'
-                      }`}
-                    >
-                      {status.replace('_', ' ')} ({count})
-                    </button>
-                  );
-                })}
-              </div>
+          {activeTab === 'crm' && canManageEnquiries && (
+            <PipelineBoard
+              staff={staff}
+              meId={currentUser.id}
+              canEdit={currentUser.permissions.includes('enquiries:update')}
+              notify={(type, message) => notify(message, type)}
+              focusId={crmFocus}
+              onOpenCustomer={(email) => navigateTo('customers', email)}
+            />
+          )}
 
-              {/* Leads Table */}
-              <div className="rounded-2xl border border-border/80 bg-surface/70 overflow-hidden">
-                <table className="w-full text-left text-xs text-ink">
-                  <thead className="bg-surface-raised border-b border-border text-[11px] text-text-secondary font-semibold uppercase tracking-wider">
-                    <tr>
-                      <th className="p-3.5">Contact</th>
-                      <th className="p-3.5">Service Requested</th>
-                      <th className="p-3.5">Source</th>
-                      <th className="p-3.5">Date</th>
-                      <th className="p-3.5">CRM Pipeline Status</th>
-                      <th className="p-3.5 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/50">
-                    {leads
-                      .filter((l) => leadStatusFilter === 'all' || l.status === leadStatusFilter)
-                      .map((lead) => (
-                        <tr key={lead.id} className="hover:bg-surface-raised/40 transition-colors">
-                          <td className="p-3.5">
-                            <div className="font-semibold text-ink">{lead.name}</div>
-                            <div className="text-[11px] text-text-secondary">{lead.email}</div>
-                          </td>
-                          <td className="p-3.5 font-medium">{lead.service}</td>
-                          <td className="p-3.5">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 uppercase">
-                              {lead.source.replace('_', ' ')}
-                            </span>
-                          </td>
-                          <td className="p-3.5 text-text-secondary">
-                            {new Date(lead.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="p-3.5">
-                            <select
-                              value={lead.status}
-                              onChange={async (e) => {
-                                try {
-                                  await api.updateEnquiryStatus(lead.id, e.target.value.toUpperCase());
-                                  notify(`Status updated to ${e.target.value.replace('_', ' ')}.`);
-                                  loadLeads();
-                                  loadEnquiries();
-                                } catch (err: any) {
-                                  notify(err.message || 'Failed to update lead', 'error', err.reference);
-                                }
-                              }}
-                              className="px-2.5 py-1 rounded-lg bg-surface border border-border text-ink text-xs"
-                            >
-                              <option value="new">New</option>
-                              <option value="contacted">Contacted</option>
-                              <option value="qualified">Qualified</option>
-                              <option value="proposal_sent">Proposal Sent</option>
-                              <option value="won">Won / Closed</option>
-                              <option value="lost">Lost</option>
-                            </select>
-                          </td>
-                          <td className="p-3.5 text-right space-x-2">
-                            <button
-                              onClick={() => setSelectedLead(lead)}
-                              className="p-1.5 rounded-lg bg-surface hover:bg-surface-raised border border-border text-primary inline-flex items-center gap-1"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                              <span>View</span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (confirm(`Delete lead from ${lead.name}?`)) {
-                                  api.softDeleteEnquiry(lead.id)
-                                    .then(() => { notify('Lead deleted.'); loadLeads(); loadEnquiries(); })
-                                    .catch((err: any) => notify(err.message || 'Failed to delete lead', 'error', err.reference));
-                                }
-                              }}
-                              className="p-1.5 rounded-lg bg-surface hover:bg-red-500/10 border border-border text-text-secondary hover:text-red-400 inline-flex"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Lead Transcript Modal */}
-              <AnimatePresence>
-                {selectedLead && (
-                  <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      className="bg-surface-raised border border-border rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 space-y-5 shadow-2xl"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <span className="text-[10px] font-semibold uppercase text-primary tracking-wider">
-                            Inquiry Record #{selectedLead.id.slice(-6)}
-                          </span>
-                          <h3 className="font-heading font-bold text-lg text-ink mt-0.5">
-                            {selectedLead.name}
-                          </h3>
-                          <p className="text-xs text-text-secondary">{selectedLead.email}</p>
-                        </div>
-                        <button onClick={() => setSelectedLead(null)} className="text-text-secondary hover:text-ink">
-                          <X className="w-5 h-5" />
-                        </button>
-                      </div>
-
-                      <div className="p-3.5 rounded-xl bg-surface border border-border">
-                        <span className="text-[11px] text-text-secondary font-semibold uppercase block mb-1">
-                          Message Body
-                        </span>
-                        <p className="text-xs text-ink whitespace-pre-wrap">{selectedLead.message}</p>
-                      </div>
-
-                      {selectedLead.conversationTranscript && selectedLead.conversationTranscript.length > 0 && (
-                        <div className="space-y-2">
-                          <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider block">
-                            Chatbot Interaction Transcript
-                          </span>
-                          <div className="p-3 rounded-xl bg-surface border border-border max-h-48 overflow-y-auto space-y-2">
-                            {selectedLead.conversationTranscript.map((t, i) => (
-                              <div key={i} className={`text-xs ${t.sender === 'user' ? 'text-primary' : 'text-ink'}`}>
-                                <span className="font-semibold uppercase text-[10px] opacity-70 block">{t.sender}:</span>
-                                <p>{t.text}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex justify-end pt-2">
-                        <button
-                          onClick={() => setSelectedLead(null)}
-                          className="px-4 py-2 rounded-xl bg-primary text-ink text-xs font-semibold"
-                        >
-                          Close
-                        </button>
-                      </div>
-                    </motion.div>
-                  </div>
-                )}
-              </AnimatePresence>
-            </div>
+          {activeTab === 'customers' && canManageEnquiries && (
+            <CustomersPanel
+              staff={staff}
+              notify={(type, message) => notify(message, type)}
+              focusEmail={customerFocus}
+              onOpenLead={(id) => navigateTo('crm', id)}
+              onOpenTicket={(id) => navigateTo('tickets', id)}
+            />
           )}
 
           {/* ════════════════════════════════════════════════════════════ */}

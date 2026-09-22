@@ -2,7 +2,7 @@
  * Cloudflare Worker for Kinetic Bay / KB NEXUS
  *
  * Serves the SPA (ASSETS) and every /api/* endpoint. All state lives in the
- * DB_KV namespace; nothing sensitive lives in source code.
+ * D1 database (binding DB, one row per record); nothing sensitive lives in source code.
  *
  * Required configuration (see scripts/cms-bootstrap.mjs and wrangler.jsonc):
  *   SESSION_SECRET  (secret) — HMAC key for sessions, MFA challenges and CSRF tokens
@@ -20,8 +20,10 @@ import {
 } from './edge/ratelimit.js';
 import {
   notifyStaffNewTicket, notifyCustomerTicketReceived, notifyCustomerTicketUpdate, notifyCustomerTicketStatus,
-  notifyStaffNewEnquiry, sendTestEmail, mailConfigured, internalAddress,
+  notifyStaffNewEnquiry, sendTestEmail, mailConfigured, internalAddress, sendLeadReply, sendDigest,
 } from './edge/email.js';
+import { listDocs, getDoc, putDoc, deleteDoc, countDocs, pruneColl, getValue, setValue } from './edge/store.js';
+import { withSla, leadClock, leadSource, activity, buildCustomers, customerProfile, notificationsFor, dashboard, SLA_TARGETS } from './edge/crm.js';
 
 /* ═══════════════════════════════════════════════════════════
    Roles & permissions
@@ -61,51 +63,28 @@ const MFA_TTL = 5 * 60 * 1000;
 const LEGACY_SEED_IDS = new Set(['tkt_seed_01', 'enq_seed_01']);
 
 /* ═══════════════════════════════════════════════════════════
-   KV storage
+   Storage (D1: one row per record)
 ═══════════════════════════════════════════════════════════ */
 
-const KEYS = {
-  users: 'kb_users_v2',
-  tickets: 'kb_tickets_v1',
-  enquiries: 'kb_enquiries_v1',
-  content: 'kb_content_v1',
-  team: 'kb_team_v1',
-  audit: 'kb_audit_v1',
-  settings: 'kb_settings_v1',
-  analytics: 'kb_analytics_v1',
-};
-
-async function kvGet(env, key, fallback) {
-  if (!env.DB_KV) return fallback;
-  const raw = await env.DB_KV.get(key);
-  if (!raw) return fallback;
-  try { return JSON.parse(raw); } catch { return fallback; }
-}
-
-async function kvPut(env, key, value) {
-  if (!env.DB_KV) throw new Error('Storage unavailable (DB_KV binding missing).');
-  await env.DB_KV.put(key, JSON.stringify(value));
-}
-
-const getUsers = (env) => kvGet(env, KEYS.users, []);
-const saveUsers = (env, users) => kvPut(env, KEYS.users, users);
+const getUsers = (env) => listDocs(env, 'users');
+const saveUser = (env, user) => putDoc(env, 'users', user);
 
 async function getTickets(env) {
-  const list = await kvGet(env, KEYS.tickets, []);
-  return Array.isArray(list) ? list.filter((t) => !LEGACY_SEED_IDS.has(t.id)) : [];
+  return (await listDocs(env, 'tickets')).filter((t) => !LEGACY_SEED_IDS.has(t.id));
 }
-const saveTickets = (env, list) => kvPut(env, KEYS.tickets, list);
+const saveTicket = (env, t) => putDoc(env, 'tickets', t);
 
 async function getEnquiries(env) {
-  const list = await kvGet(env, KEYS.enquiries, []);
-  return Array.isArray(list) ? list.filter((e) => !LEGACY_SEED_IDS.has(e.id)) : [];
+  return (await listDocs(env, 'enquiries')).filter((e) => !LEGACY_SEED_IDS.has(e.id));
 }
-const saveEnquiries = (env, list) => kvPut(env, KEYS.enquiries, list);
+const saveEnquiry = (env, e) => putDoc(env, 'enquiries', e);
 
 async function getSettings(env) {
-  const s = await kvGet(env, KEYS.settings, {});
-  return { cmsRoute: s.cmsRoute || env.CMS_ROUTE || DEFAULT_CMS_ROUTE, ...s };
+  const s = await getValue(env, 'settings', {});
+  return { ...s, cmsRoute: s.cmsRoute || env.CMS_ROUTE || DEFAULT_CMS_ROUTE };
 }
+
+const CLOSED_TICKET_STATUSES = ['RESOLVED', 'CLOSED'];
 
 /* ═══════════════════════════════════════════════════════════
    HTTP helpers
@@ -231,9 +210,8 @@ function makeCtx(req, env, ctx) {
         role: u ? u.role : 'public', reqId, ip: c.ip, userAgent: c.ua, target: String(target || ''), action: type, result, metadata,
       };
       try {
-        const logs = await kvGet(env, KEYS.audit, []);
-        logs.unshift(entry);
-        await kvPut(env, KEYS.audit, logs.slice(0, 500));
+        await putDoc(env, 'audit', entry);
+        if (Math.random() < 0.02) await pruneColl(env, 'audit', 5000); // keep the trail bounded
       } catch { /* auditing must never break the request */ }
     },
     // run work after the response is sent (emails, audit of async results)
@@ -262,7 +240,7 @@ function limited(check) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Analytics (buffered per isolate to respect KV write limits)
+   Analytics (buffered per isolate to keep writes low)
 ═══════════════════════════════════════════════════════════ */
 
 const emptyAnalytics = () => ({ totalVisits: 0, uniqueVisitors: 0, pageViews: {}, dailyVisits: [], deviceBreakdown: { desktop: 0, mobile: 0, tablet: 0 }, recentVisits: [], since: nowIso() });
@@ -274,7 +252,7 @@ async function flushAnalytics(env) {
   const batch = pendingVisits;
   pendingVisits = [];
   lastFlush = Date.now();
-  const a = await kvGet(env, KEYS.analytics, emptyAnalytics());
+  const a = await getValue(env, 'analytics', emptyAnalytics());
   for (const v of batch) {
     a.totalVisits += 1;
     if (v.isNew) a.uniqueVisitors += 1;
@@ -290,7 +268,7 @@ async function flushAnalytics(env) {
   // cap the number of distinct paths so junk URLs cannot bloat the record
   const paths = Object.entries(a.pageViews).sort((x, y) => y[1] - x[1]).slice(0, 80);
   a.pageViews = Object.fromEntries(paths);
-  await kvPut(env, KEYS.analytics, a);
+  await setValue(env, 'analytics', a);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -359,7 +337,7 @@ async function handleApi(c) {
       throw new HttpError(401, 'Invalid authenticator or recovery code.');
     }
     user.lastLoginAt = nowIso();
-    await saveUsers(env, users);
+    await saveUser(env, user);
     const { cookie, csrfToken } = await issueSession(req, env, user);
     c.session = { user, token: '' };
     await c.audit('LOGIN_SUCCESS', user.username, 'SUCCESS', { method: method2, recoveryCodesLeft: (user.recoveryHashes || []).length });
@@ -391,7 +369,7 @@ async function handleApi(c) {
     if (problem) throw new HttpError(400, problem);
     user.passwordHash = await hashPassword(body.newPassword);
     user.sessionVersion = (user.sessionVersion || 0) + 1; // sign out every other session
-    await saveUsers(env, users);
+    await saveUser(env, user);
     const { cookie, csrfToken } = await issueSession(req, env, user);
     await c.audit('PASSWORD_CHANGE', me.username);
     return json({ success: true, csrfToken }, 200, { 'Set-Cookie': cookie });
@@ -431,8 +409,7 @@ async function handleApi(c) {
         passwordHash: await hashPassword(body.initialPassword), totpSecret,
         recoveryHashes: await Promise.all(recovery.map((r) => sha256Hex(r))), sessionVersion: 0, createdAt: nowIso(),
       };
-      users.push(user);
-      await saveUsers(env, users);
+      await saveUser(env, user);
       await c.audit('USER_CREATED', username, 'SUCCESS', { role });
       return json({
         success: true, user: publicUser(user),
@@ -452,7 +429,7 @@ async function handleApi(c) {
         if ((role === 'super_admin' || target.role === 'super_admin') && me.role !== 'super_admin') throw new HttpError(403, 'Only a Super Admin can change Super Admin roles.');
         target.role = role;
         target.sessionVersion = (target.sessionVersion || 0) + 1;
-        await saveUsers(env, users);
+        await saveUser(env, target);
         await c.audit('USER_ROLE_CHANGED', target.username, 'SUCCESS', { role });
         return json({ success: true, user: publicUser(target) });
       }
@@ -467,7 +444,7 @@ async function handleApi(c) {
         }
         target.status = status;
         target.sessionVersion = (target.sessionVersion || 0) + 1;
-        await saveUsers(env, users);
+        await saveUser(env, target);
         await c.audit('USER_STATUS_CHANGED', target.username, 'SUCCESS', { status });
         return json({ success: true, user: publicUser(target) });
       }
@@ -476,7 +453,7 @@ async function handleApi(c) {
 
   /* ─── Content workflow ─────────────────────────────── */
   if (seg[0] === 'content') {
-    const items = await kvGet(env, KEYS.content, []);
+    const items = await listDocs(env, 'content');
     if (seg.length === 1 && method === 'GET') {
       await c.auth('content:read');
       const includeDeleted = url.searchParams.get('includeDeleted') === 'true';
@@ -493,8 +470,7 @@ async function handleApi(c) {
         content: str(body.content, 20000), version: 1, authorId: me.id, reviewerId: null,
         deleted_at: null, deleted_by: null, deletion_reason: null, created_at: nowIso(), updated_at: nowIso(),
       };
-      items.unshift(item);
-      await kvPut(env, KEYS.content, items);
+      await putDoc(env, 'content', item);
       await c.audit('CONTENT_CREATED', slug);
       return json({ success: true, item }, 201);
     }
@@ -509,7 +485,7 @@ async function handleApi(c) {
       item.version += 1;
       if (item.status === 'published' || item.status === 'approved') item.status = 'draft'; // edits need re-approval
       item.updated_at = nowIso();
-      await kvPut(env, KEYS.content, items);
+      await putDoc(env, 'content', item);
       await c.audit('CONTENT_UPDATED', item.slug, 'SUCCESS', { version: item.version });
       return json({ success: true, item });
     }
@@ -524,7 +500,7 @@ async function handleApi(c) {
       item.status = target;
       if (target === 'review' || target === 'approved') item.reviewerId = me.id;
       item.updated_at = nowIso();
-      await kvPut(env, KEYS.content, items);
+      await putDoc(env, 'content', item);
       await c.audit('CONTENT_TRANSITION', item.slug, 'SUCCESS', { to: target });
       return json({ success: true, item });
     }
@@ -533,27 +509,27 @@ async function handleApi(c) {
       item.deleted_at = nowIso();
       item.deleted_by = me.id;
       item.deletion_reason = str(body.reason, 300) || null;
-      await kvPut(env, KEYS.content, items);
+      await putDoc(env, 'content', item);
       await c.audit('CONTENT_DELETED', item.slug);
       return json({ success: true });
     }
     if (seg.length === 3 && seg[2] === 'restore' && method === 'POST') {
       await c.auth('content:delete');
       item.deleted_at = null; item.deleted_by = null; item.deletion_reason = null; item.updated_at = nowIso();
-      await kvPut(env, KEYS.content, items);
+      await putDoc(env, 'content', item);
       await c.audit('CONTENT_RESTORED', item.slug);
       return json({ success: true, item });
     }
   }
 
   if (path === '/api/public/content' && method === 'GET') {
-    const items = await kvGet(env, KEYS.content, []);
+    const items = await listDocs(env, 'content');
     return json({ items: items.filter((i) => i.status === 'published' && !i.deleted_at).map(({ id, title, slug, category, content, updated_at }) => ({ id, title, slug, category, content, updated_at })) }, 200, { 'Cache-Control': 'public, max-age=60' });
   }
 
   /* ─── Team (server-side so it is shared, not per-browser) ─ */
   if (seg[0] === 'team') {
-    const team = await kvGet(env, KEYS.team, []);
+    const team = (await listDocs(env, 'team')).sort((x, y) => (x.order || 0) - (y.order || 0));
     if (seg.length === 1 && method === 'GET') {
       await c.auth('content:read');
       return json({ team });
@@ -564,10 +540,9 @@ async function handleApi(c) {
       if (!name || !role) throw new HttpError(400, 'Name and role are required.');
       const member = {
         id: newId('team'), name, role, bio: str(body.bio, 600), image: str(body.image, 500), linkedin: str(body.linkedin, 300),
-        order: team.length + 1, visible: body.visible !== false, updated_at: nowIso(),
+        order: team.length + 1, visible: body.visible !== false, created_at: nowIso(), updated_at: nowIso(),
       };
-      team.push(member);
-      await kvPut(env, KEYS.team, team);
+      await putDoc(env, 'team', member);
       await c.audit('TEAM_MEMBER_ADDED', name);
       return json({ success: true, member }, 201);
     }
@@ -578,20 +553,20 @@ async function handleApi(c) {
       for (const k of ['name', 'role', 'bio', 'image', 'linkedin']) if (body[k] !== undefined) member[k] = str(body[k], k === 'bio' ? 600 : 500);
       if (typeof body.visible === 'boolean') member.visible = body.visible;
       member.updated_at = nowIso();
-      await kvPut(env, KEYS.team, team);
+      await putDoc(env, 'team', member);
       await c.audit('TEAM_MEMBER_UPDATED', member.name);
       return json({ success: true, member });
     }
     if (seg.length === 2 && method === 'DELETE') {
       await c.auth('content:delete');
-      await kvPut(env, KEYS.team, team.filter((m) => m.id !== member.id));
+      await deleteDoc(env, 'team', member.id);
       await c.audit('TEAM_MEMBER_REMOVED', member.name);
       return json({ success: true });
     }
   }
 
   if (path === '/api/public/team' && method === 'GET') {
-    const team = await kvGet(env, KEYS.team, []);
+    const team = (await listDocs(env, 'team')).sort((x, y) => (x.order || 0) - (y.order || 0));
     return json({ team: team.filter((m) => m.visible !== false).map(({ id, name, role, bio, image, linkedin }) => ({ id, name, role, bio, image, linkedin })) }, 200, { 'Cache-Control': 'public, max-age=60' });
   }
 
@@ -613,9 +588,7 @@ async function handleApi(c) {
       created_at: now, updated_at: now, deleted_at: null, deleted_by: null, deletion_reason: null,
       internal_notes: [], customer_updates: [{ id: newId('upd'), message: 'Ticket received and logged into our service queue.', created_at: now }],
     };
-    const tickets = await getTickets(env);
-    tickets.unshift(ticket);
-    await saveTickets(env, tickets);
+    await saveTicket(env, ticket);
     await c.audit('TICKET_CREATED_PUBLIC', ticket.public_id, 'SUCCESS', { username: email });
     mail(c, 'staff:new-ticket', ticket.public_id, () => notifyStaffNewTicket(env, ticket, 'Website chatbot'));
     mail(c, 'customer:ticket-received', ticket.public_id, () => notifyCustomerTicketReceived(env, ticket));
@@ -654,7 +627,9 @@ async function handleApi(c) {
         if (v && v !== 'all') list = list.filter((t) => t[k] === v);
       }
       if (q) list = list.filter((t) => [t.public_id, t.subject, t.requester_name, t.requester_email].some((f) => (f || '').toLowerCase().includes(q)));
-      return json({ success: true, count: list.length, tickets: list });
+      const mine = p.get('assigned') === 'me' ? c.session.user.id : null;
+      if (mine) list = list.filter((t) => t.assigned_to === mine);
+      return json({ success: true, count: list.length, tickets: list.map((t) => withSla(t)), targets: SLA_TARGETS });
     }
     if (seg.length === 1 && method === 'POST') {
       const me = await c.auth('tickets:create');
@@ -676,8 +651,7 @@ async function handleApi(c) {
         internal_notes: note ? [{ id: newId('note'), author_id: me.id, author_name: me.name, note, created_at: now }] : [],
         customer_updates: [{ id: newId('upd'), message: 'Ticket created and registered in our service queue.', created_at: now }],
       };
-      tickets.unshift(ticket);
-      await saveTickets(env, tickets);
+      await saveTicket(env, ticket);
       await c.audit('TICKET_CREATED', ticket.public_id);
       if (!internalAddress(email)) mail(c, 'customer:ticket-received', ticket.public_id, () => notifyCustomerTicketReceived(env, ticket));
       return json({ success: true, message: `Ticket ${ticket.public_id} created.`, ticket }, 201);
@@ -690,7 +664,10 @@ async function handleApi(c) {
     const prevStatus = ticket.status;
     const touch = async (auditType, meta = {}) => {
       ticket.updated_at = nowIso();
-      await saveTickets(env, tickets);
+      // resolution clock: stamp when closed, clear if reopened
+      if (CLOSED_TICKET_STATUSES.includes(ticket.status) && !ticket.resolved_at) ticket.resolved_at = ticket.updated_at;
+      if (!CLOSED_TICKET_STATUSES.includes(ticket.status)) ticket.resolved_at = null;
+      await saveTicket(env, ticket);
       await c.audit(auditType, ticket.public_id, 'SUCCESS', meta);
       // tell the customer when their ticket is resolved or closed
       if (ticket.status !== prevStatus && ['RESOLVED', 'CLOSED'].includes(ticket.status) && !internalAddress(ticket.requester_email)) {
@@ -700,7 +677,7 @@ async function handleApi(c) {
 
     if (!action && method === 'GET') {
       await c.auth('tickets:read');
-      return json({ success: true, ticket });
+      return json({ success: true, ticket: withSla(ticket) });
     }
     if ((!action || action === 'update') && (method === 'PATCH' || method === 'PUT')) {
       await c.auth('tickets:update');
@@ -720,14 +697,14 @@ async function handleApi(c) {
         ticket.requester_email = e;
       }
       await touch('TICKET_UPDATED');
-      return json({ success: true, message: 'Ticket updated.', ticket });
+      return json({ success: true, message: 'Ticket updated.', ticket: withSla(ticket) });
     }
     if (action === 'status' && method === 'PATCH') {
       await c.auth('tickets:update');
       if (!TICKET_STATUSES.includes(body.status)) throw new HttpError(400, 'Unknown ticket status.');
       ticket.status = body.status;
       await touch('TICKET_STATUS_CHANGED', { from: prevStatus, to: ticket.status });
-      return json({ success: true, ticket });
+      return json({ success: true, ticket: withSla(ticket) });
     }
     if (action === 'assign' && method === 'PATCH') {
       await c.auth('tickets:assign');
@@ -736,7 +713,7 @@ async function handleApi(c) {
       ticket.assigned_to = assignee;
       if (ticket.status === 'NEW' && assignee) ticket.status = 'ASSIGNED';
       await touch('TICKET_ASSIGNED', { to: assignee });
-      return json({ success: true, ticket });
+      return json({ success: true, ticket: withSla(ticket) });
     }
     if (action === 'notes' && method === 'POST') {
       const me = await c.auth('tickets:update');
@@ -748,11 +725,16 @@ async function handleApi(c) {
       return json({ success: true, note: n });
     }
     if (action === 'customer-update' && method === 'POST') {
-      await c.auth('tickets:update');
+      const me = await c.auth('tickets:update');
       const message = str(body.message, 3000);
       if (!message) throw new HttpError(400, 'Update cannot be empty.');
-      const u = { id: newId('upd'), message, created_at: nowIso() };
+      const u = { id: newId('upd'), message, created_at: nowIso(), author_name: me.name };
       (ticket.customer_updates = ticket.customer_updates || []).push(u);
+      // first customer-visible reply stops the response clock
+      if (!ticket.first_response_at) {
+        ticket.first_response_at = u.created_at;
+        ticket.first_responder_id = me.id;
+      }
       await touch('TICKET_CUSTOMER_UPDATE');
       if (!internalAddress(ticket.requester_email)) mail(c, 'customer:ticket-update', ticket.public_id, () => notifyCustomerTicketUpdate(env, ticket, message));
       return json({ success: true, update: u, emailed: mailConfigured(env) && !internalAddress(ticket.requester_email) });
@@ -787,10 +769,10 @@ async function handleApi(c) {
       name, email, company: str(body.company, 120), service_slug: str(body.service_slug, 80), service_name: str(body.service_slug, 80) || 'General',
       budget_range: str(body.budget_range, 60) || 'Not specified', timeline: str(body.timeline, 60) || 'Not specified',
       message: str(body.message, 5000) || '(no message)', status: 'NEW', notes: '', created_at: now, updated_at: now, deleted_at: null,
+      owner_id: null, follow_up_at: null, first_response_at: null, last_contacted_at: null, activities: [],
     };
-    const list = await getEnquiries(env);
-    list.unshift(enq);
-    await saveEnquiries(env, list);
+    enq.source = leadSource(enq);
+    await saveEnquiry(env, enq);
     mail(c, 'staff:new-enquiry', enq.reference_id, () => notifyStaffNewEnquiry(env, enq));
     return json({ success: true, message: 'Your enquiry has been received. We will respond within 24 hours.', reference_id: enq.reference_id, status: 'NEW' }, 201);
   }
@@ -805,27 +787,83 @@ async function handleApi(c) {
       const status = p.get('status');
       if (status && status !== 'all') out = out.filter((e) => e.status === status);
       if (q) out = out.filter((e) => [e.name, e.email, e.company, e.reference_id].some((f) => (f || '').toLowerCase().includes(q)));
-      return json({ success: true, count: out.length, enquiries: out });
+      if (p.get('owner') === 'me') out = out.filter((e) => e.owner_id === c.session.user.id);
+      return json({ success: true, count: out.length, enquiries: out.map((e) => ({ ...e, source: leadSource(e), response_clock: leadClock(e) })) });
     }
     const enq = list.find((e) => e.id === seg[1] || e.reference_id === seg[1]);
     if (!enq) throw new HttpError(404, 'Enquiry not found.');
-    if (seg[2] === 'status' && method === 'PATCH') {
-      await c.auth('enquiries:update');
-      if (body.status !== undefined) {
+    // status (pipeline moves), owner, follow-up date, notes — one endpoint, two paths for compatibility
+    if ((seg[2] === 'status' || !seg[2]) && method === 'PATCH') {
+      const me = await c.auth('enquiries:update');
+      enq.activities = enq.activities || [];
+      if (body.status !== undefined && body.status !== enq.status) {
         if (!ENQUIRY_STATUSES.includes(body.status)) throw new HttpError(400, 'Unknown enquiry status.');
+        if (body.status === 'LOST') enq.lost_from = enq.status;
+        if (body.status === 'WON') enq.won_at = nowIso();
+        enq.activities.push(activity('status', `Moved from ${enq.status.replace(/_/g, ' ').toLowerCase()} to ${body.status.replace(/_/g, ' ').toLowerCase()}`, me));
         enq.status = body.status;
+        // reaching "contacted" or beyond means someone has been in touch
+        if (!enq.first_response_at && body.status !== 'NEW') enq.first_response_at = nowIso();
+      }
+      if ('owner_id' in body) {
+        const owner = str(body.owner_id, 60) || null;
+        if (owner && !(await getUsers(env)).some((u) => u.id === owner && u.status === 'active')) throw new HttpError(400, 'Owner must be an active staff member.');
+        if (owner !== enq.owner_id) {
+          const name = owner ? (await getUsers(env)).find((u) => u.id === owner).name : 'nobody';
+          enq.activities.push(activity('owner', `Owner set to ${name}`, me));
+        }
+        enq.owner_id = owner;
+      }
+      if ('follow_up_at' in body) {
+        const when = body.follow_up_at ? new Date(body.follow_up_at) : null;
+        if (when && Number.isNaN(when.getTime())) throw new HttpError(400, 'Follow-up date is not valid.');
+        enq.follow_up_at = when ? when.toISOString() : null;
       }
       if (body.notes !== undefined) enq.notes = str(body.notes, 3000);
       enq.updated_at = nowIso();
-      await saveEnquiries(env, list);
-      await c.audit('ENQUIRY_UPDATED', enq.reference_id, 'SUCCESS', { status: enq.status });
-      return json({ success: true, enquiry: enq });
+      await saveEnquiry(env, enq);
+      await c.audit('ENQUIRY_UPDATED', enq.reference_id, 'SUCCESS', { status: enq.status, owner: enq.owner_id });
+      return json({ success: true, enquiry: { ...enq, source: leadSource(enq), response_clock: leadClock(enq) } });
+    }
+    if (seg[2] === 'activities' && method === 'POST') {
+      const me = await c.auth('enquiries:update');
+      const type = ['note', 'call', 'meeting', 'whatsapp'].includes(body.type) ? body.type : 'note';
+      const text = str(body.text, 3000);
+      if (!text) throw new HttpError(400, 'Please describe the activity.');
+      const a = activity(type, text, me);
+      (enq.activities = enq.activities || []).push(a);
+      if (type !== 'note') {
+        enq.last_contacted_at = a.at;
+        if (!enq.first_response_at) enq.first_response_at = a.at;
+        if (enq.status === 'NEW') enq.status = 'CONTACTED';
+      }
+      enq.updated_at = nowIso();
+      await saveEnquiry(env, enq);
+      return json({ success: true, activity: a, enquiry: { ...enq, source: leadSource(enq), response_clock: leadClock(enq) } });
+    }
+    if (seg[2] === 'reply' && method === 'POST') {
+      const me = await c.auth('enquiries:update');
+      if (!mailConfigured(env)) throw new HttpError(400, 'Email is not configured yet.');
+      const subject = str(body.subject, 200) || `Re: your enquiry ${enq.reference_id}`;
+      const message = str(body.message, 8000);
+      if (!message) throw new HttpError(400, 'Message cannot be empty.');
+      const r = await sendLeadReply(env, enq, subject, message, me);
+      await c.audit(r.ok ? 'EMAIL_SENT' : 'EMAIL_FAILED', enq.reference_id, r.ok ? 'SUCCESS' : 'FAILED', { label: 'lead:reply', status: r.status, error: r.error });
+      if (!r.ok) throw new HttpError(502, `Email could not be sent (${r.status}). Please try again.`);
+      const a = activity('email', message, me, { subject });
+      (enq.activities = enq.activities || []).push(a);
+      enq.last_contacted_at = a.at;
+      if (!enq.first_response_at) enq.first_response_at = a.at;
+      if (enq.status === 'NEW') enq.status = 'CONTACTED';
+      enq.updated_at = nowIso();
+      await saveEnquiry(env, enq);
+      return json({ success: true, activity: a, enquiry: { ...enq, source: leadSource(enq), response_clock: leadClock(enq) } });
     }
     if (!seg[2] && method === 'DELETE') {
       await c.auth('enquiries:delete');
       enq.deleted_at = nowIso();
       enq.updated_at = nowIso();
-      await saveEnquiries(env, list);
+      await saveEnquiry(env, enq);
       await c.audit('ENQUIRY_DELETED', enq.reference_id);
       return json({ success: true });
     }
@@ -844,14 +882,14 @@ async function handleApi(c) {
   if (path === '/api/analytics' && method === 'GET') {
     await c.auth('analytics:read');
     await flushAnalytics(env);
-    return json({ analytics: await kvGet(env, KEYS.analytics, emptyAnalytics()) });
+    return json({ analytics: await getValue(env, 'analytics', emptyAnalytics()) });
   }
 
   if (path === '/api/analytics/reset' && method === 'POST') {
     await c.auth('settings:update');
     pendingVisits = [];
     const fresh = emptyAnalytics();
-    await kvPut(env, KEYS.analytics, fresh);
+    await setValue(env, 'analytics', fresh);
     await c.audit('ANALYTICS_RESET', 'analytics');
     return json({ success: true, analytics: fresh });
   }
@@ -859,7 +897,7 @@ async function handleApi(c) {
   /* ─── Security, audit, settings ────────────────────── */
   if (path === '/api/security/audit-logs' && method === 'GET') {
     await c.auth('audit:read');
-    return json({ logs: await kvGet(env, KEYS.audit, []) });
+    return json({ logs: await listDocs(env, 'audit', { limit: 500 }) });
   }
 
   if (path === '/api/security/rotate-cms-route' && method === 'POST') {
@@ -872,31 +910,30 @@ async function handleApi(c) {
     }
     const bytes = crypto.getRandomValues(new Uint8Array(16));
     const route = 'cms_' + Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
-    const settings = await kvGet(env, KEYS.settings, {});
+    const settings = await getValue(env, 'settings', {});
     settings.cmsRoute = route;
     settings.cmsRouteRotatedAt = nowIso();
-    await kvPut(env, KEYS.settings, settings);
+    await setValue(env, 'settings', settings);
     await c.audit('CMS_ROUTE_ROTATION', 'cms-route', 'SUCCESS', { reason: str(body.reason, 200) });
     return json({ success: true, newRoutePath: `/${route}` });
   }
 
   if (path === '/api/security/database' && method === 'GET') {
     await c.auth('security:read');
-    const [users, tickets, enquiries, content, team, audit, analytics] = await Promise.all([
-      getUsers(env), getTickets(env), getEnquiries(env), kvGet(env, KEYS.content, []), kvGet(env, KEYS.team, []), kvGet(env, KEYS.audit, []), kvGet(env, KEYS.analytics, emptyAnalytics()),
-    ]);
-    const coll = (name, docs, raw) => [name, { documents: docs, file: `KV:${KEYS[name] || name}`, sizeBytes: JSON.stringify(raw).length }];
-    const collections = Object.fromEntries([
-      coll('users', users.length, users.map(publicUser)), coll('tickets', tickets.length, tickets), coll('enquiries', enquiries.length, enquiries),
-      coll('content', content.length, content), coll('team', team.length, team), coll('audit', audit.length, audit), coll('analytics', 1, analytics),
-    ]);
+    const counts = await countDocs(env);
+    const collections = Object.fromEntries(Object.entries(counts).map(([name, v]) => [name, { ...v, file: `D1:docs/${name}` }]));
     return json({
       database: {
-        engine: 'Cloudflare Workers KV', format: 'JSON documents per collection', kvBindingActive: Boolean(env.DB_KV),
+        engine: 'Cloudflare D1 (SQLite)', format: 'One JSON document per row', d1BindingActive: Boolean(env.DB),
         emailConfigured: mailConfigured(env), totalCollections: Object.keys(collections).length,
-        totalDocuments: Object.values(collections).reduce((s, x) => s + x.documents, 0), collections, persistedAt: nowIso(),
+        totalDocuments: Object.values(collections).reduce((sum, x) => sum + x.documents, 0), collections, persistedAt: nowIso(),
       },
     });
+  }
+
+  if (path === '/api/security/run-digest' && method === 'POST') {
+    await c.auth('settings:update');
+    return json({ success: true, result: await runDailyDigest(env) });
   }
 
   if (path === '/api/security/test-email' && method === 'POST') {
@@ -908,7 +945,94 @@ async function handleApi(c) {
     return json({ success: true });
   }
 
+  /* ─── Dashboard, notifications, customers ──────────── */
+  if (path === '/api/dashboard' && method === 'GET') {
+    const me = await c.auth('analytics:read');
+    const perms = ROLE_PERMISSIONS[me.role] || [];
+    const data = await loadWorkspace(env, perms);
+    const notes = notificationsFor(me, perms, data);
+    return json({ dashboard: dashboard({ user: me, perms, ...data, notifications: notes }) });
+  }
+
+  if (path === '/api/notifications' && method === 'GET') {
+    const me = await c.auth();
+    const perms = ROLE_PERMISSIONS[me.role] || [];
+    const items = notificationsFor(me, perms, await loadWorkspace(env, perms));
+    const seen = me.notificationsSeenAt || '';
+    return json({ items, unread: items.filter((n) => n.at > seen).length, seen_at: seen || null });
+  }
+
+  if (path === '/api/notifications/seen' && method === 'POST') {
+    const me = await c.auth();
+    me.notificationsSeenAt = nowIso();
+    await saveUser(env, me);
+    return json({ success: true });
+  }
+
+  if (seg[0] === 'customers' && method === 'GET') {
+    await c.auth('enquiries:read');
+    const [enquiries, tickets] = await Promise.all([getEnquiries(env), getTickets(env)]);
+    if (seg.length === 1) {
+      const q = (url.searchParams.get('search') || '').toLowerCase();
+      let list = buildCustomers(enquiries, tickets);
+      if (q) list = list.filter((x) => [x.name, x.email, x.company].some((f) => (f || '').toLowerCase().includes(q)));
+      return json({ customers: list });
+    }
+    const profile = customerProfile(decodeURIComponent(seg[1]), enquiries, tickets);
+    if (!profile) throw new HttpError(404, 'Customer not found.');
+    return json({ customer: profile });
+  }
+
   throw new HttpError(404, 'Not found.');
+}
+
+/** Everything the dashboard and notifications need, loaded only if the role may see it. */
+async function loadWorkspace(env, perms) {
+  const want = (perm, loader) => (perms.includes(perm) ? loader() : Promise.resolve([]));
+  const [users, tickets, enquiries, content, audit, analytics] = await Promise.all([
+    getUsers(env),
+    want('tickets:read', () => getTickets(env)),
+    want('enquiries:read', () => getEnquiries(env)),
+    want('content:read', () => listDocs(env, 'content')),
+    want('audit:read', () => listDocs(env, 'audit', { limit: 2000 })),
+    getValue(env, 'analytics', emptyAnalytics()),
+  ]);
+  return { users, tickets, enquiries, content, audit, analytics };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Daily digest (cron: 03:30 UTC = 09:00 IST)
+═══════════════════════════════════════════════════════════ */
+
+async function runDailyDigest(env) {
+  if (!mailConfigured(env)) return { skipped: 'email not configured' };
+  const now = Date.now();
+  const [users, tickets, enquiries] = await Promise.all([getUsers(env), getTickets(env), getEnquiries(env)]);
+  const name = (id) => users.find((u) => u.id === id)?.name || 'Unassigned';
+  const openLeads = enquiries.filter((e) => !e.deleted_at && !['WON', 'LOST'].includes(e.status));
+  const groups = [
+    {
+      title: 'Tickets past their response or resolution target',
+      items: tickets.filter((t) => !t.deleted_at && !CLOSED_TICKET_STATUSES.includes(t.status)).map((t) => withSla(t, now))
+        .filter((t) => t.sla.response.state === 'breached' || t.sla.resolution.state === 'breached')
+        .map((t) => ({ label: `${t.public_id} · ${t.subject}`, detail: `${t.priority} priority · ${name(t.assigned_to)} · ${t.requester_email}` })),
+    },
+    {
+      title: 'Lead follow-ups due or overdue',
+      items: openLeads.filter((e) => e.follow_up_at && Date.parse(e.follow_up_at) <= now + 12 * 3600 * 1000)
+        .map((e) => ({ label: `${e.name}${e.company ? ` (${e.company})` : ''}`, detail: `Due ${e.follow_up_at.slice(0, 10)} · ${name(e.owner_id)} · ${e.service_name}` })),
+    },
+    {
+      title: 'Leads not contacted within 24 hours',
+      items: openLeads.filter((e) => !e.first_response_at && leadClock(e, now).state === 'breached')
+        .map((e) => ({ label: `${e.name} · ${e.email}`, detail: `Came in ${e.created_at.slice(0, 10)} · ${e.service_name} · ${name(e.owner_id)}` })),
+    },
+  ];
+  if (!groups.some((g) => g.items.length)) return { skipped: 'nothing due' };
+  const r = await sendDigest(env, null, groups);
+  const entry = { id: newId('aud'), type: r.ok ? 'EMAIL_SENT' : 'EMAIL_FAILED', timestamp: nowIso(), userId: 'system', role: 'system', reqId: 'CRON', ip: '', userAgent: 'cron', target: 'daily-digest', action: 'DAILY_DIGEST', result: r.ok ? 'SUCCESS' : 'FAILED', metadata: { label: 'digest', status: r.status, error: r.error } };
+  await putDoc(env, 'audit', entry);
+  return { sent: r.ok, items: groups.reduce((n, g) => n + g.items.length, 0) };
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -933,5 +1057,9 @@ export default {
     }
 
     return env.ASSETS.fetch(request);
+  },
+
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runDailyDigest(env).then((r) => console.log('[digest]', JSON.stringify(r))));
   },
 };

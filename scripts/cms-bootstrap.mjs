@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
- * Provision KB NEXUS CMS accounts into Workers KV.
+ * Provision KB NEXUS CMS accounts into the D1 database.
  *
- *   node scripts/cms-bootstrap.mjs --local            # local `wrangler dev` KV + .dev.vars
- *   node scripts/cms-bootstrap.mjs --remote           # production KV + SESSION_SECRET secret
+ *   node scripts/cms-bootstrap.mjs --local            # local `wrangler dev` D1 + .dev.vars
+ *   node scripts/cms-bootstrap.mjs --remote           # production D1 + SESSION_SECRET secret
  *   add --force to replace existing accounts, --out <file> to choose where credentials are written
  *
  * For each account it generates a strong password, an authenticator (TOTP)
  * secret and six single-use recovery codes. Only PBKDF2 / SHA-256 hashes are
- * stored in KV; plaintext credentials are written once to the --out file
+ * stored in D1; plaintext credentials are written once to the --out file
  * (default: outside the repo, in your home folder) and never committed.
  */
 import { execFileSync } from 'node:child_process';
@@ -36,10 +36,13 @@ const wrangler = (wArgs, input) =>
 const where = remote ? '--remote' : '--local';
 
 // refuse to clobber existing accounts unless asked
-let existing = '';
-try { existing = wrangler(['kv', 'key', 'get', '--binding', 'DB_KV', 'kb_users_v2', where]).trim(); } catch { /* key absent */ }
-if (existing && existing !== 'Value not found' && !force) {
-  console.error('CMS accounts already exist in this KV namespace. Re-run with --force to replace them.');
+let existing = 0;
+try {
+  const out = wrangler(['d1', 'execute', 'kineticbay-cms', where, '--json', '--command', "SELECT COUNT(*) AS n FROM docs WHERE coll = 'users'"]);
+  existing = JSON.parse(out)[0].results[0].n;
+} catch { /* table empty or not yet migrated */ }
+if (existing && !force) {
+  console.error('CMS accounts already exist in this database. Re-run with --force to replace them.');
   process.exit(1);
 }
 
@@ -73,9 +76,11 @@ for (const a of ACCOUNTS) {
 
 const dir = mkdtempSync(join(tmpdir(), 'kbcms-'));
 try {
-  const usersFile = join(dir, 'users.json');
-  writeFileSync(usersFile, JSON.stringify(users));
-  wrangler(['kv', 'key', 'put', '--binding', 'DB_KV', 'kb_users_v2', '--path', usersFile, where]);
+  const q = (v) => `'${String(v).replace(/'/g, "''")}'`;
+  const sqlFile = join(dir, 'users.sql');
+  writeFileSync(sqlFile, users.map((u) => `INSERT INTO docs (coll, id, created_at, updated_at, data) VALUES ('users', ${q(u.id)}, ${q(u.createdAt)}, ${q(u.createdAt)}, ${q(JSON.stringify(u))})
+ON CONFLICT (coll, id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at;`).join('\n'));
+  wrangler(['d1', 'execute', 'kineticbay-cms', where, '--file', sqlFile, '-y']);
 } finally {
   rmSync(dir, { recursive: true, force: true });
 }

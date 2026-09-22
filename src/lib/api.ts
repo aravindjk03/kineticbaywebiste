@@ -393,4 +393,41 @@ export const api = {
   async deleteTeamMember(id: string) {
     return request(`/api/team/${encodeURIComponent(id)}`, { method: 'DELETE' });
   },
+
+  // ── Dashboard, pipeline, customers, notifications ──
+  async getDashboard() {
+    return request('/api/dashboard');
+  },
+
+  async updateLead(id: string, data: { status?: string; owner_id?: string | null; follow_up_at?: string | null; notes?: string }) {
+    return request(`/api/enquiries/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
+  },
+
+  async logLeadActivity(id: string, type: 'note' | 'call' | 'meeting' | 'whatsapp', text: string) {
+    return request(`/api/enquiries/${encodeURIComponent(id)}/activities`, { method: 'POST', body: JSON.stringify({ type, text }) });
+  },
+
+  async replyToLead(id: string, subject: string, message: string) {
+    return request(`/api/enquiries/${encodeURIComponent(id)}/reply`, { method: 'POST', body: JSON.stringify({ subject, message }) });
+  },
+
+  async getCustomers(search?: string) {
+    return request(`/api/customers${search ? `?search=${encodeURIComponent(search)}` : ''}`);
+  },
+
+  async getCustomer(email: string) {
+    return request(`/api/customers/${encodeURIComponent(email)}`);
+  },
+
+  async getNotifications() {
+    return request('/api/notifications');
+  },
+
+  async markNotificationsSeen() {
+    return request('/api/notifications/seen', { method: 'POST' });
+  },
+
+  async runDigest() {
+    return request('/api/security/run-digest', { method: 'POST' });
+  },
 };

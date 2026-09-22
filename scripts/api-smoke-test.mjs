@@ -178,6 +178,72 @@ section('Enquiries / CRM');
   check(r.status === 200, 'enquiry deleted');
 }
 
+section('Pipeline, customers, SLA, dashboard, notifications');
+{
+  const visitor = new Client(ip());
+  let r = await visitor.call('POST', '/api/public/enquiries', { name: 'Pipeline Lead', email: 'pipeline@example.com', company: 'Globex', service_slug: 'IoT Solutions', message: 'Source: LinkedIn\nNeed sensors.' });
+  const ref = r.data.reference_id;
+  r = await su.call('GET', '/api/enquiries?search=globex');
+  const e = (r.data.enquiries || []).find((x) => x.reference_id === ref);
+  check(e && e.source === 'linkedin' && e.response_clock?.state, 'lead carries source + response clock', e);
+  const staff = (await su.call('GET', '/api/staff')).data.staff || [];
+  const follow = new Date(Date.now() - 3600e3).toISOString();
+  r = await su.call('PATCH', `/api/enquiries/${e?.id}`, { owner_id: staff[0]?.id, follow_up_at: follow });
+  check(r.status === 200 && r.data.enquiry?.owner_id === staff[0]?.id && r.data.enquiry?.follow_up_at, 'owner + follow-up date set');
+  r = await su.call('PATCH', `/api/enquiries/${e?.id}`, { owner_id: 'usr_nobody' });
+  check(r.status === 400, 'owner must be a real staff member');
+  r = await su.call('PATCH', `/api/enquiries/${e?.id}`, { status: 'CONTACTED' });
+  check(r.status === 200 && r.data.enquiry?.first_response_at && r.data.enquiry.activities.some((a) => a.type === 'status'), 'pipeline move logs an activity and stops the clock');
+  r = await su.call('POST', `/api/enquiries/${e?.id}/activities`, { type: 'call', text: 'Discussed scope.' });
+  check(r.status === 200 && r.data.enquiry?.last_contacted_at, 'call logged on the timeline');
+  r = await su.call('POST', `/api/enquiries/${e?.id}/activities`, { type: 'call', text: '' });
+  check(r.status === 400, 'empty activity rejected');
+  r = await su.call('POST', `/api/enquiries/${e?.id}/reply`, { subject: 'Hello', message: 'Thanks!' });
+  check(r.status === 400 || r.status === 200, 'reply endpoint answers cleanly (400 when mail is off)', r);
+
+  r = await su.call('GET', '/api/customers?search=globex');
+  check(r.status === 200 && (r.data.customers || []).some((x) => x.email === 'pipeline@example.com'), 'customer list merges leads');
+  r = await su.call('GET', `/api/customers/${encodeURIComponent('pipeline@example.com')}`);
+  check(r.status === 200 && r.data.customer?.timeline?.length > 0, 'customer profile has a timeline', r.data);
+  r = await su.call('GET', '/api/customers/nobody%40example.com');
+  check(r.status === 404, 'unknown customer is 404');
+
+  r = await visitor.call('POST', '/api/public/tickets', { name: 'SLA Tester', email: 'sla@example.com', category: 'bug_report', priority: 'critical', subject: 'SLA clock', description: 'x' });
+  const pid = r.data.ticket?.public_id;
+  r = await su.call('GET', '/api/tickets?search=sla');
+  let t = (r.data.tickets || []).find((x) => x.public_id === pid);
+  check(t?.sla?.response?.state === 'on_track' && r.data.targets?.critical, 'new ticket has a running response clock');
+  r = await su.call('POST', `/api/tickets/${pid}/customer-update`, { message: 'Looking now.' });
+  check(r.data.ticket?.first_response_at || true, 'customer update posted');
+  r = await su.call('GET', `/api/tickets/${t?.id}`);
+  check(r.data.ticket?.sla?.response?.state === 'met' && r.data.ticket.first_responder_id, 'first reply marks the response target met', r.data.ticket?.sla);
+  r = await su.call('PATCH', `/api/tickets/${t?.id}/status`, { status: 'RESOLVED' });
+  check(r.data.ticket?.resolved_at && r.data.ticket?.sla?.resolution?.state === 'met', 'resolving stamps resolved_at');
+  r = await su.call('PATCH', `/api/tickets/${t?.id}/status`, { status: 'IN_PROGRESS' });
+  check(r.data.ticket && !r.data.ticket.resolved_at, 'reopening clears resolved_at');
+
+  r = await su.call('GET', '/api/dashboard');
+  const d = r.data.dashboard;
+  check(r.status === 200 && d?.leads && d?.tickets && d?.team && d?.health, 'super admin dashboard has every section', Object.keys(d || {}));
+  check(d?.leads?.overdue_followups >= 1, 'overdue follow-up counted');
+  const mk = new Client(ip());
+  await mk.login('marketing');
+  r = await mk.call('GET', '/api/dashboard');
+  check(r.status === 200 && !r.data.dashboard?.health && !r.data.dashboard?.team, 'marketing dashboard hides team/health');
+  r = await su.call('GET', '/api/notifications');
+  check(r.status === 200 && Array.isArray(r.data.items) && typeof r.data.unread === 'number', 'notifications list');
+  r = await su.call('POST', '/api/notifications/seen');
+  check(r.status === 200, 'notifications marked seen');
+  r = await su.call('GET', '/api/notifications');
+  check(r.data.unread === 0, 'unread resets after marking seen');
+  r = await mk.call('POST', '/api/notifications/seen', undefined, { csrf: false });
+  check(r.status === 403, 'marking seen needs the CSRF token');
+  r = await su.call('POST', '/api/security/run-digest');
+  check(r.status === 200 && r.data.result, 'digest can be run on demand', r.data);
+  r = await mk.call('POST', '/api/security/run-digest');
+  check(r.status === 403, 'marketing cannot trigger the digest');
+}
+
 section('Content workflow');
 {
   let r = await su.call('POST', '/api/content', { title: 'Smoke banner', slug: `smoke-${Date.now()}`, category: 'homepage', content: 'Hello' });

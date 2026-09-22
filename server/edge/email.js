@@ -122,6 +122,37 @@ export function notifyStaffNewEnquiry(env, e) {
   return send(env, { to: staffInbox(env), subject, html, text, replyTo: e.email });
 }
 
+/* ─── CRM ─────────────────────────────────────────────── */
+
+/** A staff reply to a lead, sent from the CMS; replies come back to the team inbox. */
+export function sendLeadReply(env, lead, subject, message, author) {
+  const html = layout(subject, para(`Hi ${esc(lead.name)},`) + `<div style="white-space:pre-wrap;font-size:14px;line-height:1.6;margin:0 0 16px">${esc(message)}</div>`
+    + para(`— ${esc(author?.name || 'The Kinetic Bay team')}<br><span style="color:#8a837b">Kinetic Bay · Chennai, India</span>`));
+  const text = `Hi ${lead.name},
+
+${message}
+
+— ${author?.name || 'The Kinetic Bay team'}
+Kinetic Bay`;
+  return send(env, { to: lead.email, subject, html, text, replyTo: staffInbox(env)[0] });
+}
+
+/** Morning digest of overdue work. `groups` = [{ title, items: [{ label, detail }] }]. */
+export function sendDigest(env, to, groups) {
+  const body = groups.filter((g) => g.items.length).map((g) => `<h2 style="font-size:15px;margin:18px 0 8px;color:#101114">${esc(g.title)} (${g.items.length})</h2>`
+    + `<ul style="padding-left:18px;margin:0 0 8px">${g.items.map((i) => `<li style="font-size:14px;line-height:1.55;margin:0 0 6px"><b>${esc(i.label)}</b><br><span style="color:#8a837b">${esc(i.detail)}</span></li>`).join('')}</ul>`).join('');
+  const text = groups.filter((g) => g.items.length)
+    .map((g) => [`${g.title} (${g.items.length})`, ...g.items.map((i) => `- ${i.label} — ${i.detail}`)].join('\n'))
+    .join('\n\n');
+  const total = groups.reduce((s, g) => s + g.items.length, 0);
+  return send(env, {
+    to: to && to.length ? to : staffInbox(env),
+    subject: `Kinetic Bay · ${total} item${total === 1 ? '' : 's'} need attention today`,
+    html: layout('Your morning follow-ups', body + para(`Open the CMS to act on these: <a href="${site(env)}" style="color:#D9733A">Kinetic Bay CMS</a>`)),
+    text,
+  });
+}
+
 /* ─── Diagnostics ─────────────────────────────────────── */
 
 export function sendTestEmail(env, to) {

@@ -12,6 +12,15 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kineticbay-cms",
+      "database_id": "c048f7b8-e61c-4264-acd0-38cf7b5be018",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Legacy store: kept bound so existing data can be migrated/rolled back.
   "kv_namespaces": [
     {
       "binding": "DB_KV",
@@ -24,6 +33,8 @@
     "MAIL_NOTIFY_TO": "kineticbay@gmail.com",
     "SITE_URL": "https://kineticbay.kineticbay.workers.dev"
   },
+  // Daily 09:00 IST digest: overdue follow-ups and response-time breaches.
+  "triggers": { "crons": ["30 3 * * *"] },
   "compatibility_flags": [
     "nodejs_compat"
   ]
