@@ -61,6 +61,26 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Google Analytics 4 (G-V6CVF15TCH) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V6CVF15TCH"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      // Consent Mode v2: store nothing until the visitor accepts analytics
+      // cookies in the banner (India's DPDP Act 2023, and GDPR for EU visitors).
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        wait_for_update: 500
+      });
+      // This is a single-page app, so the app sends a page_view on each route
+      // change instead; sending one here too would double-count the landing page.
+      gtag('config', 'G-V6CVF15TCH', { send_page_view: false });
+    </script>
   </head>
   <body>
     <div id="root"></div>

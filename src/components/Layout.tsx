@@ -4,7 +4,8 @@ import Header from './Header';
 import Footer from './Footer';
 import ChatbotWidget from './Chatbot/ChatbotWidget';
 import CookieConsent from './CookieConsent';
-import { recordVisit } from '../lib/analytics';
+import { recordVisit, getCookieConsent } from '../lib/analytics';
+import { syncGaConsent, trackPageView } from '../lib/gtag';
 import { useSmoothScroll } from '../lib/motion';
 
 const PUBLIC_PATHS = ['/', '/services', '/products', '/solutions', '/about', '/team', '/contact'];
@@ -23,8 +24,18 @@ export default function Layout({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isPublic) {
       recordVisit(path);
+      trackPageView(path);
     }
   }, [path, isPublic]);
+
+  // Keep Google Analytics consent in step with the cookie banner, both on load
+  // and whenever the visitor changes their choice.
+  useEffect(() => {
+    const apply = () => syncGaConsent(getCookieConsent().analytics === true);
+    apply();
+    window.addEventListener('kb:cookie_changed', apply);
+    return () => window.removeEventListener('kb:cookie_changed', apply);
+  }, []);
 
   if (!isPublic) {
     return <div className="min-h-screen bg-[#07080a] text-ink">{children}</div>;
