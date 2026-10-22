@@ -27,6 +27,7 @@ import { listDocs, getDoc, putDoc, deleteDoc, countDocs, pruneColl, getValue, se
 import { mailOauthConfigured, redirectUri, authUrl, exchangeCode, profileWithToken, seal, unseal, revoke, gmail, summarizeThread, parseThread, parseAddress, buildRaw } from './edge/gmail.js';
 import { withSla, leadClock, leadSource, activity, buildCustomers, customerProfile, notificationsFor, dashboard, SLA_TARGETS } from './edge/crm.js';
 import { assignTicket, assignLead, isMajorIssue, TICKET_RULES, LEAD_ROLE } from './edge/assign.js';
+import { pageMeta, injectMeta } from './edge/seo.js';
 import { APPROVAL_LIMIT, PLANS, PROJECT_STATUSES, PAYMENT_METHODS, WON_STATUSES, contractValue, requiredApprover, withFinance } from './edge/projects.js';
 
 /* ═══════════════════════════════════════════════════════════
@@ -1611,7 +1612,12 @@ export default {
       headers.set('Cloudflare-CDN-Cache-Control', 'no-store');
       // The CMS entry route must never be indexed if a crawler ever reaches it.
       if (/^\/cms_/i.test(url.pathname)) headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
-      return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+      const out = new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+
+      // Give each route its own title, description and canonical URL, so the
+      // page is indexable without the crawler having to run the app's JS.
+      const meta = type.includes('text/html') && res.status === 200 ? pageMeta(url.pathname) : null;
+      return meta ? injectMeta(out, meta) : out;
     }
     return res;
   },
