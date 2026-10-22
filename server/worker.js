@@ -1558,9 +1558,34 @@ async function runDailyDigest(env) {
    Entry point
 ═══════════════════════════════════════════════════════════ */
 
+/**
+ * One address for the whole site, so search engines index kineticbay.in and
+ * never the www alias or the workers.dev deployment URL.
+ */
+const CANONICAL_HOST = 'kineticbay.in';
+const isWorkersDev = (host) => host.endsWith('.workers.dev');
+
+function canonicalRedirect(url) {
+  const host = url.hostname.toLowerCase();
+  if (host === CANONICAL_HOST || host === 'localhost' || host === '127.0.0.1') return null;
+  if (host !== `www.${CANONICAL_HOST}` && !isWorkersDev(host)) return null;
+  const target = new URL(url);
+  target.hostname = CANONICAL_HOST;
+  target.protocol = 'https:';
+  target.port = '';
+  return Response.redirect(target.toString(), 301);
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    // Send browsers and crawlers to the canonical domain, except for API calls
+    // (an in-flight CMS session on another host must not be bounced mid-request).
+    if (!url.pathname.startsWith('/api')) {
+      const redirect = canonicalRedirect(url);
+      if (redirect) return redirect;
+    }
 
     if (url.pathname.startsWith('/api')) {
       // Same-origin API only: no cross-origin credentials are ever granted.
@@ -1575,7 +1600,18 @@ export default {
       }
     }
 
-    return env.ASSETS.fetch(request);
+    const res = await env.ASSETS.fetch(request);
+
+    // HTML, robots and the sitemap must revalidate, otherwise a Cloudflare
+    // cache rule can keep serving a previous deployment's metadata.
+    const type = res.headers.get('content-type') || '';
+    if (/text\/html|text\/plain|application\/xml/.test(type)) {
+      const headers = new Headers(res.headers);
+      headers.set('Cache-Control', 'public, max-age=0, must-revalidate');
+      headers.set('Cloudflare-CDN-Cache-Control', 'no-store');
+      return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+    }
+    return res;
   },
 
   async scheduled(event, env, ctx) {

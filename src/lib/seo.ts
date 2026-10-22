@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const SITE_ORIGIN = 'https://kineticbay.kineticbay.workers.dev';
+const SITE_ORIGIN = 'https://kineticbay.in';
 
 function setMeta(selector: string, attr: string, value: string) {
   const el = document.head.querySelector<HTMLMetaElement | HTMLLinkElement>(selector);

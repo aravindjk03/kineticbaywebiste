@@ -48,7 +48,7 @@ async function send(env, { to, subject, html, text, replyTo }) {
 }
 
 const staffInbox = (env) => String(env.MAIL_NOTIFY_TO || env.MAIL_FROM || '').split(',').map((s) => s.trim()).filter(Boolean);
-const site = (env) => (env.SITE_URL || 'https://kineticbay.kineticbay.workers.dev').replace(/\/$/, '');
+const site = (env) => (env.SITE_URL || 'https://kineticbay.in').replace(/\/$/, '');
 
 function layout(title, bodyHtml) {
   return `<!doctype html><html><body style="margin:0;background:#f6f3ef;font-family:Segoe UI,Arial,sans-serif;color:#1b1c20">
