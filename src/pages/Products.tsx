@@ -17,8 +17,8 @@ const deploy = [
 
 export default function Products() {
   useSeo(
-    'Products: HRMS, VMS, PMS, CRM & Attendance | Kinetic Bay',
-    'Ready-to-deploy HRMS, visitor management, project management, CRM and smart attendance platforms — customised to your industry, workflows and brand.',
+    'HRMS, VMS, PMS, CRM & Attendance Software | Kinetic Bay',
+    'Ready-to-deploy HRMS, visitor management, project management, CRM and smart attendance platforms, customised to your industry, workflows and branding.',
   );
 
   return (

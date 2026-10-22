@@ -85,8 +85,8 @@ function Belief() {
 
 export default function About() {
   useSeo(
-    'About Kinetic Bay | Technology with SDG Purpose',
-    'Chennai-born technology company that finds the friction in how organisations work and engineers it away — human-centred and aligned with the UN SDGs.',
+    'About Kinetic Bay | AI & Software Company in Chennai',
+    'Chennai-born technology company that finds the friction in how organisations work and engineers it away. Human-centred software, aligned with the UN SDGs.',
   );
 
   return (

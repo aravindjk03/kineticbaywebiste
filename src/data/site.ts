@@ -120,8 +120,8 @@ export const pillars: Pillar[] = [
     ],
     outcome: 'Fewer manual hours, faster decisions and customer experiences that feel personal at scale.',
     cta: 'Discuss Your AI Project',
-    seoTitle: 'AI Chatbots, AI Agents & Automation | Kinetic Bay',
-    seoDescription: 'AI chatbots, autonomous agents, LLM fine-tuning and workflow automation built around your data. Cut manual work and decide faster.',
+    seoTitle: 'AI Chatbots, AI Agents & Automation Services | Kinetic Bay',
+    seoDescription: 'AI chatbots, autonomous agents, LLM fine-tuning and workflow automation built around your own data. Cut manual work, decide faster. Free discovery call.',
   },
   {
     slug: 'digital-engineering',
@@ -142,8 +142,8 @@ export const pillars: Pillar[] = [
     ],
     outcome: 'Software your team actually enjoys using, delivered on time and built to grow with you.',
     cta: 'Discuss Your Digital Project',
-    seoTitle: 'Custom Software & App Development | Kinetic Bay',
-    seoDescription: 'Web apps, mobile apps, SaaS products and enterprise integrations designed around how you work. Fast, scalable, beautifully built.',
+    seoTitle: 'Custom Software & App Development Company | Kinetic Bay',
+    seoDescription: 'Web apps, mobile apps, SaaS products and enterprise integrations designed around how you actually work. Fast, scalable and beautifully built in Chennai.',
   },
   {
     slug: 'cybersecurity-cloud',
@@ -163,8 +163,8 @@ export const pillars: Pillar[] = [
     ],
     outcome: 'Peace of mind: infrastructure that scales on demand and data that stays protected.',
     cta: 'Discuss Your Cybersecurity Project',
-    seoTitle: 'Cloud & Cybersecurity Services | Kinetic Bay',
-    seoDescription: 'Azure & AWS cloud-native apps, migration, DevSecOps and VAPT. Secure foundations that scale with your business.',
+    seoTitle: 'Cloud Migration & Cybersecurity Services | Kinetic Bay',
+    seoDescription: 'Azure and AWS cloud-native apps, migration, DevSecOps and VAPT penetration testing. Secure, compliant foundations that scale with your growing business.',
   },
   {
     slug: 'iot',
@@ -184,7 +184,7 @@ export const pillars: Pillar[] = [
     outcome: 'Complete visibility of your operations, fewer breakdowns and a measurable drop in waste.',
     cta: 'Discuss Your IoT Project',
     seoTitle: 'Industrial IoT & Smart Factory Solutions | Kinetic Bay',
-    seoDescription: 'IoT for predictive maintenance, asset tracking, energy monitoring and smart buildings. Real-time visibility, fewer breakdowns.',
+    seoDescription: 'IoT for predictive maintenance, asset tracking, energy monitoring and smart buildings. Real-time visibility and fewer breakdowns across every site you operate.',
   },
 ];
 
@@ -230,8 +230,8 @@ export const products: Product[] = [
       'Analytics dashboard for headcount, attrition and costs',
     ],
     ideal: 'Growing businesses, manufacturers, hospitals, schools and multi-location enterprises.',
-    seoTitle: 'HRMS Software with Payroll India | Kinetic HRMS',
-    seoDescription: 'All-in-one HRMS with payroll, statutory compliance, leave and performance management. Customisable for your industry. Book a demo.',
+    seoTitle: 'HRMS Software with Payroll for India | Kinetic HRMS',
+    seoDescription: 'All-in-one HRMS with payroll, statutory compliance, leave and performance management, customisable for your industry. Book a free demo with our Chennai team.',
   },
   {
     slug: 'vms',
@@ -250,8 +250,8 @@ export const products: Product[] = [
       'Multi-gate and multi-site support',
     ],
     ideal: 'Corporate offices, factories, tech parks, hospitals, schools and residential communities.',
-    seoTitle: 'Visitor Management System Software | Kinetic VMS',
-    seoDescription: 'Digital visitor management with QR pre-registration, ID verification, badges and instant host alerts. Secure every entry.',
+    seoTitle: 'Visitor Management System Software in India | Kinetic VMS',
+    seoDescription: 'Digital visitor management with QR pre-registration, ID verification, badge printing and instant host alerts. Secure every entry across every location.',
   },
   {
     slug: 'pms',
@@ -270,8 +270,8 @@ export const products: Product[] = [
       'Real-time project health dashboards',
     ],
     ideal: 'IT and service firms, construction, agencies, consultancies and internal project teams.',
-    seoTitle: 'Project Management Software | Kinetic PMS',
-    seoDescription: 'Plan, track and deliver projects with task boards, Gantt charts, timesheets and live dashboards. Customisable to your workflow.',
+    seoTitle: 'Project Management Software for Teams | Kinetic PMS',
+    seoDescription: 'Plan, track and deliver projects with task boards, Gantt charts, timesheets and live dashboards, customised to the way your own teams already prefer to work.',
   },
   {
     slug: 'crm',
@@ -290,8 +290,8 @@ export const products: Product[] = [
       'Sales forecasting and performance analytics',
     ],
     ideal: 'Sales teams, real estate, education, healthcare, B2B services and retail.',
-    seoTitle: 'CRM Software for Growing Businesses | Kinetic CRM',
-    seoDescription: 'Capture leads, automate follow-ups and close more deals with a CRM tailored to your sales process. WhatsApp-ready.',
+    seoTitle: 'CRM Software for Growing Businesses | Kinetic Bay CRM',
+    seoDescription: 'Capture leads, automate follow-ups and close more deals with a CRM tailored to your sales process. WhatsApp-ready and built for Indian businesses of every size.',
   },
   {
     slug: 'attendance',
@@ -311,7 +311,7 @@ export const products: Product[] = [
     ],
     ideal: 'Factories, retail chains, hospitals, schools, security agencies and field-force teams.',
     seoTitle: 'Biometric & Face Attendance System | Kinetic Attendance',
-    seoDescription: 'Face, biometric, RFID and GPS attendance that syncs with payroll. Accurate, dispute-free time tracking for every location.',
+    seoDescription: 'Face recognition, biometric, RFID and GPS attendance that syncs straight into payroll. Accurate, dispute-free time tracking for every location you run.',
   },
 ];
 

@@ -148,7 +148,7 @@ const orgJsonLd = {
 export default function Home() {
   useSeo(
     'Kinetic Bay | Custom Software & AI Solutions, Chennai',
-    'Custom software, AI, cloud & IoT solutions that make work easier and create impact. 40+ projects, 99% success. Chennai-based, serving India & the world.',
+    'Custom software, AI, cloud and IoT solutions that make work easier and create impact. 40+ projects, 99% success. Chennai-based, serving India and the world.',
     orgJsonLd,
   );
 

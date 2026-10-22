@@ -26,8 +26,8 @@ function Field({ id, label, error, children }: { id: string; label: string; erro
 
 export default function Contact() {
   useSeo(
-    'Contact Kinetic Bay | Book a Free Consultation',
-    "Tell us about your challenge. Free discovery call, NDA on request, and a response within 24 hours from Kinetic Bay's Chennai team.",
+    'Contact Kinetic Bay | Book a Free Consultation Today',
+    'Tell us about your challenge. Free discovery call, NDA on request and a reply within 24 hours from the Kinetic Bay team in Chennai, serving all of India.',
   );
   const [params] = useSearchParams();
   const topic = params.get('topic');

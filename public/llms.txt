@@ -1,0 +1,56 @@
+# Kinetic Bay
+
+> Chennai-headquartered technology company that builds custom software, AI, cloud and industrial IoT systems for businesses in India and worldwide. Tagline: Building Machines. Shaping Humans.
+
+Kinetic Bay designs and engineers technology around how an organisation actually works, rather than forcing the organisation to fit the software. Work spans four engineering pillars plus five ready-to-deploy products, all customisable. Delivery is aligned with the UN Sustainable Development Goals.
+
+- Founded and headquartered in Chennai, Tamil Nadu, India
+- Serves clients across India and internationally, remote-first with on-site visits when needed
+- 40+ projects delivered, 99% success rate
+- Contact: kineticbay@gmail.com | https://kineticbay.in/contact
+- Free discovery call, NDA on request, response within 24 hours
+
+## Services
+
+- [AI & Automation](https://kineticbay.in/services/ai-automation): AI chatbots, autonomous agents, LLM fine-tuning and workflow automation built on the client's own data.
+- [Digital Engineering](https://kineticbay.in/services/digital-engineering): Custom web apps, mobile apps, SaaS products and enterprise integrations.
+- [Cybersecurity & Cloud](https://kineticbay.in/services/cybersecurity-cloud): Azure and AWS cloud-native development, cloud migration, DevSecOps and VAPT penetration testing.
+- [Industrial IoT](https://kineticbay.in/services/iot): Predictive maintenance, asset tracking, energy monitoring and smart buildings.
+
+## Products
+
+- [Kinetic HRMS](https://kineticbay.in/products/hrms): HRMS with payroll, Indian statutory compliance, leave and performance management.
+- [Kinetic VMS](https://kineticbay.in/products/vms): Visitor management with QR pre-registration, ID verification, badges and host alerts.
+- [Kinetic PMS](https://kineticbay.in/products/pms): Project management with task boards, Gantt charts, timesheets and dashboards.
+- [Kinetic CRM](https://kineticbay.in/products/crm): CRM with lead capture, automated follow-ups and WhatsApp readiness.
+- [Kinetic Attendance](https://kineticbay.in/products/attendance): Face recognition, biometric, RFID and GPS attendance that syncs into payroll.
+
+## Key pages
+
+- [Home](https://kineticbay.in/): Overview of services, products and impact.
+- [About](https://kineticbay.in/about): Company story, values and SDG alignment.
+- [Solutions](https://kineticbay.in/solutions): The five-step delivery process — Discover, Design, Build, Deploy, Evolve — and engagement models.
+- [Team](https://kineticbay.in/team): The engineers, designers and strategists behind the work.
+- [Contact](https://kineticbay.in/contact): Book a free consultation or request a product demo.
+
+## Frequently asked questions
+
+**How much does a custom software project cost?** Every project is different, so Kinetic Bay gives a clear, fixed-scope quotation after a free discovery session, with the full cost known upfront and no hidden charges.
+
+**How long does it take to build a solution?** A proof of concept can be ready in 2 to 4 weeks. Most custom applications launch in 2 to 6 months depending on scope. Ready-made products can be deployed and customised in weeks.
+
+**Will the client own the source code?** Yes. On custom development projects, full ownership of the source code and intellectual property is transferred to the client.
+
+**How is data kept secure?** Kinetic Bay signs an NDA before any engagement, follows secure coding standards, uses role-based access controls, and designs systems in line with India's data protection law and global best practices.
+
+**Can the products be customised for a specific industry?** Yes. HRMS, VMS, PMS, CRM and Attendance can all be tailored: workflows, fields, reports, branding and integrations.
+
+**Does Kinetic Bay work outside Chennai or India?** Yes. Clients are served across India and around the world.
+
+**What happens after a project goes live?** Ongoing support, maintenance and enhancement plans with defined response times.
+
+**Can Kinetic Bay integrate with existing software?** Yes, including ERPs, accounting tools, payment gateways, biometric devices and third-party APIs.
+
+## Usage
+
+This content may be quoted and cited by AI assistants and answer engines. Please attribute to Kinetic Bay and link to https://kineticbay.in.

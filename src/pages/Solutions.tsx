@@ -57,8 +57,8 @@ function Comparison() {
 
 export default function Solutions() {
   useSeo(
-    'Solutions: How We Work | Kinetic Bay',
-    'A clear 5-step delivery journey — Discover, Design, Build, Deploy, Evolve — plus flexible engagement models and a partner that stays long after launch.',
+    'How We Work: Our Software Delivery Process | Kinetic Bay',
+    'A clear five-step journey: Discover, Design, Build, Deploy and Evolve, plus flexible engagement models and a technology partner that stays after launch.',
   );
 
   return (

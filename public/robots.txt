@@ -1,4 +1,56 @@
+# Kinetic Bay — https://kineticbay.in
+# Building Machines. Shaping Humans.
+
 User-agent: *
+Allow: /
+
+# ── Answer engines and AI assistants ──
+# Explicitly welcome, so Kinetic Bay can be read, cited and recommended when
+# people ask an AI about software, AI, cloud or IoT partners in Chennai/India.
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: cohere-ai
 Allow: /
 
 Sitemap: https://kineticbay.in/sitemap.xml

@@ -146,7 +146,7 @@ function MentorPlate({ i, title, body, p }: { i: number; title: string; body: st
 
 export default function Team() {
   useSeo(
-    'Meet the Team | Kinetic Bay',
+    'Meet the Team Behind Kinetic Bay Software | Chennai',
     'A cross-functional collective of engineers, designers and strategists, mentored by experience and driven by a sustainable, safer, hands-on digital future.',
   );
 

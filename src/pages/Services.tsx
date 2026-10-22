@@ -10,8 +10,8 @@ import { useSeo } from '../lib/seo';
 
 export default function Services() {
   useSeo(
-    'Services: AI, Software, Cloud & IoT | Kinetic Bay',
-    'AI & automation, digital engineering, cybersecurity & cloud, and IoT projects — four pillars combined into solutions that work end to end.',
+    'AI, Software, Cloud & IoT Services in Chennai | Kinetic Bay',
+    'AI and automation, digital engineering, cybersecurity and cloud, and industrial IoT. Four engineering pillars combined into solutions that work end to end.',
   );
 
   return (
