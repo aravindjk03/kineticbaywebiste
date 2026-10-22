@@ -27,7 +27,7 @@ import { listDocs, getDoc, putDoc, deleteDoc, countDocs, pruneColl, getValue, se
 import { mailOauthConfigured, redirectUri, authUrl, exchangeCode, profileWithToken, seal, unseal, revoke, gmail, summarizeThread, parseThread, parseAddress, buildRaw } from './edge/gmail.js';
 import { withSla, leadClock, leadSource, activity, buildCustomers, customerProfile, notificationsFor, dashboard, SLA_TARGETS } from './edge/crm.js';
 import { assignTicket, assignLead, isMajorIssue, TICKET_RULES, LEAD_ROLE } from './edge/assign.js';
-import { pageMeta, injectMeta } from './edge/seo.js';
+import { pageMeta, injectMeta, sitemapXml } from './edge/seo.js';
 import { APPROVAL_LIMIT, PLANS, PROJECT_STATUSES, PAYMENT_METHODS, WON_STATUSES, contractValue, requiredApprover, withFinance } from './edge/projects.js';
 
 /* ═══════════════════════════════════════════════════════════
@@ -1591,6 +1591,13 @@ export default {
       });
     }
 
+    // Generated from the page metadata, so it can never drift out of date.
+    if (url.pathname === '/sitemap.xml') {
+      return new Response(sitemapXml(), {
+        headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=3600' },
+      });
+    }
+
     // Send browsers and crawlers to the canonical domain, except for API calls
     // (an in-flight CMS session on another host must not be bounced mid-request).
     if (!url.pathname.startsWith('/api')) {
@@ -1622,12 +1629,22 @@ export default {
       headers.set('Cloudflare-CDN-Cache-Control', 'no-store');
       // The CMS entry route must never be indexed if a crawler ever reaches it.
       if (/^\/cms_/i.test(url.pathname)) headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
-      const out = new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+      if (type.includes('text/html') && res.status === 200) {
+        // Give each route its own title, description and canonical URL, so the
+        // page is indexable without the crawler having to run the app's JS.
+        const meta = pageMeta(url.pathname);
+        if (meta) return injectMeta(new Response(res.body, { status: 200, headers }), meta);
 
-      // Give each route its own title, description and canonical URL, so the
-      // page is indexable without the crawler having to run the app's JS.
-      const meta = type.includes('text/html') && res.status === 200 ? pageMeta(url.pathname) : null;
-      return meta ? injectMeta(out, meta) : out;
+        // The SPA fallback answers every unknown path with the app shell. Left
+        // at 200 that is a soft 404: crawlers index junk URLs and waste crawl
+        // budget. Send a real 404 status, keeping the shell so the visitor
+        // still sees the styled not-found page. The CMS route is a real page.
+        if (!/^\/cms_/i.test(url.pathname)) {
+          headers.set('X-Robots-Tag', 'noindex');
+          return new Response(res.body, { status: 404, statusText: 'Not Found', headers });
+        }
+      }
+      return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
     }
     return res;
   },

@@ -128,6 +128,31 @@ const PRODUCT_CATEGORIES = {
 
 const normalise = (pathname) => (pathname.length > 1 ? pathname.replace(/\/+$/, '') : '/');
 
+/* ─── Sitemap ─────────────────────────────────────────────
+   Generated from PAGES so a new service or product appears in the sitemap the
+   moment it has metadata, instead of being forgotten in a hand-edited file. */
+
+// Bump when page content materially changes, so lastmod stays truthful.
+export const CONTENT_UPDATED = '2026-10-22';
+
+const SITEMAP_RULES = [
+  [/^\/$/, '1.0', 'weekly'],
+  [/^\/(services|products)$/, '0.9', 'monthly'],
+  [/^\/contact$/, '0.9', 'monthly'],
+  [/^\/(services|products)\/[^/]+$/, '0.8', 'monthly'],
+  [/^\/(about|solutions)$/, '0.7', 'monthly'],
+];
+
+export function sitemapXml() {
+  const urls = Object.keys(PAGES).map((path) => {
+    const rule = SITEMAP_RULES.find(([re]) => re.test(path));
+    const [, priority, changefreq] = rule || [null, '0.6', 'yearly'];
+    const loc = SITE_ORIGIN + (path === '/' ? '/' : path);
+    return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${CONTENT_UPDATED}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`;
+  });
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`;
+}
+
 /** Metadata for a path, or null when the path is not a known public page. */
 export function pageMeta(pathname) {
   const path = normalise(pathname);
