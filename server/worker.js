@@ -1564,6 +1564,8 @@ async function runDailyDigest(env) {
  * never the www alias or the workers.dev deployment URL.
  */
 const CANONICAL_HOST = 'kineticbay.in';
+/** Google Search Console file-verification tokens (public, not secrets). */
+const SEARCH_VERIFICATION = new Set(['/google31203a901ff94429.html']);
 const isWorkersDev = (host) => host.endsWith('.workers.dev');
 
 function canonicalRedirect(url) {
@@ -1580,6 +1582,14 @@ function canonicalRedirect(url) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    // Search Console's file check needs this exact path to answer 200 with the
+    // token. Served here because the asset handler strips the .html extension.
+    if (SEARCH_VERIFICATION.has(url.pathname)) {
+      return new Response(`google-site-verification: ${url.pathname.slice(1)}\n`, {
+        headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
+      });
+    }
 
     // Send browsers and crawlers to the canonical domain, except for API calls
     // (an in-flight CMS session on another host must not be bounced mid-request).
