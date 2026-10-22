@@ -1609,6 +1609,8 @@ export default {
       const headers = new Headers(res.headers);
       headers.set('Cache-Control', 'public, max-age=0, must-revalidate');
       headers.set('Cloudflare-CDN-Cache-Control', 'no-store');
+      // The CMS entry route must never be indexed if a crawler ever reaches it.
+      if (/^\/cms_/i.test(url.pathname)) headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
       return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
     }
     return res;
